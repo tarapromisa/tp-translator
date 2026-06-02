@@ -4,14 +4,15 @@ import { useEffect, useState, useRef } from 'react'
 import Sidebar from '@/components/Sidebar'
 import { supabase } from '@/lib/supabase'
 import {
-  UserIcon, EnvelopeIcon, LockClosedIcon, GlobeAltIcon,
-  BellIcon, ExclamationTriangleIcon, CameraIcon, CheckCircleIcon,
+  UserIcon, EnvelopeIcon, LockClosedIcon,
+  ExclamationTriangleIcon, CameraIcon,
 } from '@heroicons/react/24/outline'
 import { CheckCircleIcon as CheckSolid } from '@heroicons/react/24/solid'
 
 type UserProfile = {
   id: string; full_name: string; email: string
   language: string; role: string; active: boolean
+  avatar_url?: string | null
 }
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error'
@@ -44,54 +45,42 @@ function SaveBtn({ state, onClick, label = 'Salvează' }: { state: SaveState; on
         'bg-[#ce0100] text-white shadow-[0_4px_12px_rgba(206,1,0,0.22)] hover:bg-[#a80000] disabled:opacity-50'
       }`}>
       {state === 'saving' ? 'Se salvează...' :
-       state === 'saved'  ? <><CheckSolid className="w-4 h-4" />Salvat!</> :
-       state === 'error'  ? 'Eroare — încearcă din nou' : label}
+       state === 'saved' ? <><CheckSolid className="w-4 h-4" />Salvat!</> :
+       state === 'error' ? 'Eroare' : label}
     </button>
   )
 }
 
 export default function SetariPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null)
-  const [authUserId, setAuthUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
-
-  // Fields
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [language, setLanguage] = useState('')
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
-
-  // Password
-  const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [passwordError, setPasswordError] = useState<string | null>(null)
-
-  // Save states
   const [profileState, setProfileState] = useState<SaveState>('idle')
   const [emailState, setEmailState] = useState<SaveState>('idle')
   const [passwordState, setPasswordState] = useState<SaveState>('idle')
   const [avatarState, setAvatarState] = useState<SaveState>('idle')
-
-  // Danger zone
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleteConfirmText, setDeleteConfirmText] = useState('')
-
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const load = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-      setAuthUserId(user.id)
       const { data: p } = await supabase.from('users').select('*').eq('auth_user_id', user.id).single()
       if (p) {
         setProfile(p)
         setFullName(p.full_name || '')
         setEmail(p.email || '')
         setLanguage(p.language || '')
-          setAvatarUrl(p.avatar_url || null)
+        setAvatarUrl(p.avatar_url || null)
       }
       setLoading(false)
     }
@@ -110,7 +99,6 @@ export default function SetariPage() {
     if (!avatarPreview || !profile) return
     setAvatarState('saving')
     try {
-      // Upload to Supabase Storage
       const file = fileInputRef.current?.files?.[0]
       if (!file) return
       const ext = file.name.split('.').pop()
@@ -135,12 +123,10 @@ export default function SetariPage() {
   }
 
   const handleSaveEmail = async () => {
-    if (!profile || !authUserId) return
+    if (!profile) return
     setEmailState('saving')
-    // Update in auth
     const { error: authError } = await supabase.auth.updateUser({ email })
     if (authError) { setEmailState('error'); return }
-    // Update in users table
     await supabase.from('users').update({ email }).eq('id', profile.id)
     setEmailState('saved')
     setTimeout(() => setEmailState('idle'), 2000)
@@ -148,17 +134,14 @@ export default function SetariPage() {
 
   const handleSavePassword = async () => {
     setPasswordError(null)
-    if (!newPassword || newPassword.length < 6) { setPasswordError('Parola trebuie să aibă cel puțin 6 caractere.'); return }
+    if (!newPassword || newPassword.length < 6) { setPasswordError('Parola trebuie sa aiba cel putin 6 caractere.'); return }
     if (newPassword !== confirmPassword) { setPasswordError('Parolele nu coincid.'); return }
     setPasswordState('saving')
     const { error } = await supabase.auth.updateUser({ password: newPassword })
     if (error) { setPasswordState('error'); setPasswordError(error.message); return }
     setPasswordState('saved')
-    setCurrentPassword(''); setNewPassword(''); setConfirmPassword('')
+    setNewPassword(''); setConfirmPassword('')
     setTimeout(() => setPasswordState('idle'), 2000)
-  }
-
-    if (!profile) return
   }
 
   const handleSignOutAll = async () => {
@@ -172,8 +155,8 @@ export default function SetariPage() {
   if (loading) return (
     <main className="flex min-h-screen bg-[#f9f7f5]">
       <Sidebar />
-      <div className="flex-1 w-0 flex items-center justify-center">
-        <p className="text-sm text-[#888]">Se încarcă...</p>
+      <div className="flex-1 flex items-center justify-center">
+        <p className="text-sm text-[#888]">Se incarca...</p>
       </div>
     </main>
   )
@@ -181,32 +164,28 @@ export default function SetariPage() {
   return (
     <main className="flex min-h-screen bg-[#f9f7f5] overflow-hidden">
       <Sidebar />
-      <div className="flex-1 w-0 px-10 py-8 overflow-y-auto">
+      <div className="flex-1 min-w-0 px-10 py-8 overflow-y-auto">
 
-        {/* Header */}
         <div className="mb-8">
           <p className="text-[11px] font-semibold text-[#9c8e87] uppercase tracking-[0.15em] mb-2">Cont personal</p>
-          <h1 className="text-[48px] leading-none tracking-tight font-light text-[#111] mb-3">Setări</h1>
+          <h1 className="text-[48px] leading-none tracking-tight font-light text-[#111] mb-3">Setari</h1>
           <div className="w-10 h-[3px] rounded-full bg-[#ce0100] mb-4" />
-          <p className="text-sm font-light text-[#666]">Gestionează profilul și preferințele tale.</p>
+          <p className="text-sm font-light text-[#666]">Gestioneaza profilul si preferintele tale.</p>
         </div>
 
-        <div className="grid grid-cols-[1fr_360px] gap-5">
+        <div className="grid gap-5" style={{ gridTemplateColumns: '1fr 360px' }}>
 
-          {/* LEFT */}
           <div className="flex flex-col gap-5">
 
-            {/* Profil */}
-            <Section title="Profil" sub="Numele tău și limba de lucru" icon={UserIcon}>
+            <Section title="Profil" sub="Numele tau si limba de lucru" icon={UserIcon}>
               <div className="flex flex-col gap-4">
                 <div>
                   <label className="text-[11px] font-semibold text-[#666] uppercase tracking-wide block mb-2">Nume complet</label>
-                  <input value={fullName} onChange={e => setFullName(e.target.value.toUpperCase())}
-                    className="w-full h-11 rounded-[14px] border border-[#f0e9e5] px-4 text-sm text-[#111] outline-none focus:border-[#ce0100] focus:shadow-[0_0_0_3px_rgba(206,1,0,0.07)] transition-all uppercase tracking-wide"
-                    style={{ fontWeight: 400 }} />
+                  <input value={fullName} onChange={e => setFullName(e.target.value)}
+                    className="w-full h-11 rounded-[14px] border border-[#f0e9e5] px-4 text-sm text-[#111] outline-none focus:border-[#ce0100] transition-all" />
                 </div>
                 <div>
-                  <label className="text-[11px] font-semibold text-[#666] uppercase tracking-wide block mb-2">Limbă de lucru</label>
+                  <label className="text-[11px] font-semibold text-[#666] uppercase tracking-wide block mb-2">Limba de lucru</label>
                   <div className="flex flex-wrap gap-2">
                     {LANGUAGES.map(l => (
                       <button key={l} onClick={() => setLanguage(l)}
@@ -222,84 +201,74 @@ export default function SetariPage() {
               </div>
             </Section>
 
-            {/* Email */}
-            <Section title="Adresă de email" sub="Adresa folosită pentru autentificare și corespondență" icon={EnvelopeIcon}>
+            <Section title="Adresa de email" sub="Adresa folosita pentru autentificare" icon={EnvelopeIcon}>
               <div className="flex flex-col gap-4">
                 <div>
                   <label className="text-[11px] font-semibold text-[#666] uppercase tracking-wide block mb-2">Email</label>
-                  <input value={email} onChange={e => setEmail(e.target.value.toLowerCase())} type="email"
-                    className="w-full h-11 rounded-[14px] border border-[#f0e9e5] px-4 text-sm text-[#111] outline-none focus:border-[#ce0100] focus:shadow-[0_0_0_3px_rgba(206,1,0,0.07)] transition-all"
-                    style={{ fontWeight: 300 }} />
-                  <p className="text-[11px] text-[#aaa] mt-2">Vei primi un email de confirmare la noua adresă.</p>
+                  <input value={email} onChange={e => setEmail(e.target.value)} type="email"
+                    className="w-full h-11 rounded-[14px] border border-[#f0e9e5] px-4 text-sm text-[#111] outline-none focus:border-[#ce0100] transition-all" />
+                  <p className="text-[11px] text-[#aaa] mt-2">Vei primi un email de confirmare la noua adresa.</p>
                 </div>
                 <div className="flex justify-end">
-                  <SaveBtn state={emailState} onClick={handleSaveEmail} label="Actualizează emailul" />
+                  <SaveBtn state={emailState} onClick={handleSaveEmail} label="Actualizeaza emailul" />
                 </div>
               </div>
             </Section>
 
-            {/* Parolă */}
-            <Section title="Parolă" sub="Schimbă parola de acces la platformă" icon={LockClosedIcon}>
+            <Section title="Parola" sub="Schimba parola de acces" icon={LockClosedIcon}>
               <div className="flex flex-col gap-4">
                 <div>
-                  <label className="text-[11px] font-semibold text-[#666] uppercase tracking-wide block mb-2">Parolă nouă</label>
+                  <label className="text-[11px] font-semibold text-[#666] uppercase tracking-wide block mb-2">Parola noua</label>
                   <input value={newPassword} onChange={e => setNewPassword(e.target.value)} type="password" placeholder="Minimum 6 caractere"
-                    className="w-full h-11 rounded-[14px] border border-[#f0e9e5] px-4 text-sm text-[#111] outline-none focus:border-[#ce0100] focus:shadow-[0_0_0_3px_rgba(206,1,0,0.07)] transition-all placeholder:text-[#ccc]"
-                    style={{ fontWeight: 300 }} />
+                    className="w-full h-11 rounded-[14px] border border-[#f0e9e5] px-4 text-sm text-[#111] outline-none focus:border-[#ce0100] transition-all placeholder:text-[#ccc]" />
                 </div>
                 <div>
-                  <label className="text-[11px] font-semibold text-[#666] uppercase tracking-wide block mb-2">Confirmă parola</label>
-                  <input value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} type="password" placeholder="Repetă parola nouă"
-                    className={`w-full h-11 rounded-[14px] border px-4 text-sm text-[#111] outline-none focus:border-[#ce0100] focus:shadow-[0_0_0_3px_rgba(206,1,0,0.07)] transition-all placeholder:text-[#ccc] ${
+                  <label className="text-[11px] font-semibold text-[#666] uppercase tracking-wide block mb-2">Confirma parola</label>
+                  <input value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} type="password" placeholder="Repeta parola noua"
+                    className={`w-full h-11 rounded-[14px] border px-4 text-sm text-[#111] outline-none focus:border-[#ce0100] transition-all placeholder:text-[#ccc] ${
                       confirmPassword && confirmPassword !== newPassword ? 'border-[#ffd3d3]' : 'border-[#f0e9e5]'
-                    }`}
-                    style={{ fontWeight: 300 }} />
+                    }`} />
                   {confirmPassword && confirmPassword !== newPassword && (
                     <p className="text-[11px] text-[#ce0100] mt-1">Parolele nu coincid.</p>
                   )}
                 </div>
                 {passwordError && <p className="text-[12px] text-[#ce0100] font-medium">{passwordError}</p>}
                 <div className="flex justify-end">
-                  <SaveBtn state={passwordState} onClick={handleSavePassword} label="Schimbă parola" />
+                  <SaveBtn state={passwordState} onClick={handleSavePassword} label="Schimba parola" />
                 </div>
               </div>
             </Section>
 
-            {/* Zona de pericol */}
             <div className="bg-white border border-[#ffd3d3] rounded-[24px] p-7 shadow-sm">
               <div className="flex items-center gap-3 mb-6 pb-5 border-b border-[#ffeaea]">
                 <div className="w-10 h-10 rounded-[12px] bg-[#fff1f1] flex items-center justify-center flex-shrink-0">
                   <ExclamationTriangleIcon className="w-5 h-5 text-[#ce0100]" strokeWidth={1.5} />
                 </div>
                 <div>
-                  <h2 className="text-base font-semibold text-[#ce0100]">Zonă de pericol</h2>
-                  <p className="text-xs text-[#888] font-light mt-0.5">Acțiuni ireversibile — procedează cu atenție</p>
+                  <h2 className="text-base font-semibold text-[#ce0100]">Zona de pericol</h2>
+                  <p className="text-xs text-[#888] font-light mt-0.5">Actiuni ireversibile</p>
                 </div>
               </div>
-
               <div className="flex flex-col gap-4">
-                {/* Sign out all */}
                 <div className="flex items-center justify-between py-3 border-b border-[#ffeaea]">
                   <div>
-                    <p className="text-sm font-semibold text-[#111]">Deconectează toate sesiunile</p>
-                    <p className="text-xs text-[#888] mt-0.5 font-light">Închide sesiunile active pe toate dispozitivele</p>
+                    <p className="text-sm font-semibold text-[#111]">Deconecteaza toate sesiunile</p>
+                    <p className="text-xs text-[#888] mt-0.5 font-light">Inchide sesiunile active pe toate dispozitivele</p>
                   </div>
                   <button onClick={handleSignOutAll}
                     className="h-9 px-4 rounded-xl border border-[#ffd3d3] bg-white text-sm font-semibold text-[#ce0100] hover:bg-[#fff1f1] transition-all">
-                    Deconectează
+                    Deconecteaza
                   </button>
                 </div>
-
-                {/* Delete account — only for non-admin */}
                 {!isAdmin && (
                   <div className="flex items-center justify-between py-3">
                     <div>
-                      <p className="text-sm font-semibold text-[#111]">Șterge contul</p>
-                      <p className="text-xs text-[#888] mt-0.5 font-light">Această acțiune este permanentă și ireversibilă</p>
+                      <p className="text-sm font-semibold text-[#111]">Sterge contul</p>
+                      <p className="text-xs text-[#888] mt-0.5 font-light">Aceasta actiune este permanenta si ireversibila</p>
                     </div>
                     <button onClick={() => setShowDeleteConfirm(true)}
-                      className="h-9 px-4 rounded-xl bg-[#ce0100] text-white text-sm font-semibold hover:bg-[#a80000] transition-all shadow-[0_4px_12px_rgba(206,1,0,0.2)]">
-                      Șterge contul
+                      className="h-9 px-4 rounded-xl bg-[#ce0100] text-white text-sm font-semibold hover:bg-[#a80000] transition-all">
+                      Sterge contul
                     </button>
                   </div>
                 )}
@@ -308,10 +277,8 @@ export default function SetariPage() {
 
           </div>
 
-          {/* RIGHT — Avatar + Info */}
           <div className="flex flex-col gap-5">
 
-            {/* Avatar */}
             <div className="bg-white border border-[#f0e9e5] rounded-[24px] p-7 shadow-sm">
               <div className="flex items-center gap-3 mb-6 pb-5 border-b border-[#f4ece9]">
                 <div className="w-10 h-10 rounded-[12px] bg-[#fff4f4] flex items-center justify-center flex-shrink-0">
@@ -319,10 +286,9 @@ export default function SetariPage() {
                 </div>
                 <div>
                   <h2 className="text-base font-semibold text-[#111]">Fotografie profil</h2>
-                  <p className="text-xs text-[#888] font-light mt-0.5">JPG, PNG — max 2MB</p>
+                  <p className="text-xs text-[#888] font-light mt-0.5">JPG, PNG max 2MB</p>
                 </div>
               </div>
-
               <div className="flex flex-col items-center gap-5">
                 <div className="relative">
                   <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-[#f0e9e5] flex items-center justify-center"
@@ -341,27 +307,24 @@ export default function SetariPage() {
                   </button>
                 </div>
                 <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
-                {avatarPreview && (
-                  <SaveBtn state={avatarState} onClick={handleSaveAvatar} label="Salvează fotografia" />
-                )}
+                {avatarPreview && <SaveBtn state={avatarState} onClick={handleSaveAvatar} label="Salveaza fotografia" />}
                 {!avatarPreview && displayAvatar && (
                   <button onClick={async () => {
                     await supabase.from('users').update({ avatar_url: null }).eq('id', profile!.id)
                     setAvatarUrl(null); setAvatarPreview(null)
                   }} className="text-xs text-[#ce0100] hover:underline">
-                    Elimină fotografia
+                    Elimina fotografia
                   </button>
                 )}
               </div>
             </div>
 
-            {/* Info card */}
             <div className="bg-white border border-[#f0e9e5] rounded-[24px] p-7 shadow-sm">
-              <h3 className="text-sm font-semibold text-[#111] mb-4">Informații cont</h3>
+              <h3 className="text-sm font-semibold text-[#111] mb-4">Informatii cont</h3>
               <div className="flex flex-col gap-3">
                 {[
-                  { label: 'Rol',    value: profile?.role || '—' },
-                  { label: 'Limbă', value: profile?.language || '—' },
+                  { label: 'Rol', value: profile?.role || '' },
+                  { label: 'Limba', value: profile?.language || '' },
                   { label: 'Stare', value: profile?.active ? 'Activ' : 'Inactiv' },
                 ].map(({ label, value }) => (
                   <div key={label} className="flex items-center justify-between py-2 border-b border-[#f4ece9] last:border-0">
@@ -376,7 +339,6 @@ export default function SetariPage() {
         </div>
       </div>
 
-      {/* Delete confirm modal */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-[999] flex items-center justify-center p-4"
           style={{ background: 'rgba(10,6,4,0.65)', backdropFilter: 'blur(10px)' }}
@@ -389,16 +351,16 @@ export default function SetariPage() {
                   <ExclamationTriangleIcon className="w-6 h-6 text-[#ce0100]" />
                 </div>
               </div>
-              <h3 className="text-xl font-semibold text-[#111] text-center mb-2">Ștergi contul?</h3>
+              <h3 className="text-xl font-semibold text-[#111] text-center mb-2">Stergi contul?</h3>
               <p className="text-sm text-[#666] text-center mb-5 leading-relaxed">
-                Această acțiune este <strong>ireversibilă</strong>. Scrie <strong className="text-[#ce0100]">STERGE</strong> pentru a confirma.
+                Aceasta actiune este <strong>ireversibila</strong>. Scrie <strong className="text-[#ce0100]">STERGE</strong> pentru a confirma.
               </p>
               <input value={deleteConfirmText} onChange={e => setDeleteConfirmText(e.target.value)}
                 placeholder="STERGE" className="w-full h-11 rounded-[14px] border border-[#f0e9e5] px-4 text-sm text-center text-[#111] outline-none focus:border-[#ce0100] transition-all mb-5 placeholder:text-[#ccc]" />
               <div className="flex gap-3">
                 <button onClick={() => { setShowDeleteConfirm(false); setDeleteConfirmText('') }}
                   className="flex-1 h-11 rounded-[14px] border border-[#e8e2de] bg-white text-sm font-semibold text-[#666] hover:bg-[#faf7f5] transition-all">
-                  Anulează
+                  Anuleaza
                 </button>
                 <button disabled={deleteConfirmText !== 'STERGE'}
                   onClick={async () => {
@@ -407,8 +369,8 @@ export default function SetariPage() {
                     await supabase.auth.signOut()
                     window.location.href = '/login'
                   }}
-                  className="flex-1 h-11 rounded-[14px] bg-[#ce0100] text-white text-sm font-bold shadow-[0_4px_12px_rgba(206,1,0,0.3)] hover:bg-[#a80000] disabled:opacity-40 transition-all">
-                  Șterge definitiv
+                  className="flex-1 h-11 rounded-[14px] bg-[#ce0100] text-white text-sm font-bold hover:bg-[#a80000] disabled:opacity-40 transition-all">
+                  Sterge definitiv
                 </button>
               </div>
             </div>
