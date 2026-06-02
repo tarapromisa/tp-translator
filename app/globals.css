@@ -24,3 +24,170 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+.font-title {
+  font-family: var(--font-montserrat);
+  font-weight: 900;
+}
+
+.font-editorial {
+  font-family: "Times New Roman", serif;
+  font-style: italic;
+}
+
+.font-light {
+  font-family: var(--font-openSans);
+  font-weight: 300;
+}
+body {
+  background:
+    radial-gradient(
+      circle at top left,
+      rgba(120, 24, 32, 0.04),
+      transparent 28%
+    ),
+    radial-gradient(
+      circle at bottom right,
+      rgba(180, 120, 80, 0.05),
+      transparent 35%
+    ),
+    #f3efe8;
+
+  color: #111111;
+}
+
+::selection {
+  background: #ce0100;
+  color: white;
+}
+
+.glass-card {
+  background: rgba(255,255,255,0.58);
+
+  backdrop-filter: blur(20px);
+
+  border: 1px solid rgba(255,255,255,0.45);
+
+  box-shadow:
+    0 10px 40px rgba(15,23,42,0.04),
+    inset 0 1px 0 rgba(255,255,255,0.35);
+}
+
+.editorial-title {
+  font-family: var(--font-montserrat);
+  font-weight: 900;
+  letter-spacing: -0.08em;
+}
+
+.editorial-serif {
+  font-family: "Times New Roman", serif;
+  font-style: italic;
+}
+
+.editorial-light {
+  font-family: var(--font-openSans);
+  font-weight: 300;
+}
+
+.sidebar-item {
+  height: 54px;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-left: 18px;
+
+  color: #444444;
+
+  font-size: 15px;
+  font-weight: 400;
+
+  transition: all .2s ease;
+}
+
+.sidebar-item:hover {
+  background: #f7f3f0;
+}
+
+.sidebar-icon {
+  width: 22px;
+  height: 22px;
+  color: #777777;
+}
+
+.stat-card {
+  background: white;
+
+  border: 1px solid #ece7e2;
+
+  border-radius: 24px;
+
+  padding: 26px;
+
+  transition: all .25s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+}
+
+.stat-icon {
+  width: 52px;
+  height: 52px;
+
+  border-radius: 16px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stat-label {
+  margin-top: 24px;
+
+  font-size: 12px;
+
+  letter-spacing: .12em;
+
+  color: #8f8f8f;
+
+  font-weight: 500;
+}
+
+.stat-number {
+  margin-top: 10px;
+
+  font-size: 56px;
+
+  line-height: 1;
+
+  letter-spacing: -0.06em;
+
+  color: #111111;
+
+  font-weight: 500;
+}
+
+.stat-line {
+  width: 36px;
+  height: 3px;
+
+  border-radius: 999px;
+
+  margin-top: 18px;
+}
+
+.stat-description {
+  margin-top: 18px;
+
+  font-size: 15px;
+
+  color: #a3a3a3;
+
+  font-weight: 300;
+}
+body {
+  background: #f8f5f2;
+  font-family: var(--font-openSans);
+}
+
