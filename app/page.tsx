@@ -113,7 +113,7 @@ export default function DashboardPage() {
     const load = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
-        const { data: p } = await supabase.from('users').select('full_name, role').eq('auth_user_id', user.id).single()
+        const { data: p } = await supabase.from('users').select('full_name, role, language').eq('auth_user_id', user.id).single()
         setUserName(p?.full_name || '')
         setUserRole(p?.role || '')
         setUserLanguage(p?.language || '')
@@ -176,7 +176,7 @@ export default function DashboardPage() {
   return (
     <main className="flex min-h-screen bg-[#fcfbfa]" style={{ fontFamily: 'var(--font-openSans)' }}>
       <Sidebar />
-      <div className="flex-1 w-0 px-10 py-8 overflow-y-auto">
+      <div className="flex-1 min-w-0 px-10 py-8 overflow-y-auto">
 
         {/* ── HERO ── */}
         <div className="relative mb-10">
