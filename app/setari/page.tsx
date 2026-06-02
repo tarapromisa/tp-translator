@@ -12,7 +12,6 @@ import { CheckCircleIcon as CheckSolid } from '@heroicons/react/24/solid'
 type UserProfile = {
   id: string; full_name: string; email: string
   language: string; role: string; active: boolean
-  avatar_url?: string | null; notificari_email?: boolean
 }
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error'
@@ -159,13 +158,7 @@ export default function SetariPage() {
     setTimeout(() => setPasswordState('idle'), 2000)
   }
 
-  const handleSavePreferences = async () => {
     if (!profile) return
-    setPrefState('saving')
-    const { error } = await supabase.from('users').update({ notificari_email: notificari }).eq('id', profile.id)
-    if (error) { setPrefState('error'); return }
-    setPrefState('saved')
-    setTimeout(() => setPrefState('idle'), 2000)
   }
 
   const handleSignOutAll = async () => {
