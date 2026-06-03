@@ -249,7 +249,7 @@ export default function VersetePage() {
           <>
             {/* ═══ CARDS ═══ */}
             {view === 'cards' && (
-              <div className="grid grid-cols-3 gap-5 items-start">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
                 {filtered.map(v => {
                   const count = getCompletedCount(v)
                   const pct = (count / 7) * 100

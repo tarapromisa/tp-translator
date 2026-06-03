@@ -271,7 +271,7 @@ export default function CitatePage() {
           <>
             {/* ═══ CARDS ═══ */}
             {view === 'cards' && (
-              <div className="grid grid-cols-3 gap-5 items-start">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
                 {filtered.map((text) => {
                   const count = getCompletedCount(text)
                   const pct = (count / 7) * 100

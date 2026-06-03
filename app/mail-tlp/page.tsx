@@ -51,7 +51,7 @@ function generateEmailHtml(toName: string, dinZiua: string, panaZiua: string, ci
   <!-- Header -->
   <div style="background:#ce0100;border-radius:16px 16px 0 0;padding:28px 32px;">
     <div style="margin-bottom:22px;">
-      <img src="https://res.cloudinary.com/dlgqpbpwu/image/upload/v1780344170/new_tpt_1_sxiu3b.png" alt="TP Translator" style="height:52px;width:auto;display:block;" />
+      <img src="https://res.cloudinary.com/dlgqpbpwu/image/upload/v1780344170/new_tpt_1_sxiu3b.png" alt="TP Translator" style="height:32px;width:auto;display:block;" />
     </div>
     <h1 style="margin:0;font-size:32px;font-weight:300;color:#fff;line-height:1.2;letter-spacing:-0.02em;font-family:Helvetica,Arial,sans-serif;">
       Citate in asteptare<br>
@@ -331,7 +331,7 @@ export default function MailTLPPage() {
     const html = generateEmailHtml(record.traducator_user.full_name, record.din_ziua, record.pana_ziua, record.citate_lipsesc, fromName, fromEmail, record.traducator_user.language, fromRole)
     const res = await fetch('/api/send-email', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ to: record.traducator_user.email, toName: record.traducator_user.full_name, type: 'custom', htmlBody: html, subject: 'Citate in asteptare ' + record.din_ziua + ' / ' + record.pana_ziua, fromEmail, fromName }),
+      body: JSON.stringify({ to: record.traducator_user.email, toName: record.traducator_user.full_name, type: 'custom', htmlBody: html, subject: 'Citate nefinalizate - TP Translator', fromEmail, fromName }),
     })
     if (res.ok) {
       await supabase.from('mail_tlp').update({ trimis: true, trimis_at: new Date().toISOString(), trimis_de: currentUser?.id }).eq('id', record.id)
@@ -406,7 +406,7 @@ export default function MailTLPPage() {
         </div>
 
         {/* Main split layout */}
-        <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
 
           {/* LEFT — Records + Form */}
           <div style={{ width: leftWidth, flexShrink: 0 }} className="flex flex-col overflow-hidden bg-[#f9f7f5]">

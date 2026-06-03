@@ -105,7 +105,7 @@ function TranslatorDetail({ stats, onClose }: { stats: TranslatorStats; onClose:
           </button>
         </div>
 
-        <div className="grid grid-cols-4 gap-4 px-8 py-5 border-b border-[#f0e9e5] flex-shrink-0">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 px-8 py-5 border-b border-[#f0e9e5] flex-shrink-0">
           {[
             { label:'Total asignate', value:stats.total,      color:'#111'     },
             { label:'La timp',        value:stats.inTime,     color:'#166534'  },
@@ -286,17 +286,17 @@ export default function ProductivitatePage() {
   return (
     <main className="flex min-h-screen bg-[#f9f7f5] overflow-hidden">
       <Sidebar />
-      <div className="flex-1 w-0 px-10 py-8 overflow-y-auto">
+      <div className="flex-1 min-w-0 px-4 md:px-10 py-6 md:py-8 overflow-y-auto">
 
         <div className="mb-8">
           <p className="text-[11px] font-semibold text-[#9c8e87] uppercase tracking-[0.15em] mb-2">Analiză echipă</p>
-          <h1 className="text-[48px] leading-none tracking-tight font-light text-[#111] mb-3">Productivitate</h1>
+          <h1 className="text-[32px] md:text-[48px] leading-none tracking-tight font-light text-[#111] mb-3">Productivitate</h1>
           <div className="w-10 h-[3px] rounded-full bg-[#ce0100] mb-4" />
           <p className="text-sm font-light text-[#666]">Performanța traducătorilor — citate completate la timp vs. total asignate.</p>
         </div>
 
         {/* Global stats */}
-        <div className="grid grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8">
           {[
             { label:'Traducători activi',    value:totalStats.translators,    color:'#ce0100', Icon:UserIcon         },
             { label:'Total citate asignate', value:totalStats.totalCitate,    color:'#1e40af', Icon:ChartBarIcon     },
@@ -349,7 +349,7 @@ export default function ProductivitatePage() {
             <p className="text-sm text-[#888]">Se încarcă...</p>
           </div>
         ) : view === 'grid' ? (
-          <div className="grid grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {filtered.map((stats, index) => {
               const color = getProductivityColor(stats.productivity)
               return (

@@ -164,11 +164,11 @@ export default function SetariPage() {
   return (
     <main className="flex min-h-screen bg-[#f9f7f5] overflow-hidden">
       <Sidebar />
-      <div className="flex-1 min-w-0 px-10 py-8 overflow-y-auto">
+      <div className="flex-1 min-w-0 px-4 md:px-10 py-6 md:py-8 overflow-y-auto">
 
         <div className="mb-8">
           <p className="text-[11px] font-semibold text-[#9c8e87] uppercase tracking-[0.15em] mb-2">Cont personal</p>
-          <h1 className="text-[48px] leading-none tracking-tight font-light text-[#111] mb-3">Setari</h1>
+          <h1 className="text-[32px] md:text-[48px] leading-none tracking-tight font-light text-[#111] mb-3">Setari</h1>
           <div className="w-10 h-[3px] rounded-full bg-[#ce0100] mb-4" />
           <p className="text-sm font-light text-[#666]">Gestioneaza profilul si preferintele tale.</p>
         </div>

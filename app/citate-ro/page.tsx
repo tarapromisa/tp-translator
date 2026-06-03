@@ -276,7 +276,7 @@ export default function CitateROPage() {
         <div className="px-10 pt-8 pb-6 flex-shrink-0">
           <div className="flex items-start justify-between mb-6">
             <div>
-              <h1 className="text-[48px] leading-none tracking-tight font-light text-[#111] mb-3">Citate RO</h1>
+              <h1 className="text-[32px] md:text-[48px] leading-none tracking-tight font-light text-[#111] mb-3">Citate RO</h1>
               <div className="w-10 h-[3px] rounded-full bg-[#ce0100] mb-3" />
               <p className="text-sm text-[#666]">Texte originale în limba română.</p>
             </div>
