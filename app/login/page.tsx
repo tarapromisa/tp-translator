@@ -143,7 +143,7 @@ export default function LoginPage() {
           absolute
           top-[-200px]
           left-[-200px]
-          w-[500px]
+          w-full md:w-[500px]
           h-[500px]
           rounded-full
           bg-[#ce0100]/[0.04]
@@ -156,7 +156,7 @@ export default function LoginPage() {
           absolute
           bottom-[-200px]
           right-[-200px]
-          w-[500px]
+          w-full md:w-[500px]
           h-[500px]
           rounded-full
           bg-[#ce0100]/[0.05]
@@ -178,7 +178,7 @@ export default function LoginPage() {
           shadow-[0_40px_120px_rgba(0,0,0,0.06)]
           overflow-hidden
           grid
-          grid-cols-2
+          grid-cols-1 md:grid-cols-2
           relative
         "
       >
