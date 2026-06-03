@@ -27,7 +27,7 @@ type User = {
   role: string
   active: boolean
   created_at: string
-  auth_user_id: string
+  auth_user_id?: string
 }
 
 // ── Helpers ───────────────────────────────────────────────────────
