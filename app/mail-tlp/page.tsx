@@ -406,7 +406,7 @@ export default function MailTLPPage() {
         </div>
 
         {/* Main split layout */}
-        <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+        <div className="flex-1 flex flex-col overflow-y-auto">
 
           {/* LEFT — Records + Form */}
           <div style={{ width: leftWidth, flexShrink: 0 }} className="flex flex-col overflow-hidden bg-[#f9f7f5]">

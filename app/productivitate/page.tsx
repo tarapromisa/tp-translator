@@ -296,7 +296,7 @@ export default function ProductivitatePage() {
         </div>
 
         {/* Global stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
           {[
             { label:'Traducători activi',    value:totalStats.translators,    color:'#ce0100', Icon:UserIcon         },
             { label:'Total citate asignate', value:totalStats.totalCitate,    color:'#1e40af', Icon:ChartBarIcon     },
@@ -349,7 +349,7 @@ export default function ProductivitatePage() {
             <p className="text-sm text-[#888]">Se încarcă...</p>
           </div>
         ) : view === 'grid' ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {filtered.map((stats, index) => {
               const color = getProductivityColor(stats.productivity)
               return (

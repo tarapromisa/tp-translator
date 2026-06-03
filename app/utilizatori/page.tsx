@@ -27,7 +27,7 @@ type User = {
   role: string
   active: boolean
   created_at: string
-  auth_user_id?: string
+  auth_user_id: string
 }
 
 // ── Helpers ───────────────────────────────────────────────────────
@@ -205,7 +205,7 @@ export default function UtilizatoriPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-4 gap-3 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
           {[
             { label: 'Total',      value: users.length,                         color: '#ce0100' },
             { label: 'Activi',     value: users.filter(u => u.active).length,   color: '#166534' },
