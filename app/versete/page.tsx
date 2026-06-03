@@ -153,7 +153,7 @@ export default function VersetePage() {
         </div>
 
         {/* ── STATS ── */}
-        <div className="grid grid-cols-4 gap-3 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
           {[
             { title: 'Versete active', value: stats.total,       Icon: BookOpenIcon,    accent: '#ce0100' },
             { title: 'În traducere',   value: stats.translating,  Icon: ClockIcon,       accent: '#c05c00' },

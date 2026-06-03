@@ -167,7 +167,7 @@ export default function CitatePage() {
         </div>
 
         {/* ── STATS ── */}
-        <div className="grid grid-cols-4 gap-3 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
           {[
             { title: 'Citate active',  value: stats.total,       Icon: () => <svg width="18" height="14" viewBox="0 0 20 16" fill="none"><path d="M0 16V9.6C0 7.2.633 5.133 1.9 3.4 3.2 1.633 5 .467 7.3 0L8.2 1.6C6.867 1.967 5.8 2.7 5 3.8 4.233 4.867 3.85 6.067 3.85 7.4H7.3V16H0ZM11.7 16V9.6c0-2.4.633-4.467 1.9-6.2C14.9 1.633 16.7.467 19 0L19.9 1.6C18.567 1.967 17.5 2.7 16.7 3.8c-.767 1.067-1.15 2.267-1.15 3.6H19V16H11.7Z" fill="#ce0100" fillOpacity=".85"/></svg>, accent: '#ce0100' },
             { title: 'În traducere',   value: stats.translating,  Icon: ClockIcon,        accent: '#c05c00' },
