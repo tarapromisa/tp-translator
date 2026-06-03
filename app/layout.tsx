@@ -19,7 +19,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body className={`${openSans.variable} ${montserrat.variable} ${playfair.variable} antialiased bg-[#fcfbfa]`}>
         <UserProvider>
           <PageTransitionWrapper>
-            {children}
+            {/* pt-14 on mobile for the top bar, removed on md+ */}
+            <div className="pt-14 md:pt-0">
+              {children}
+            </div>
           </PageTransitionWrapper>
         </UserProvider>
       </body>
