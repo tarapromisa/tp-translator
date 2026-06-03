@@ -176,7 +176,7 @@ export default function DashboardPage() {
   return (
     <main className="flex min-h-screen bg-[#fcfbfa]" style={{ fontFamily: 'var(--font-openSans)' }}>
       <Sidebar />
-      <div className="flex-1 min-w-0 px-10 py-8 overflow-y-auto">
+      <div className="flex-1 min-w-0 px-4 md:px-10 py-6 md:py-8 overflow-y-auto">
 
         {/* ── HERO ── */}
         <div className="relative mb-10">
@@ -188,7 +188,7 @@ export default function DashboardPage() {
           <p style={{ fontSize:'14px', fontWeight:300, color:'#9c8e87', marginBottom:'8px', letterSpacing:'0.02em' }}>{greeting}</p>
 
           {/* Name */}
-          <h1 style={{ fontSize:'52px', fontWeight:300, color:'#111', lineHeight:1, letterSpacing:'-0.04em', marginBottom:'16px' }}>
+          <h1 style={{ fontSize:'clamp(32px, 6vw, 52px)', fontWeight:300, color:'#111', lineHeight:1, letterSpacing:'-0.04em', marginBottom:'16px' }}>
             {userName || '...'}
           </h1>
 
@@ -216,7 +216,7 @@ export default function DashboardPage() {
         </div>
 
         {/* ── STAT CARDS ── */}
-        <div className="grid grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
           {[
             { label: 'Citate',     sub: `${stats?.citateInTraducere ?? 0} în traducere`, value: stats?.totalCitate ?? 0,    Icon: ChatBubbleBottomCenterTextIcon, href: '/citate'     },
             { label: 'Versete',    sub: `${stats?.versetInTraducere ?? 0} în traducere`, value: stats?.totalVersete ?? 0,    Icon: BookOpenIcon,                   href: '/versete'    },
@@ -241,7 +241,7 @@ export default function DashboardPage() {
         </div>
 
         {/* ── MIDDLE ROW ── */}
-        <div className="grid gap-4 mb-8" style={{ gridTemplateColumns: isCoordinator ? "1fr 1fr 320px" : "1fr 1fr" }}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8" style={{ gridTemplateColumns: isCoordinator ? undefined : undefined }}>
 
           {/* Progres general */}
           <div className="bg-white border border-[#f0e9e5] rounded-[24px] p-7 col-span-1">
@@ -351,7 +351,7 @@ export default function DashboardPage() {
         </div>
 
         {/* ── BOTTOM ROW ── */}
-        <div className="grid grid-cols-[1fr_340px] gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_340px] gap-4">
 
           {/* Recent */}
           <div className="bg-white border border-[#f0e9e5] rounded-[24px] overflow-hidden">
