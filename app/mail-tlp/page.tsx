@@ -127,7 +127,7 @@ function DeleteModal({ item, onClose, onDeleted }: { item: MailRecord|null; onCl
     <div className="fixed inset-0 z-[999] flex items-center justify-center p-4"
       style={{ background:'rgba(10,6,4,0.65)', backdropFilter:'blur(10px)' }}
       onClick={e => { if (e.target === e.currentTarget && !loading) onClose() }}>
-      <div className="bg-white rounded-[24px] w-full max-w-[380px] overflow-hidden shadow-[0_32px_80px_rgba(0,0,0,0.2)]">
+      <div className="bg-white rounded-[24px] w-full max-w-[380px] overflow-x-hidden shadow-[0_32px_80px_rgba(0,0,0,0.2)]">
         <div className="h-[4px] bg-[#ce0100]" />
         <div className="px-8 pt-7 pb-6">
           <div className="flex justify-center mb-4">
@@ -364,9 +364,9 @@ export default function MailTLPPage() {
   const filteredCitateRO = citateROIncomp.filter(c => !searchCitateRO || c.public_id.toLowerCase().includes(searchCitateRO.toLowerCase()) || c.text_original?.toLowerCase().includes(searchCitateRO.toLowerCase()))
 
   return (
-    <main className="flex min-h-screen bg-[#f9f7f5] overflow-hidden">
+    <main className="flex min-h-screen bg-[#f9f7f5] overflow-x-hidden">
       <Sidebar />
-      <div className="flex-1 w-0 flex flex-col overflow-hidden">
+      <div className="flex-1 w-0 flex flex-col overflow-x-hidden">
 
         {/* Header */}
         <div className="flex-shrink-0 px-8 pt-7 pb-5 border-b border-[#f0e9e5] bg-[#f9f7f5]">
@@ -409,7 +409,7 @@ export default function MailTLPPage() {
         <div className="flex-1 flex flex-col overflow-y-auto">
 
           {/* LEFT — Records + Form */}
-          <div style={{ width: leftWidth, flexShrink: 0 }} className="flex flex-col overflow-hidden bg-[#f9f7f5]">
+          <div style={{ width: leftWidth, flexShrink: 0 }} className="flex flex-col overflow-x-hidden bg-[#f9f7f5]">
 
             {/* New record form */}
             {canManage && (
@@ -478,10 +478,10 @@ export default function MailTLPPage() {
           <ResizableDivider onResize={handleResizeH} />
 
           {/* RIGHT — Reference panels */}
-          <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+          <div className="flex-1 min-w-0 flex flex-col overflow-x-hidden">
 
             {/* TOP — Citate incomplete */}
-            <div style={{ height: `${rightTopHeight}%` }} className="flex flex-col overflow-hidden">
+            <div style={{ height: `${rightTopHeight}%` }} className="flex flex-col overflow-x-hidden">
               <div className="flex-shrink-0 px-5 py-3 border-b border-[#f0e9e5] flex items-center justify-between bg-white">
                 <div>
                   <p className="text-[10px] font-semibold text-[#9c8e87] uppercase tracking-[0.12em]">Citate · idiomas lipsă</p>
@@ -528,7 +528,7 @@ export default function MailTLPPage() {
             <VerticalDivider onResize={handleResizeV} />
 
             {/* BOTTOM — Citate RO incomplete */}
-            <div style={{ height: `${100 - rightTopHeight}%` }} className="flex flex-col overflow-hidden">
+            <div style={{ height: `${100 - rightTopHeight}%` }} className="flex flex-col overflow-x-hidden">
               <div className="flex-shrink-0 px-5 py-3 border-b border-[#f0e9e5] flex items-center justify-between bg-white">
                 <div>
                   <p className="text-[10px] font-semibold text-[#9c8e87] uppercase tracking-[0.12em]">Citate RO · fără traducere</p>
@@ -584,7 +584,7 @@ function RecordCard({ record, canManage, isSending, isSent, onSend, onDelete, fm
 }) {
   const ids = record.citate_lipsesc?.split(',').map(s => s.trim()).filter(Boolean) ?? []
   return (
-    <div className={`bg-white border border-[#e8e2de] rounded-xl mb-2 overflow-hidden ${record.trimis ? 'opacity-70' : ''}`}>
+    <div className={`bg-white border border-[#e8e2de] rounded-xl mb-2 overflow-x-hidden ${record.trimis ? 'opacity-70' : ''}`}>
       <div className={`h-1 ${record.trimis ? 'bg-[#166534]' : 'bg-[#c05c00]'}`} />
       <div className="p-4">
         <div className="flex items-start justify-between gap-2 mb-3">

@@ -105,7 +105,7 @@ function ValidateModal({ item, type, onClose, onDone }: {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: 'rgba(10,6,4,0.6)', backdropFilter: 'blur(8px)' }}
       onClick={(e) => { if (e.target === e.currentTarget && !loading) onClose() }}>
-      <div className="bg-white rounded-[28px] w-full max-w-[680px] overflow-hidden shadow-[0_32px_80px_rgba(0,0,0,0.2)]"
+      <div className="bg-white rounded-[28px] w-full max-w-[680px] overflow-x-hidden shadow-[0_32px_80px_rgba(0,0,0,0.2)]"
         style={{ maxHeight: '92vh', overflowY: 'auto' }}>
         <div className="h-[4px] bg-[#ce0100]" />
         <div className="px-[36px] pt-[32px] pb-[28px]">
@@ -355,7 +355,7 @@ export default function ValidariPage() {
   ]
 
   return (
-    <main className="flex min-h-screen bg-[#f9f7f5] overflow-hidden">
+    <main className="flex min-h-screen bg-[#f9f7f5] overflow-x-hidden">
       <Sidebar />
       <div className="flex-1 w-0 px-10 py-8 overflow-y-auto">
 
@@ -451,7 +451,7 @@ export default function ValidariPage() {
             <p className="text-sm text-[#888]">pentru {contentTab === 'citate' ? 'citate' : 'versete'}</p>
           </div>
         ) : (
-          <div className="bg-white border border-[#e8e2de] rounded-2xl overflow-hidden shadow-sm divide-y divide-[#f8f3f0]">
+          <div className="bg-white border border-[#e8e2de] rounded-2xl overflow-x-hidden shadow-sm divide-y divide-[#f8f3f0]">
             {items.map(item => (
               <ItemRow
                 key={item.id}

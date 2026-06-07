@@ -130,7 +130,7 @@ export default function VersetePage() {
   }
 
   return (
-    <main className="flex min-h-screen bg-[#f9f7f5] overflow-hidden">
+    <main className="flex min-h-screen bg-[#f9f7f5] overflow-x-hidden">
       <Sidebar />
       <div className="flex-1 w-0 px-10 py-8 overflow-y-auto overflow-x-hidden">
 
@@ -257,7 +257,7 @@ export default function VersetePage() {
                   const accent = STATUS_ACCENT[ds] ?? '#ce0100'
                   return (
                     <div key={v.id} onClick={() => router.push(`/versete/${v.id}`)}
-                      className="group bg-white border border-[#e8e2de] rounded-2xl overflow-hidden cursor-pointer hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(0,0,0,0.09)] transition-all duration-300">
+                      className="group bg-white border border-[#e8e2de] rounded-2xl overflow-x-hidden cursor-pointer hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(0,0,0,0.09)] transition-all duration-300">
                       <div className="h-[3px]" style={{ background: accent }} />
                       <div className="p-5">
                         {/* Header */}
@@ -288,7 +288,7 @@ export default function VersetePage() {
                             <span className="text-xs font-medium text-[#777] uppercase tracking-wide">Progres</span>
                             <span className="text-xs font-bold text-[#111]">{count}<span className="text-[#aaa] font-normal">/7</span></span>
                           </div>
-                          <div className="h-1 bg-[#f0e8e4] rounded-full overflow-hidden">
+                          <div className="h-1 bg-[#f0e8e4] rounded-full overflow-x-hidden">
                             <div className="h-full rounded-full transition-all duration-700"
                               style={{ width: `${pct}%`, background: count === 7 ? '#166534' : '#ce0100' }} />
                           </div>
@@ -315,7 +315,7 @@ export default function VersetePage() {
 
             {/* ═══ TABLE ═══ */}
             {view === 'table' && (
-              <div className="bg-white border border-[#e8e2de] rounded-2xl overflow-hidden shadow-sm w-full">
+              <div className="bg-white border border-[#e8e2de] rounded-2xl overflow-x-hidden shadow-sm w-full">
                 <table className="w-full table-fixed">
                   <colgroup>
                     <col className="w-[110px]" />
@@ -351,7 +351,7 @@ export default function VersetePage() {
                           <td className="px-4 py-3"><p className="text-sm text-[#555] truncate">{v.verset_ro}</p></td>
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2">
-                              <div className="flex-1 h-1 bg-[#f0e8e4] rounded-full overflow-hidden">
+                              <div className="flex-1 h-1 bg-[#f0e8e4] rounded-full overflow-x-hidden">
                                 <div className="h-full rounded-full" style={{ width: `${(count/7)*100}%`, background: count===7?'#166534':'#ce0100' }} />
                               </div>
                               <span className="text-xs font-bold text-[#111] flex-shrink-0">{count}/7</span>
@@ -376,7 +376,7 @@ export default function VersetePage() {
 
             {/* ═══ COMPACT ═══ */}
             {view === 'compact' && (
-              <div className="bg-white border border-[#e8e2de] rounded-2xl overflow-hidden shadow-sm">
+              <div className="bg-white border border-[#e8e2de] rounded-2xl overflow-x-hidden shadow-sm">
                 {filtered.map((v, i) => {
                   const count = getCompletedCount(v)
                   const ds = getDisplayStatus(v)

@@ -97,7 +97,7 @@ function CitatROModal({ item, users, onClose, onSaved }: {
       style={{ background: 'rgba(10,6,4,0.65)', backdropFilter: 'blur(10px)' }}
       onClick={(e) => { if (e.target === e.currentTarget && saveState !== 'saving') onClose() }}>
       <style>{`@keyframes mIn{from{opacity:0;transform:scale(.94) translateY(16px)}to{opacity:1;transform:scale(1) translateY(0)}}.m-in{animation:mIn .28s cubic-bezier(.22,1,.36,1) forwards}`}</style>
-      <div className="m-in bg-white rounded-[32px] w-full max-w-[540px] overflow-hidden shadow-[0_48px_100px_rgba(0,0,0,0.22)]">
+      <div className="m-in bg-white rounded-[32px] w-full max-w-[540px] overflow-x-hidden shadow-[0_48px_100px_rgba(0,0,0,0.22)]">
         <div className="h-[4px] bg-[#ce0100]" />
         <div className="px-[40px] pt-[36px] pb-[32px]">
           <div className="flex items-start justify-between mb-[28px]">
@@ -185,7 +185,7 @@ function DeleteModal({ item, onClose, onDeleted }: {
     <div className="fixed inset-0 z-[999] flex items-center justify-center p-4"
       style={{ background: 'rgba(10,6,4,0.65)', backdropFilter: 'blur(10px)' }}
       onClick={(e) => { if (e.target === e.currentTarget && !loading) onClose() }}>
-      <div className="bg-white rounded-[28px] w-full max-w-[400px] overflow-hidden shadow-[0_32px_80px_rgba(0,0,0,0.2)]">
+      <div className="bg-white rounded-[28px] w-full max-w-[400px] overflow-x-hidden shadow-[0_32px_80px_rgba(0,0,0,0.2)]">
         <div className="h-[4px] bg-[#ce0100]" />
         <div className="px-[36px] pt-[32px] pb-[28px]">
           <div className="flex justify-center mb-[18px]">
@@ -269,9 +269,9 @@ export default function CitateROPage() {
   }
 
   return (
-    <main className="flex min-h-screen bg-[#f9f7f5] overflow-hidden">
+    <main className="flex min-h-screen bg-[#f9f7f5] overflow-x-hidden">
       <Sidebar />
-      <div className="flex-1 w-0 overflow-hidden flex flex-col">
+      <div className="flex-1 w-0 overflow-x-hidden flex flex-col">
 
         <div className="px-10 pt-8 pb-6 flex-shrink-0">
           <div className="flex items-start justify-between mb-6">
@@ -321,10 +321,10 @@ export default function CitateROPage() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-hidden flex px-10 pb-8 gap-4">
+        <div className="flex-1 overflow-x-hidden flex px-10 pb-8 gap-4">
 
           {/* List */}
-          <div className="w-[420px] flex-shrink-0 bg-white border border-[#e8e2de] rounded-2xl overflow-hidden shadow-sm flex flex-col">
+          <div className="w-[420px] flex-shrink-0 bg-white border border-[#e8e2de] rounded-2xl overflow-x-hidden shadow-sm flex flex-col">
             <div className="px-5 py-3 border-b border-[#f0e9e5] flex-shrink-0">
               <p className="text-xs text-[#888]">{filtered.length} {filtered.length === 1 ? 'citat' : 'citate'}</p>
             </div>

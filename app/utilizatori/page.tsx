@@ -187,7 +187,7 @@ export default function UtilizatoriPage() {
   }
 
   return (
-    <main className="flex min-h-screen bg-[#f9f7f5] overflow-hidden">
+    <main className="flex min-h-screen bg-[#f9f7f5] overflow-x-hidden">
       <Sidebar />
       <div className="flex-1 w-0 px-10 py-8 overflow-y-auto">
 
@@ -259,7 +259,7 @@ export default function UtilizatoriPage() {
             </div>
 
             {/* User list */}
-            <div className="bg-white border border-[#e8e2de] rounded-2xl overflow-hidden shadow-sm">
+            <div className="bg-white border border-[#e8e2de] rounded-2xl overflow-x-hidden shadow-sm">
               {loading ? (
                 <p className="text-center py-12 text-sm text-[#888]">Se încarcă...</p>
               ) : filtered.length === 0 ? (
@@ -444,7 +444,7 @@ export default function UtilizatoriPage() {
         <div className="fixed inset-0 z-[999] flex items-center justify-center p-4"
           style={{ background: 'rgba(10,6,4,0.65)', backdropFilter: 'blur(10px)' }}
           onClick={(e) => { if (e.target === e.currentTarget) setShowCredentialsModal(false) }}>
-          <div className="bg-white rounded-[28px] w-full max-w-[420px] overflow-hidden shadow-[0_32px_80px_rgba(0,0,0,0.2)]">
+          <div className="bg-white rounded-[28px] w-full max-w-[420px] overflow-x-hidden shadow-[0_32px_80px_rgba(0,0,0,0.2)]">
             <div className="h-[4px] bg-[#ce0100]" />
             <div className="px-[36px] pt-[32px] pb-[28px]">
               <div className="flex items-center gap-3 mb-[20px]">
@@ -488,7 +488,7 @@ export default function UtilizatoriPage() {
         <div className="fixed inset-0 z-[999] flex items-center justify-center p-4"
           style={{ background: 'rgba(10,6,4,0.65)', backdropFilter: 'blur(10px)' }}
           onClick={(e) => { if (e.target === e.currentTarget && !isDeleting) setShowDeleteModal(false) }}>
-          <div className="bg-white rounded-[28px] w-full max-w-[400px] overflow-hidden shadow-[0_32px_80px_rgba(0,0,0,0.2)]">
+          <div className="bg-white rounded-[28px] w-full max-w-[400px] overflow-x-hidden shadow-[0_32px_80px_rgba(0,0,0,0.2)]">
             <div className="h-[4px] bg-[#ce0100]" />
             <div className="px-[36px] pt-[36px] pb-[28px]">
               <div className="flex justify-center mb-[20px]">

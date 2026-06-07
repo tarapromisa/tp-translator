@@ -279,7 +279,7 @@ export default function CitatePage() {
                   const accent = STATUS_ACCENT[ds] ?? '#ce0100'
                   return (
                     <div key={text.id} onClick={() => router.push(`/citate/${text.id}`)}
-                      className="group bg-white border border-[#e8e2de] rounded-2xl overflow-hidden cursor-pointer hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(0,0,0,0.09)] transition-all duration-300">
+                      className="group bg-white border border-[#e8e2de] rounded-2xl overflow-x-hidden cursor-pointer hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(0,0,0,0.09)] transition-all duration-300">
                       <div className="h-[3px]" style={{ background: accent }} />
                       <div className="p-5">
                         {/* Header */}
@@ -310,7 +310,7 @@ export default function CitatePage() {
                             <span className="text-xs font-medium text-[#777] uppercase tracking-wide">Progres</span>
                             <span className="text-xs font-bold text-[#111]">{count}<span className="text-[#aaa] font-normal">/7</span></span>
                           </div>
-                          <div className="h-1 bg-[#f0e8e4] rounded-full overflow-hidden">
+                          <div className="h-1 bg-[#f0e8e4] rounded-full overflow-x-hidden">
                             <div className="h-full rounded-full transition-all duration-700"
                               style={{ width: `${pct}%`, background: count === 7 ? '#166534' : '#ce0100' }} />
                           </div>
@@ -349,7 +349,7 @@ export default function CitatePage() {
 
             {/* ═══ TABLE ═══ */}
             {view === 'table' && (
-              <div className="bg-white border border-[#e8e2de] rounded-2xl overflow-hidden shadow-sm">
+              <div className="bg-white border border-[#e8e2de] rounded-2xl overflow-x-hidden shadow-sm">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-[#f0e8e4]">
@@ -377,7 +377,7 @@ export default function CitatePage() {
                           <td className="px-5 py-3"><p className="text-sm text-[#666] truncate">{text.autor_original || 'Anonim'}</p></td>
                           <td className="px-5 py-3 w-36">
                             <div className="flex items-center gap-2">
-                              <div className="flex-1 h-1 bg-[#f0e8e4] rounded-full overflow-hidden">
+                              <div className="flex-1 h-1 bg-[#f0e8e4] rounded-full overflow-x-hidden">
                                 <div className="h-full rounded-full" style={{ width: `${(count/7)*100}%`, background: count===7?'#166534':'#ce0100' }} />
                               </div>
                               <span className="text-xs font-bold text-[#111]">{count}/7</span>
