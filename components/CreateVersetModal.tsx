@@ -64,7 +64,10 @@ export default function CreateVersetModal({ open, onClose }: Props) {
         ...LANGS.map(l => [`referinta_${l.key}`, l.key === 'ro' ? referenceRO : references[l.key]]),
       ])
 
-      const { data, error } = await supabase.from('versete').insert(payload).select()
+      const { data: { user: u } } = await supabase.auth.getUser()
+      let createdBy = null
+      if (u) { const { data: pr } = await supabase.from("users").select("id").eq("auth_user_id", u.id).single(); createdBy = pr?.id ?? null }
+      const { data, error } = await supabase.from("versete").insert({ ...payload, created_by: createdBy }).select()
       if (error) { alert(error.message); setLoading(false); return }
 
       const { data: { user } } = await supabase.auth.getUser()
