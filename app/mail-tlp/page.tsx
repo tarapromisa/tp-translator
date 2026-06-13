@@ -409,7 +409,7 @@ export default function MailTLPPage() {
         <div className="flex-1 flex flex-col overflow-y-auto">
 
           {/* LEFT — Records + Form */}
-          <div style={{ width: leftWidth, flexShrink: 0 }} className="flex flex-col overflow-x-hidden bg-[#f9f7f5]">
+          <div style={{ width: "100%", maxWidth: "100%" }} className="md:w-[420px] md:flex-shrink-0" className="flex flex-col overflow-x-hidden bg-[#f9f7f5]">
 
             {/* New record form */}
             {canManage && (
