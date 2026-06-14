@@ -131,7 +131,7 @@ export default function LoginPage() {
         flex
         items-center
         justify-center
-        p-[30px]
+        p-0 sm:p-[30px]
         relative
       "
     >
@@ -170,12 +170,12 @@ export default function LoginPage() {
         className="
           w-full
           max-w-[1450px]
-          h-[880px]
+          min-h-screen sm:h-[880px] sm:min-h-0
           bg-white
-          rounded-[40px]
-          border
+          rounded-none sm:rounded-[40px]
+          border-0 sm:border
           border-[#f2ece8]
-          shadow-[0_40px_120px_rgba(0,0,0,0.06)]
+          shadow-none sm:shadow-[0_40px_120px_rgba(0,0,0,0.06)]
           overflow-hidden
           grid
           grid-cols-1 md:grid-cols-2
@@ -183,17 +183,17 @@ export default function LoginPage() {
         "
       >
 
-        {/* LEFT */}
+        {/* LEFT — hidden on mobile */}
 
         <div
           className="
+            hidden md:flex
             relative
             overflow-hidden
             bg-gradient-to-br
             from-[#fffefe]
             to-[#fff4f4]
             p-[70px]
-            flex
             flex-col
             justify-between
           "
@@ -493,10 +493,58 @@ export default function LoginPage() {
             items-center
             justify-center
             relative
+            px-5 py-10
+            md:px-0 md:py-0
           "
         >
 
-          <div className="w-full max-w-[520px] px-[50px]">
+          <div className="w-full max-w-[520px] px-0 md:px-[50px]">
+
+            {/* Mobile logo */}
+            <div className="md:hidden flex flex-col items-center mb-6">
+              <img src="/logo.png" alt="logo" className="w-[100px]" />
+            </div>
+
+            {/* Mobile phrase carousel */}
+            <div className="md:hidden mb-8">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={slide}
+                  initial={{ opacity: 0, y: 16, filter: 'blur(8px)' }}
+                  animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                  exit={{ opacity: 0, y: -16, filter: 'blur(8px)' }}
+                  transition={{ duration: 0.5 }}
+                  className="text-center"
+                >
+                  <h3
+                    className="leading-[1.1] tracking-[-0.03em] text-[26px]"
+                    style={{ fontFamily: 'var(--font-openSans)', fontWeight: 300 }}
+                  >
+                    {slides[slide].title}
+                    <span className="text-[#ce0100]"> {slides[slide].accent}</span>
+                  </h3>
+                  <p
+                    className="mt-[10px] text-[#666666] leading-[1.5] text-[14px]"
+                    style={{ fontFamily: 'var(--font-openSans)', fontWeight: 300 }}
+                  >
+                    {slides[slide].description}
+                  </p>
+                </motion.div>
+              </AnimatePresence>
+
+              {/* Pagination */}
+              <div className="flex items-center justify-center gap-[10px] mt-[18px]">
+                {slides.map((_, index) => (
+                  <button key={index} onClick={() => setSlide(index)}>
+                    <div
+                      className={`h-[4px] rounded-full transition-all duration-500 ${
+                        slide === index ? 'w-[36px] bg-[#ce0100]' : 'w-[18px] bg-[#e7dede]'
+                      }`}
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
 
             <div>
 
@@ -504,9 +552,9 @@ export default function LoginPage() {
                 className="
                   text-[#111111]
                   tracking-[-0.04em]
+                  text-[36px] md:text-[58px]
                 "
                 style={{
-                  fontSize: '58px',
                   fontFamily: 'var(--font-openSans)',
                   fontWeight: 300
                 }}
@@ -531,9 +579,9 @@ export default function LoginPage() {
                   mt-[24px]
                   text-[#707070]
                   leading-[1.6]
+                  text-[15px] md:text-[18px]
                 "
                 style={{
-                  fontSize: '18px',
                   fontFamily: 'var(--font-openSans)',
                   fontWeight: 300
                 }}
@@ -548,16 +596,15 @@ export default function LoginPage() {
 
             {/* FORM */}
 
-            <div className="mt-[50px] space-y-[24px]">
+            <div className="mt-[32px] md:mt-[50px] space-y-[20px] md:space-y-[24px]">
 
               {/* EMAIL */}
 
               <div>
 
                 <label
-                  className="text-[#1a1a1a]"
+                  className="text-[#1a1a1a] text-[15px] md:text-[16px]"
                   style={{
-                    fontSize: '16px',
                     fontFamily: 'var(--font-openSans)',
                     fontWeight: 400
                   }}
@@ -570,18 +617,18 @@ export default function LoginPage() {
                 <div
                   className="
                     mt-[12px]
-                    h-[68px]
-                    rounded-[22px]
+                    h-[58px] md:h-[68px]
+                    rounded-[18px] md:rounded-[22px]
                     border
                     border-[#ece7e4]
-                    px-[22px]
+                    px-[18px] md:px-[22px]
                     flex
                     items-center
                     bg-[#fcfbfa]
                   "
                 >
 
-                  <EnvelopeIcon className="w-5 h-5 text-[#8f8f8f]" />
+                  <EnvelopeIcon className="w-5 h-5 text-[#8f8f8f] flex-shrink-0" />
 
                   <input
                     type="email"
@@ -593,11 +640,12 @@ export default function LoginPage() {
                     className="
                       ml-[14px]
                       flex-1
+                      min-w-0
                       bg-transparent
                       outline-none
+                      text-[15px] md:text-[17px]
                     "
                     style={{
-                      fontSize: '17px',
                       fontFamily:
                         'var(--font-openSans)',
                       fontWeight: 300
@@ -613,9 +661,8 @@ export default function LoginPage() {
               <div>
 
                 <label
-                  className="text-[#1a1a1a]"
+                  className="text-[#1a1a1a] text-[15px] md:text-[16px]"
                   style={{
-                    fontSize: '16px',
                     fontFamily: 'var(--font-openSans)',
                     fontWeight: 400
                   }}
@@ -628,18 +675,18 @@ export default function LoginPage() {
                 <div
                   className="
                     mt-[12px]
-                    h-[68px]
-                    rounded-[22px]
+                    h-[58px] md:h-[68px]
+                    rounded-[18px] md:rounded-[22px]
                     border
                     border-[#ece7e4]
-                    px-[22px]
+                    px-[18px] md:px-[22px]
                     flex
                     items-center
                     bg-[#fcfbfa]
                   "
                 >
 
-                  <LockClosedIcon className="w-5 h-5 text-[#8f8f8f]" />
+                  <LockClosedIcon className="w-5 h-5 text-[#8f8f8f] flex-shrink-0" />
 
                   <input
                     type={
@@ -657,11 +704,12 @@ export default function LoginPage() {
                     className="
                       ml-[14px]
                       flex-1
+                      min-w-0
                       bg-transparent
                       outline-none
+                      text-[15px] md:text-[17px]
                     "
                     style={{
-                      fontSize: '17px',
                       fontFamily:
                         'var(--font-openSans)',
                       fontWeight: 300
@@ -674,6 +722,7 @@ export default function LoginPage() {
                         !showPassword
                       )
                     }
+                    className="flex-shrink-0"
                   >
 
                     {showPassword ? (
@@ -694,16 +743,15 @@ export default function LoginPage() {
 
               {/* REMEMBER */}
 
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between flex-wrap gap-2">
 
                 <label className="flex items-center gap-[12px]">
 
                   <input type="checkbox" />
 
                   <span
-                    className="text-[#666666]"
+                    className="text-[#666666] text-[14px] md:text-[15px]"
                     style={{
-                      fontSize: '15px',
                       fontFamily:
                         'var(--font-openSans)',
                       fontWeight: 300
@@ -717,9 +765,8 @@ export default function LoginPage() {
                 </label>
 
                 <button
-                  className="text-[#ce0100]"
+                  className="text-[#ce0100] text-[14px] md:text-[15px]"
                   style={{
-                    fontSize: '15px',
                     fontFamily:
                       'var(--font-openSans)',
                     fontWeight: 400
@@ -739,17 +786,17 @@ export default function LoginPage() {
                 disabled={loading}
                 className="
                   w-full
-                  h-[68px]
-                  rounded-[22px]
+                  h-[58px] md:h-[68px]
+                  rounded-[18px] md:rounded-[22px]
                   bg-[#ce0100]
                   text-white
                   shadow-[0_16px_40px_rgba(206,1,0,0.22)]
                   transition-all
                   duration-300
                   hover:translate-y-[-2px]
+                  text-[16px] md:text-[18px]
                 "
                 style={{
-                  fontSize: '18px',
                   fontFamily: 'var(--font-montserrat)',
                   fontWeight: 700
                 }}

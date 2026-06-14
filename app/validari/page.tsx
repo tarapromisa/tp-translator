@@ -108,7 +108,7 @@ function ValidateModal({ item, type, onClose, onDone }: {
       <div className="bg-white rounded-[28px] w-full max-w-[680px] overflow-x-hidden shadow-[0_32px_80px_rgba(0,0,0,0.2)]"
         style={{ maxHeight: '92vh', overflowY: 'auto' }}>
         <div className="h-[4px] bg-[#ce0100]" />
-        <div className="px-[36px] pt-[32px] pb-[28px]">
+        <div className="px-5 pt-6 pb-5 md:px-[36px] md:pt-[32px] md:pb-[28px]">
 
           {/* Header */}
           <div className="flex items-start justify-between gap-4 mb-[20px]">
@@ -229,7 +229,9 @@ function ItemRow({ item, type, statusTab, canValidate, onValidate, onView, onRev
   const langs   = isCitat ? LANG_FIELDS_C : LANG_FIELDS_V
 
   return (
-    <div className="flex items-center gap-4 px-6 py-4 hover:bg-[#faf7f5] transition-colors">
+    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 px-4 py-3 sm:px-6 sm:py-4 hover:bg-[#faf7f5] transition-colors">
+      {/* Top row: icon + content */}
+      <div className="flex items-center gap-3 min-w-0 flex-1">
       {/* Icon */}
       <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${
         isCitat ? 'bg-[#fff4f4] border border-[#ffd3d3]' : 'bg-[#eef3ff] border border-[#c7d2fe]'
@@ -252,26 +254,37 @@ function ItemRow({ item, type, statusTab, canValidate, onValidate, onView, onRev
         </div>
         <p className="text-[12px] text-[#555] truncate italic">"{text}"</p>
       </div>
-
-      {/* Lang pills */}
-      <div className="flex gap-[2px] flex-shrink-0">
-        {LANG_CODES.map((code, idx) => {
-          const done = !!(item as any)[langs[idx]]?.trim()
-          return <span key={code} className={`inline-flex items-center justify-center h-[18px] px-[5px] rounded-full text-[8px] font-bold ${done?'bg-[#ce0100] text-white':'bg-[#f0e8e4] text-[#bbb]'}`}>{code}</span>
-        })}
       </div>
 
-      {/* Status badge for non-pending tabs */}
-      {statusTab !== 'asteptare' && (
-        <span className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3 h-6 rounded-full text-[11px] font-semibold ${
-          statusTab === 'validat' ? 'bg-[#edfaf3] text-[#166534]' : 'bg-[#fff1f1] text-[#ce0100]'
-        }`}>
-          {statusTab === 'validat' ? <><CheckSolid className="w-3 h-3"/>Validat</> : <><XSolid className="w-3 h-3"/>Refuzat</>}
-        </span>
-      )}
+      {/* Pills row — always visible */}
+      <div className="flex items-center gap-2 pl-12 sm:pl-0 sm:contents">
+        <div className="flex gap-[2px] flex-shrink-0">
+          {LANG_CODES.map((code, idx) => {
+            const done = !!(item as any)[langs[idx]]?.trim()
+            return <span key={code} className={`inline-flex items-center justify-center h-[18px] px-[5px] rounded-full text-[8px] font-bold ${done?'bg-[#ce0100] text-white':'bg-[#f0e8e4] text-[#bbb]'}`}>{code}</span>
+          })}
+        </div>
 
-      {/* Action */}
-      <div className="flex items-center gap-[6px] flex-shrink-0">
+        {/* Status badge — desktop only here, shown in buttons row on mobile */}
+        {statusTab !== 'asteptare' && (
+          <span className={`hidden sm:inline-flex flex-shrink-0 items-center gap-1.5 px-3 h-6 rounded-full text-[11px] font-semibold ${
+            statusTab === 'validat' ? 'bg-[#edfaf3] text-[#166534]' : 'bg-[#fff1f1] text-[#ce0100]'
+          }`}>
+            {statusTab === 'validat' ? <><CheckSolid className="w-3 h-3"/>Validat</> : <><XSolid className="w-3 h-3"/>Refuzat</>}
+          </span>
+        )}
+      </div>
+
+      {/* Buttons row — always its own row on mobile */}
+      <div className="flex items-center gap-[6px] pl-12 sm:pl-0 sm:flex-shrink-0">
+        {/* Status badge on mobile */}
+        {statusTab !== 'asteptare' && (
+          <span className={`sm:hidden inline-flex flex-shrink-0 items-center gap-1.5 px-3 h-6 rounded-full text-[11px] font-semibold ${
+            statusTab === 'validat' ? 'bg-[#edfaf3] text-[#166534]' : 'bg-[#fff1f1] text-[#ce0100]'
+          }`}>
+            {statusTab === 'validat' ? <><CheckSolid className="w-3 h-3"/>Validat</> : <><XSolid className="w-3 h-3"/>Refuzat</>}
+          </span>
+        )}
         {statusTab === 'asteptare' && canValidate && (
           <button onClick={onValidate}
             className="h-8 px-4 rounded-xl bg-[#ce0100] text-white text-[11px] font-semibold flex items-center gap-1.5 shadow-[0_4px_10px_rgba(206,1,0,0.2)] hover:bg-[#a80000] transition-all">
@@ -357,7 +370,7 @@ export default function ValidariPage() {
   return (
     <main className="flex min-h-screen bg-[#f9f7f5] overflow-x-hidden">
       <Sidebar />
-      <div className="flex-1 w-0 px-10 py-8 overflow-y-auto">
+      <div className="flex-1 w-0 px-4 py-6 md:px-10 md:py-8 overflow-y-auto">
 
         {/* Header */}
         <div className="mb-8">
@@ -367,13 +380,13 @@ export default function ValidariPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-3 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
           {[
             { label: 'Citate în așteptare',  value: counts.citate.asteptare,  accent: '#ce0100' },
             { label: 'Versete în așteptare', value: counts.versete.asteptare, accent: '#1e40af' },
             { label: 'Total validate',       value: counts.citate.validat + counts.versete.validat, accent: '#166534' },
           ].map(({ label, value, accent }) => (
-            <div key={label} className="bg-white border border-[#e8e2de] rounded-2xl px-5 h-20 flex items-center gap-4 shadow-sm">
+            <div key={label} className="bg-white border border-[#e8e2de] rounded-2xl px-4 py-3 md:px-5 md:h-20 flex items-center gap-4 shadow-sm">
               <div className="w-2 h-8 rounded-full flex-shrink-0" style={{ background: accent }} />
               <div>
                 <p className="text-sm text-[#666]">{label}</p>
@@ -407,7 +420,7 @@ export default function ValidariPage() {
         </div>
 
         {/* Status sub-tabs */}
-        <div className="flex items-center gap-1.5 mb-5 bg-white border border-[#e8e2de] rounded-xl p-1 w-fit shadow-sm">
+        <div className="flex items-center gap-1.5 mb-5 bg-white border border-[#e8e2de] rounded-xl p-1 w-full md:w-fit shadow-sm overflow-x-auto">
           {STATUS_TABS.map(({ key, label, color }) => {
             const count = counts[contentTab][key]
             return (

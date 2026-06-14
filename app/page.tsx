@@ -176,19 +176,30 @@ export default function DashboardPage() {
   return (
     <main className="flex min-h-screen bg-[#fcfbfa]" style={{ fontFamily: 'var(--font-openSans)' }}>
       <Sidebar />
-      <div className="flex-1 min-w-0 px-4 md:px-10 py-6 md:py-8 overflow-y-auto">
+      <div className="flex-1 min-w-0 px-4 md:px-10 py-6 md:py-8 overflow-y-auto overflow-x-hidden">
 
         {/* ── HERO ── */}
-        <div className="relative mb-10">
+        <div className="relative mb-10 overflow-hidden rounded-[8px]">
 
           {/* Watermark */}
-          <img src="/logo.png" alt="" className="absolute right-0 top-0 w-[200px] opacity-[0.04] pointer-events-none select-none" />
+          <img src="/logo.png" alt="" className="absolute right-0 top-0 w-[120px] sm:w-[160px] md:w-[200px] opacity-[0.04] pointer-events-none select-none" />
+
+          {/* Role badge */}
+          <div style={{
+            display:'inline-flex', alignItems:'center', gap:'6px',
+            background:'#ce0100', borderRadius:'100px',
+            padding:'6px 16px', marginBottom:'16px',
+          }} className="sm:absolute sm:top-0 sm:right-0 sm:mb-0">
+            <span style={{ width:'6px', height:'6px', borderRadius:'50%', background:'rgba(255,255,255,0.5)', display:'inline-block' }} />
+            <span style={{ fontSize:'13px', fontWeight:500, color:'white' }}>{userRole}</span>
+          </div>
 
           {/* Greeting */}
           <p style={{ fontSize:'14px', fontWeight:300, color:'#9c8e87', marginBottom:'8px', letterSpacing:'0.02em' }}>{greeting}</p>
 
           {/* Name */}
-          <h1 style={{ fontSize:'clamp(32px, 6vw, 52px)', fontWeight:300, color:'#111', lineHeight:1, letterSpacing:'-0.04em', marginBottom:'16px' }}>
+          <h1 style={{ fontSize:'clamp(28px, 8vw, 52px)', fontWeight:300, color:'#111', lineHeight:1, letterSpacing:'-0.04em', marginBottom:'16px' }}
+            className="pr-0 sm:pr-[180px] md:pr-[220px]">
             {userName || '...'}
           </h1>
 
@@ -197,21 +208,10 @@ export default function DashboardPage() {
 
           {/* Phrase */}
           <div style={{ transition:'opacity 0.4s ease', opacity: phraseVisible ? 1 : 0 }}>
-            <p style={{ fontSize:'32px', fontWeight:300, color:'#111', letterSpacing:'-0.03em', lineHeight:1.2 }}>
+            <p style={{ fontSize:'clamp(22px, 5vw, 32px)', fontWeight:300, color:'#111', letterSpacing:'-0.03em', lineHeight:1.2 }}>
               {phrase.bold}<span style={{ color:'#ce0100', textDecoration:'underline', textDecorationThickness:'2px', textUnderlineOffset:'4px' }}>{phrase.italic}</span>
             </p>
             <p style={{ fontSize:'15px', fontWeight:300, color:'#9c8e87', marginTop:'8px' }}>{phrase.sub}</p>
-          </div>
-
-          {/* Role badge */}
-          <div style={{
-            position:'absolute', top:0, right:0,
-            display:'flex', alignItems:'center', gap:'6px',
-            background:'#ce0100', borderRadius:'100px',
-            padding:'6px 16px',
-          }}>
-            <span style={{ width:'6px', height:'6px', borderRadius:'50%', background:'rgba(255,255,255,0.5)', display:'inline-block' }} />
-            <span style={{ fontSize:'13px', fontWeight:500, color:'white' }}>{userRole}</span>
           </div>
         </div>
 
@@ -224,14 +224,14 @@ export default function DashboardPage() {
             { label: 'Citate RO',  sub: 'texte originale',                                value: stats?.totalCitateRO ?? 0,   Icon: DocumentTextIcon,               href: '/citate-ro'  },
           ].map(({ label, sub, value, Icon, href }) => (
             <div key={label} onClick={() => router.push(href)}
-              className="group bg-white border border-[#f0e9e5] rounded-[24px] p-6 cursor-pointer hover:border-[#e0d8d2] hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] transition-all duration-300">
-              <div className="flex items-start justify-between mb-5">
+              className="group bg-white border border-[#f0e9e5] rounded-[24px] p-4 md:p-6 cursor-pointer hover:border-[#e0d8d2] hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] transition-all duration-300">
+              <div className="flex items-start justify-between mb-4 md:mb-5">
                 <div className="w-10 h-10 rounded-[14px] bg-[#fff4f4] flex items-center justify-center">
                   <Icon className="w-5 h-5 text-[#ce0100]" strokeWidth={1.5} />
                 </div>
                 <ArrowUpRightIcon className="w-4 h-4 text-[#ccc] group-hover:text-[#ce0100] transition-colors" />
               </div>
-              <p style={{ fontSize:'36px', fontWeight:300, color:'#111', lineHeight:1, marginBottom:'6px' }}>
+              <p style={{ fontSize:'28px', fontWeight:300, color:'#111', lineHeight:1, marginBottom:'6px' }} className="md:text-[36px]">
                 <AnimatedCounter value={value} />
               </p>
               <p style={{ fontSize:'14px', fontWeight:400, color:'#111', marginBottom:'3px' }}>{label}</p>
@@ -241,13 +241,13 @@ export default function DashboardPage() {
         </div>
 
         {/* ── MIDDLE ROW ── */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8" style={{ gridTemplateColumns: isCoordinator ? undefined : undefined }}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
 
           {/* Progres general */}
-          <div className="bg-white border border-[#f0e9e5] rounded-[24px] p-7 col-span-1">
+          <div className="bg-white border border-[#f0e9e5] rounded-[24px] p-5 md:p-7 col-span-1">
             <p style={{ fontSize:'11px', fontWeight:400, color:'#9c8e87', letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:'4px' }}>Progres general</p>
             <p style={{ fontSize:'22px', fontWeight:300, color:'#111', marginBottom:'24px' }}>Citate & Versete</p>
-            <div className="flex items-center gap-8">
+            <div className="flex flex-col sm:flex-row items-center gap-6 sm:gap-8">
               <DonutChart
                 validat={stats?.citateValidate ?? 0}
                 validare={stats?.citateInValidare ?? 0}
@@ -255,7 +255,7 @@ export default function DashboardPage() {
                 refuzat={stats?.citateRefuzate ?? 0}
                 total={stats?.totalCitate ?? 0}
               />
-              <div className="flex flex-col gap-3 flex-1">
+              <div className="flex flex-col gap-3 flex-1 w-full">
                 {[
                   { label:'Validate',    val: stats?.citateValidate ?? 0,   color:'#1a8c4e' },
                   { label:'În validare', val: stats?.citateInValidare ?? 0,  color:'#3b5bdb' },
@@ -276,13 +276,13 @@ export default function DashboardPage() {
           </div>
 
           {/* Versete breakdown */}
-          <div className="bg-white border border-[#f0e9e5] rounded-[24px] p-7">
-            <div className="flex items-start justify-between mb-6">
+          <div className="bg-white border border-[#f0e9e5] rounded-[24px] p-5 md:p-7">
+            <div className="flex items-start justify-between mb-6 gap-2">
               <div>
                 <p style={{ fontSize:'11px', fontWeight:400, color:'#9c8e87', letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:'4px' }}>Detaliu</p>
                 <p style={{ fontSize:'22px', fontWeight:300, color:'#111' }}>Versete</p>
               </div>
-              <button onClick={() => router.push('/versete')} style={{ fontSize:'12px', color:'#ce0100', fontWeight:400, background:'none', border:'none', cursor:'pointer' }}>
+              <button onClick={() => router.push('/versete')} style={{ fontSize:'12px', color:'#ce0100', fontWeight:400, background:'none', border:'none', cursor:'pointer', flexShrink:0 }}>
                 Vezi toate →
               </button>
             </div>
@@ -320,7 +320,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Quick actions — only for coordinators */}
-          {isCoordinator && <div style={{ background:'#ce0100', borderRadius:'24px', padding:'28px', display:'flex', flexDirection:'column', justifyContent:'space-between', boxShadow:'0 8px 28px rgba(206,1,0,0.2)' }}>
+          {isCoordinator && <div style={{ background:'#ce0100', borderRadius:'24px', padding:'20px', display:'flex', flexDirection:'column', justifyContent:'space-between', boxShadow:'0 8px 28px rgba(206,1,0,0.2)' }} className="md:p-7">
             <div>
               <p style={{ fontSize:'11px', fontWeight:400, color:'rgba(255,255,255,0.55)', letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:'6px' }}>Acțiuni rapide</p>
               <p style={{ fontSize:'22px', fontWeight:300, color:'white', lineHeight:1.2 }}>Ce faci azi?</p>
@@ -355,13 +355,13 @@ export default function DashboardPage() {
 
           {/* Recent */}
           <div className="bg-white border border-[#f0e9e5] rounded-[24px] overflow-hidden">
-            <div className="flex items-center justify-between px-7 py-5 border-b border-[#f4ece9]">
+            <div className="flex items-center justify-between px-5 md:px-7 py-5 border-b border-[#f4ece9]">
               <div>
                 <p style={{ fontSize:'11px', fontWeight:400, color:'#9c8e87', letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:'3px' }}>Ultimele adăugate</p>
                 <p style={{ fontSize:'18px', fontWeight:300, color:'#111' }}>Activitate recentă</p>
               </div>
             </div>
-            <div>
+            <div className="overflow-x-auto">
               {recent.length === 0 && !loading ? (
                 <p style={{ textAlign:'center', padding:'32px', fontSize:'13px', color:'#bbb', fontWeight:300 }}>Nicio activitate recentă.</p>
               ) : recent.map((item, i) => {
@@ -369,7 +369,7 @@ export default function DashboardPage() {
                 const color = STATUS_COLOR[ds] ?? '#d97706'
                 return (
                   <div key={item.id} onClick={() => router.push(`/${item.type === 'citat' ? 'citate' : 'versete'}/${item.id}`)}
-                    className="flex items-center gap-4 px-7 py-4 cursor-pointer hover:bg-[#faf7f5] transition-colors"
+                    className="flex items-center gap-4 px-5 md:px-7 py-4 cursor-pointer hover:bg-[#faf7f5] transition-colors min-w-[480px]"
                     style={{ borderBottom: i < recent.length-1 ? '1px solid #f8f3f0' : 'none' }}>
                     <div style={{
                       width:'32px', height:'32px', borderRadius:'10px', flexShrink:0,
@@ -414,7 +414,7 @@ export default function DashboardPage() {
 
           {/* Activity log */}
           <div className="bg-white border border-[#f0e9e5] rounded-[24px] overflow-hidden">
-            <div className="px-6 py-5 border-b border-[#f4ece9]">
+            <div className="px-5 md:px-6 py-5 border-b border-[#f4ece9]">
               <p style={{ fontSize:'11px', fontWeight:400, color:'#9c8e87', letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:'3px' }}>Istoric</p>
               <p style={{ fontSize:'18px', fontWeight:300, color:'#111' }}>Jurnal activitate</p>
             </div>

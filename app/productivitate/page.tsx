@@ -89,23 +89,23 @@ function TranslatorDetail({ stats, onClose }: { stats: TranslatorStats; onClose:
       <div className="bg-white rounded-[28px] w-full max-w-[680px] overflow-hidden shadow-[0_32px_80px_rgba(0,0,0,0.2)] flex flex-col" style={{ maxHeight:'85vh' }}>
         <div className="h-[4px]" style={{ background: color }} />
 
-        <div className="px-8 pt-7 pb-5 border-b border-[#f0e9e5] flex items-start justify-between flex-shrink-0">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-full flex items-center justify-center text-white text-lg font-bold flex-shrink-0"
+        <div className="px-5 md:px-8 pt-5 md:pt-7 pb-4 md:pb-5 border-b border-[#f0e9e5] flex items-start justify-between flex-shrink-0 gap-3">
+          <div className="flex items-center gap-3 md:gap-4 min-w-0">
+            <div className="w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center text-white text-base md:text-lg font-bold flex-shrink-0"
               style={{ background: color }}>
               {stats.translator.full_name.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase()}
             </div>
-            <div>
-              <h2 className="text-2xl font-light text-[#111] tracking-tight">{stats.translator.full_name}</h2>
-              <p className="text-sm text-[#888]">{stats.translator.email} · <span className="font-semibold text-[#ce0100]">{stats.translator.language}</span></p>
+            <div className="min-w-0">
+              <h2 className="text-lg md:text-2xl font-light text-[#111] tracking-tight truncate">{stats.translator.full_name}</h2>
+              <p className="text-xs md:text-sm text-[#888] truncate">{stats.translator.email} · <span className="font-semibold text-[#ce0100]">{stats.translator.language}</span></p>
             </div>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-[#faf7f5] border border-[#e8e2de] flex items-center justify-center hover:bg-[#ffe0e0] transition-all">
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-[#faf7f5] border border-[#e8e2de] flex items-center justify-center hover:bg-[#ffe0e0] transition-all flex-shrink-0">
             <XCircleIcon className="w-4 h-4 text-[#555]" />
           </button>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 px-8 py-5 border-b border-[#f0e9e5] flex-shrink-0">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 px-5 md:px-8 py-4 md:py-5 border-b border-[#f0e9e5] flex-shrink-0">
           {[
             { label:'Total asignate', value:stats.total,      color:'#111'     },
             { label:'La timp',        value:stats.inTime,     color:'#166534'  },
@@ -113,13 +113,13 @@ function TranslatorDetail({ stats, onClose }: { stats: TranslatorStats; onClose:
             { label:'În lucru',       value:stats.inProgress, color:'#1e40af'  },
           ].map(({ label, value, color:c }) => (
             <div key={label} className="text-center">
-              <p className="text-2xl font-light leading-none mb-1" style={{ color:c }}>{value}</p>
-              <p className="text-[11px] text-[#888] font-medium uppercase tracking-wide">{label}</p>
+              <p className="text-xl md:text-2xl font-light leading-none mb-1" style={{ color:c }}>{value}</p>
+              <p className="text-[10px] md:text-[11px] text-[#888] font-medium uppercase tracking-wide">{label}</p>
             </div>
           ))}
         </div>
 
-        <div className="px-8 py-4 border-b border-[#f0e9e5] flex-shrink-0">
+        <div className="px-5 md:px-8 py-4 border-b border-[#f0e9e5] flex-shrink-0">
           <div className="flex items-center justify-between mb-2">
             <p className="text-sm font-medium text-[#111]">Productivitate globală</p>
             <p className="text-2xl font-light" style={{ color }}>{stats.productivity}%</p>
@@ -131,7 +131,7 @@ function TranslatorDetail({ stats, onClose }: { stats: TranslatorStats; onClose:
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          <div className="px-8 py-3 border-b border-[#f0e9e5]">
+          <div className="px-5 md:px-8 py-3 border-b border-[#f0e9e5]">
             <p className="text-xs font-semibold text-[#888] uppercase tracking-wide">Istoricul citatelor</p>
           </div>
           {stats.citate.map((c, i) => {
@@ -144,9 +144,9 @@ function TranslatorDetail({ stats, onClose }: { stats: TranslatorStats; onClose:
             const isOverdue = !isComplete && months !== null && months > 3
 
             return (
-              <div key={c.id} className="flex items-center gap-4 px-8 py-3 hover:bg-[#faf7f5] transition-colors"
+              <div key={c.id} className="flex items-center gap-3 md:gap-4 px-5 md:px-8 py-3 hover:bg-[#faf7f5] transition-colors"
                 style={{ borderBottom: i < stats.citate.length-1 ? '1px solid #f8f3f0' : 'none' }}>
-                <span className="text-[12px] font-bold text-[#ce0100] w-16 flex-shrink-0">{c.public_id}</span>
+                <span className="text-[12px] font-bold text-[#ce0100] w-14 md:w-16 flex-shrink-0">{c.public_id}</span>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     {c.data_asignarii
@@ -159,11 +159,11 @@ function TranslatorDetail({ stats, onClose }: { stats: TranslatorStats; onClose:
                 </div>
                 <div className="flex-shrink-0">
                   {isComplete ? (
-                    <span className={`text-[10px] font-semibold px-2 h-5 inline-flex items-center rounded-full ${inTime ? 'bg-[#edfaf3] text-[#166534]' : 'bg-[#fff5eb] text-[#c05c00]'}`}>
+                    <span className={`text-[10px] font-semibold px-2 h-5 inline-flex items-center rounded-full whitespace-nowrap ${inTime ? 'bg-[#edfaf3] text-[#166534]' : 'bg-[#fff5eb] text-[#c05c00]'}`}>
                       {inTime ? 'La timp' : 'Întârziat'}
                     </span>
                   ) : (
-                    <span className={`text-[10px] font-semibold px-2 h-5 inline-flex items-center rounded-full ${isOverdue ? 'bg-[#fff1f1] text-[#ce0100]' : 'bg-[#eef3ff] text-[#1e40af]'}`}>
+                    <span className={`text-[10px] font-semibold px-2 h-5 inline-flex items-center rounded-full whitespace-nowrap ${isOverdue ? 'bg-[#fff1f1] text-[#ce0100]' : 'bg-[#eef3ff] text-[#1e40af]'}`}>
                       {isOverdue ? 'Depășit' : 'În lucru'}
                     </span>
                   )}
@@ -303,42 +303,44 @@ export default function ProductivitatePage() {
             { label:'Completate la timp',    value:totalStats.totalInTime,    color:'#166534', Icon:CheckCircleIcon  },
             { label:'Productivitate medie',  value:totalStats.avgProductivity,color:getProductivityColor(totalStats.avgProductivity), Icon:ClockIcon, suffix:'%' },
           ].map(({ label, value, color, Icon, suffix }) => (
-            <div key={label} className="bg-white border border-[#f0e9e5] rounded-[22px] p-6 shadow-sm">
-              <div className="flex items-start justify-between mb-4">
-                <div className="w-10 h-10 rounded-[12px] flex items-center justify-center" style={{ background:`${color}18` }}>
-                  <Icon className="w-5 h-5" style={{ color }} strokeWidth={1.5} />
+            <div key={label} className="bg-white border border-[#f0e9e5] rounded-[18px] md:rounded-[22px] p-4 md:p-6 shadow-sm">
+              <div className="flex items-start justify-between mb-3 md:mb-4">
+                <div className="w-9 h-9 md:w-10 md:h-10 rounded-[12px] flex items-center justify-center" style={{ background:`${color}18` }}>
+                  <Icon className="w-4 h-4 md:w-5 md:h-5" style={{ color }} strokeWidth={1.5} />
                 </div>
               </div>
-              <p className="text-[36px] font-light leading-none mb-2" style={{ color }}>
+              <p className="text-[26px] md:text-[36px] font-light leading-none mb-2" style={{ color }}>
                 <AnimatedCounter value={value} />{suffix}
               </p>
-              <p className="text-sm font-light text-[#666]">{label}</p>
+              <p className="text-xs md:text-sm font-light text-[#666]">{label}</p>
             </div>
           ))}
         </div>
 
         {/* Toolbar */}
-        <div className="flex items-center gap-3 mb-6">
-          <div className="flex-1 flex items-center gap-3 bg-white border border-[#e8e2de] rounded-xl px-4 h-10 shadow-sm">
-            <MagnifyingGlassIcon className="w-4 h-4 text-[#999] flex-shrink-0" />
-            <input type="text" placeholder="Caută traducător sau limbă..."
-              value={search} onChange={e => setSearch(e.target.value)}
-              className="flex-1 bg-transparent outline-none text-sm placeholder:text-[#bbb]" />
+        <div className="flex flex-col gap-3 mb-6">
+          <div className="flex items-center gap-2">
+            <div className="flex-1 min-w-0 flex items-center gap-3 bg-white border border-[#e8e2de] rounded-xl px-4 h-10 shadow-sm">
+              <MagnifyingGlassIcon className="w-4 h-4 text-[#999] flex-shrink-0" />
+              <input type="text" placeholder="Caută traducător sau limbă..."
+                value={search} onChange={e => setSearch(e.target.value)}
+                className="flex-1 min-w-0 bg-transparent outline-none text-sm placeholder:text-[#bbb]" />
+            </div>
+            <div className="flex items-center gap-1 bg-white border border-[#e8e2de] rounded-xl p-1 shadow-sm flex-shrink-0">
+              {(['grid','table'] as const).map(v => (
+                <button key={v} onClick={() => setView(v)}
+                  className={`h-8 px-3 rounded-lg text-xs font-semibold transition-all ${view===v?'bg-[#ce0100] text-white':'text-[#666] hover:text-[#111]'}`}>
+                  {v==='grid'?'Carduri':'Tabel'}
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="flex items-center gap-1.5 bg-white border border-[#e8e2de] rounded-xl p-1 shadow-sm">
+          <div className="flex items-center gap-1.5 bg-white border border-[#e8e2de] rounded-xl p-1 shadow-sm overflow-x-auto">
             {([['productivity','Productivitate'],['total','Total'],['inTime','La timp'],['avgDays','Viteză']] as [typeof sortBy,string][]).map(([field,label]) => (
               <button key={field} onClick={() => toggleSort(field)}
-                className={`h-8 px-3 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all ${sortBy===field?'bg-[#ce0100] text-white':'text-[#666] hover:text-[#111]'}`}>
+                className={`h-8 px-3 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all flex-shrink-0 ${sortBy===field?'bg-[#ce0100] text-white':'text-[#666] hover:text-[#111]'}`}>
                 {label}
                 {sortBy===field && (sortDir==='desc'?<ArrowDownIcon className="w-3 h-3"/>:<ArrowUpIcon className="w-3 h-3"/>)}
-              </button>
-            ))}
-          </div>
-          <div className="flex items-center gap-1 bg-white border border-[#e8e2de] rounded-xl p-1 shadow-sm">
-            {(['grid','table'] as const).map(v => (
-              <button key={v} onClick={() => setView(v)}
-                className={`h-8 px-3 rounded-lg text-xs font-semibold transition-all ${view===v?'bg-[#ce0100] text-white':'text-[#666] hover:text-[#111]'}`}>
-                {v==='grid'?'Carduri':'Tabel'}
               </button>
             ))}
           </div>
@@ -356,15 +358,15 @@ export default function ProductivitatePage() {
                 <div key={stats.translator.id} onClick={() => setSelectedStats(stats)}
                   className="bg-white border border-[#f0e9e5] rounded-[22px] overflow-hidden cursor-pointer hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(0,0,0,0.09)] transition-all duration-300">
                   <div className="h-1" style={{ background:color }} />
-                  <div className="p-6">
+                  <div className="p-5 md:p-6">
                     <div className="flex items-start justify-between mb-5">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
                         <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
                           style={{ background:color }}>
                           {stats.translator.full_name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()}
                         </div>
-                        <div>
-                          <p className="text-sm font-semibold text-[#111] leading-tight">{stats.translator.full_name}</p>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-[#111] leading-tight truncate">{stats.translator.full_name}</p>
                           <span className="text-[10px] font-bold px-2 h-[16px] inline-flex items-center rounded-full bg-[#fff4f4] text-[#ce0100] border border-[#ffd3d3]">
                             {stats.translator.language}
                           </span>
@@ -385,7 +387,7 @@ export default function ProductivitatePage() {
                           <span className="text-[14px] font-light text-[#111]">{stats.productivity}%</span>
                         </div>
                       </div>
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-0">
                         <p className="text-[11px] text-[#888] uppercase tracking-wide font-medium mb-1">Productivitate</p>
                         <ProductivityBar value={stats.productivity} color={color} />
                         {stats.avgDays !== null && (
@@ -409,7 +411,7 @@ export default function ProductivitatePage() {
 
                     {stats.late > 0 && (
                       <div className="mt-3 flex items-center gap-1.5 bg-[#fff5eb] rounded-lg px-3 py-2">
-                        <ClockIcon className="w-3.5 h-3.5 text-[#c05c00]" />
+                        <ClockIcon className="w-3.5 h-3.5 text-[#c05c00] flex-shrink-0" />
                         <p className="text-[11px] text-[#c05c00] font-medium">{stats.late} citate cu întârziere</p>
                       </div>
                     )}
@@ -419,8 +421,8 @@ export default function ProductivitatePage() {
             })}
           </div>
         ) : (
-          <div className="bg-white border border-[#f0e9e5] rounded-[22px] overflow-hidden shadow-sm">
-            <table className="w-full table-fixed">
+          <div className="bg-white border border-[#f0e9e5] rounded-[22px] overflow-x-auto shadow-sm">
+            <table className="w-full table-fixed min-w-[700px]">
               <colgroup>
                 <col className="w-8"/><col/><col className="w-20"/>
                 <col className="w-24"/><col className="w-24"/><col className="w-24"/>

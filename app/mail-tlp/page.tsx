@@ -259,6 +259,7 @@ export default function MailTLPPage() {
   // Layout
   const [leftWidth, setLeftWidth] = useState(420)
   const [rightTopHeight, setRightTopHeight] = useState(50) // percentage
+  const [mobileTab, setMobileTab] = useState<'lista' | 'formular' | 'referinta'>('lista')
 
   const canManage = currentUser?.role === 'Coordonator principal' || currentUser?.role === 'Admin'
 
@@ -369,34 +370,34 @@ export default function MailTLPPage() {
       <div className="flex-1 w-0 flex flex-col overflow-x-hidden">
 
         {/* Header */}
-        <div className="flex-shrink-0 px-8 pt-7 pb-5 border-b border-[#f0e9e5] bg-[#f9f7f5]">
-          <div className="flex items-start justify-between">
+        <div className="flex-shrink-0 px-4 pt-6 pb-4 md:px-8 md:pt-7 md:pb-5 border-b border-[#f0e9e5] bg-[#f9f7f5]">
+          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div>
               <p className="text-[11px] font-semibold text-[#9c8e87] uppercase tracking-[0.15em] mb-2">Coordonare traduceri</p>
-              <h1 className="text-[44px] leading-none tracking-tight font-light text-[#111] mb-3">Mail TLP / TLG</h1>
+              <h1 className="text-[36px] md:text-[44px] leading-none tracking-tight font-light text-[#111] mb-3">Mail TLP / TLG</h1>
               <div className="w-10 h-[3px] rounded-full bg-[#ce0100] mb-3" />
               <p className="text-sm font-light text-[#666]">Trimite reminder-uri personalizate traducătorilor cu citatele lipsă.</p>
             </div>
-            <div className="flex flex-col items-end gap-3 mt-1">
+            <div className="flex flex-col gap-3 md:items-end md:mt-1">
               <div className="flex items-center gap-3">
-                <div className="text-right">
+                <div>
                   <p className="text-[11px] text-[#aaa] font-light">Înregistrări active</p>
                   <p className="text-2xl font-light text-[#111] leading-none">{records.length}</p>
                 </div>
                 <div className="w-px h-10 bg-[#f0e9e5]" />
-                <div className="text-right">
+                <div>
                   <p className="text-[11px] text-[#aaa] font-light">În așteptare</p>
                   <p className="text-2xl font-light text-[#c05c00] leading-none">{pendingRecords.length}</p>
                 </div>
                 <div className="w-px h-10 bg-[#f0e9e5]" />
-                <div className="text-right">
+                <div>
                   <p className="text-[11px] text-[#aaa] font-light">Trimise</p>
                   <p className="text-2xl font-light text-[#166534] leading-none">{records.filter(r => r.trimis).length}</p>
                 </div>
               </div>
               {canManage && pendingRecords.length > 0 && (
                 <button onClick={sendAll} disabled={sendingAll}
-                  className="h-10 px-6 rounded-xl bg-[#ce0100] text-white text-sm font-semibold flex items-center gap-2 shadow-[0_4px_12px_rgba(206,1,0,0.22)] hover:bg-[#a80000] disabled:opacity-60 transition-all">
+                  className="h-10 px-6 rounded-xl bg-[#ce0100] text-white text-sm font-semibold flex items-center justify-center gap-2 shadow-[0_4px_12px_rgba(206,1,0,0.22)] hover:bg-[#a80000] disabled:opacity-60 transition-all w-full md:w-auto">
                   <PaperAirplaneIcon className="w-4 h-4" />
                   {'TLG ' + (sendingAll ? 'Se trimite...' : 'Trimite tuturor (' + pendingRecords.length + ')')}
                 </button>
@@ -405,15 +406,29 @@ export default function MailTLPPage() {
           </div>
         </div>
 
-        {/* Main split layout */}
-        <div className="flex-1 flex flex-col overflow-y-auto">
+        {/* Mobile tabs */}
+        <div className="flex md:hidden items-center gap-1.5 px-4 pt-4 pb-0">
+          {(['lista', 'formular', 'referinta'] as const).map(tab => (
+            <button key={tab} onClick={() => setMobileTab(tab)}
+              className={`h-8 px-4 rounded-xl text-[11px] font-semibold flex-1 transition-all capitalize ${
+                mobileTab === tab ? 'bg-[#ce0100] text-white' : 'bg-white border border-[#e8e2de] text-[#666]'
+              }`}>
+              {tab === 'lista' ? 'Listă' : tab === 'formular' ? 'Formular' : 'Referință'}
+            </button>
+          ))}
+        </div>
+
+        {/* Main split layout — desktop horizontal, mobile tabbed */}
+        <div className="flex-1 flex overflow-hidden">
 
           {/* LEFT — Records + Form */}
-          <div style={{ width: "100%", maxWidth: "100%" }} className="md:w-[420px] md:flex-shrink-0" className="flex flex-col overflow-x-hidden bg-[#f9f7f5]">
+          <div
+            style={{ width: typeof window !== 'undefined' && window.innerWidth >= 768 ? leftWidth : undefined }}
+            className={`${mobileTab !== 'lista' && mobileTab !== 'formular' ? 'hidden' : ''} md:flex md:flex-col md:flex-shrink-0 overflow-x-hidden bg-[#f9f7f5] w-full md:w-auto`}>
 
             {/* New record form */}
             {canManage && (
-              <div className="flex-shrink-0 p-5 border-b border-[#f0e9e5]">
+              <div className={`${mobileTab === 'lista' ? 'hidden md:block' : ''} flex-shrink-0 p-5 border-b border-[#f0e9e5]`}>
                 <p className="text-[11px] font-semibold text-[#888] uppercase tracking-wide mb-3">Înregistrare nouă</p>
                 <div className="bg-white border border-[#e8e2de] rounded-2xl p-4 flex flex-col gap-3">
                   <select value={traducator} onChange={e => setTraducator(e.target.value)}
@@ -422,9 +437,9 @@ export default function MailTLPPage() {
                     {availableUsers.map(u => <option key={u.id} value={u.id}>{u.full_name} ({u.language})</option>)}
                   </select>
                   <div className="grid grid-cols-2 gap-2">
-                    <input type="date" value={dinZiua} onChange={e => setDinZiua(e.target.value)} placeholder="Din ziua"
+                    <input type="date" value={dinZiua} onChange={e => setDinZiua(e.target.value)}
                       className="w-full h-10 rounded-xl border border-[#f0e9e5] px-3 text-sm text-[#111] outline-none focus:border-[#ce0100] transition-all" />
-                    <input type="date" value={panaZiua} onChange={e => setPanaZiua(e.target.value)} placeholder="Până ziua"
+                    <input type="date" value={panaZiua} onChange={e => setPanaZiua(e.target.value)}
                       className="w-full h-10 rounded-xl border border-[#f0e9e5] px-3 text-sm text-[#111] outline-none focus:border-[#ce0100] transition-all" />
                   </div>
                   <div>
@@ -444,7 +459,7 @@ export default function MailTLPPage() {
             )}
 
             {/* Records list */}
-            <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-3">
+            <div className={`${mobileTab === 'formular' ? 'hidden md:block' : ''} flex-1 overflow-y-auto p-4 md:p-5 flex flex-col gap-3`}>
               {pendingRecords.length > 0 && (
                 <div>
                   <p className="text-[10px] font-semibold text-[#888] uppercase tracking-wide mb-2">În așteptare · {pendingRecords.length}</p>
@@ -474,20 +489,22 @@ export default function MailTLPPage() {
             </div>
           </div>
 
-          {/* HORIZONTAL DIVIDER */}
-          <ResizableDivider onResize={handleResizeH} />
+          {/* HORIZONTAL DIVIDER — desktop only */}
+          <div className="hidden md:block">
+            <ResizableDivider onResize={handleResizeH} />
+          </div>
 
           {/* RIGHT — Reference panels */}
-          <div className="flex-1 min-w-0 flex flex-col overflow-x-hidden">
+          <div className={`${mobileTab !== 'referinta' ? 'hidden' : ''} md:flex flex-1 min-w-0 flex-col overflow-x-hidden`}>
 
             {/* TOP — Citate incomplete */}
             <div style={{ height: `${rightTopHeight}%` }} className="flex flex-col overflow-x-hidden">
-              <div className="flex-shrink-0 px-5 py-3 border-b border-[#f0e9e5] flex items-center justify-between bg-white">
-                <div>
+              <div className="flex-shrink-0 px-4 md:px-5 py-3 border-b border-[#f0e9e5] flex items-center justify-between bg-white gap-2">
+                <div className="min-w-0">
                   <p className="text-[10px] font-semibold text-[#9c8e87] uppercase tracking-[0.12em]">Citate · idiomas lipsă</p>
-                  <p className="text-sm font-light text-[#111]">{filteredCitate.length} <span className="text-[#9c8e87]">· apasă ID pentru a-l adăuga</span></p>
+                  <p className="text-sm font-light text-[#111]">{filteredCitate.length} <span className="text-[#9c8e87] hidden sm:inline">· apasă ID pentru a-l adăuga</span></p>
                 </div>
-                <div className="flex items-center gap-2 bg-[#f9f7f5] border border-[#e8e2de] rounded-lg px-3 h-8 w-48">
+                <div className="flex items-center gap-2 bg-[#f9f7f5] border border-[#e8e2de] rounded-lg px-3 h-8 w-36 md:w-48 flex-shrink-0">
                   <MagnifyingGlassIcon className="w-3.5 h-3.5 text-[#999] flex-shrink-0" />
                   <input type="text" placeholder="Caută..." value={searchCitate} onChange={e => setSearchCitate(e.target.value)}
                     className="flex-1 bg-transparent outline-none text-xs placeholder:text-[#ccc]" />
@@ -529,12 +546,12 @@ export default function MailTLPPage() {
 
             {/* BOTTOM — Citate RO incomplete */}
             <div style={{ height: `${100 - rightTopHeight}%` }} className="flex flex-col overflow-x-hidden">
-              <div className="flex-shrink-0 px-5 py-3 border-b border-[#f0e9e5] flex items-center justify-between bg-white">
-                <div>
+              <div className="flex-shrink-0 px-4 md:px-5 py-3 border-b border-[#f0e9e5] flex items-center justify-between bg-white gap-2">
+                <div className="min-w-0">
                   <p className="text-[10px] font-semibold text-[#9c8e87] uppercase tracking-[0.12em]">Citate RO · fără traducere</p>
-                  <p className="text-sm font-light text-[#111]">{filteredCitateRO.length} <span className="text-[#9c8e87]">· apasă ID pentru a-l adăuga</span></p>
+                  <p className="text-sm font-light text-[#111]">{filteredCitateRO.length} <span className="text-[#9c8e87] hidden sm:inline">· apasă ID pentru a-l adăuga</span></p>
                 </div>
-                <div className="flex items-center gap-2 bg-[#f9f7f5] border border-[#e8e2de] rounded-lg px-3 h-8 w-48">
+                <div className="flex items-center gap-2 bg-[#f9f7f5] border border-[#e8e2de] rounded-lg px-3 h-8 w-36 md:w-48 flex-shrink-0">
                   <MagnifyingGlassIcon className="w-3.5 h-3.5 text-[#999] flex-shrink-0" />
                   <input type="text" placeholder="Caută..." value={searchCitateRO} onChange={e => setSearchCitateRO(e.target.value)}
                     className="flex-1 bg-transparent outline-none text-xs placeholder:text-[#ccc]" />

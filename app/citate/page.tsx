@@ -146,21 +146,21 @@ export default function CitatePage() {
   return (
     <main className="flex min-h-screen bg-[#f9f7f5]">
       <Sidebar />
-      <div className="flex-1 px-10 py-8 overflow-y-auto">
+      <div className="flex-1 px-4 py-6 md:px-10 md:py-8 overflow-y-auto overflow-x-hidden">
 
         {/* ── HEADER ── */}
-        <div className="flex items-start justify-between mb-8">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-8">
           <div>
-            <h1 className="text-[52px] leading-none tracking-tight font-light text-[#111] mb-3">Citate</h1>
+            <h1 className="text-[40px] md:text-[52px] leading-none tracking-tight font-light text-[#111] mb-3">Citate</h1>
             <div className="w-10 h-[3px] rounded-full bg-[#ce0100] mb-4" />
             <p className="text-base text-[#666]">Gestionează traducerile și validările pentru toate limbile.</p>
           </div>
-          <div className="flex items-center gap-3 mt-2">
+          <div className="flex items-center gap-3 sm:mt-2">
             <button className="w-11 h-11 rounded-xl bg-white border border-[#e8e2de] flex items-center justify-center hover:bg-[#faf7f5] transition-all">
               <BellIcon className="w-5 h-5 text-[#444]" />
             </button>
             <button onClick={() => setOpenCreateModal(true)}
-              className="h-11 px-6 rounded-xl bg-[#ce0100] text-white text-sm font-semibold shadow-[0_6px_16px_rgba(206,1,0,0.22)] hover:bg-[#a80000] transition-all">
+              className="h-11 px-6 rounded-xl bg-[#ce0100] text-white text-sm font-semibold shadow-[0_6px_16px_rgba(206,1,0,0.22)] hover:bg-[#a80000] transition-all flex-1 sm:flex-none">
               + Citat nou
             </button>
           </div>
@@ -187,31 +187,18 @@ export default function CitatePage() {
         </div>
 
         {/* ── TOOLBAR ── */}
-        <div className="bg-white border border-[#e8e2de] rounded-2xl px-5 py-4 mb-4 shadow-sm">
-          {/* Row 1 */}
-          <div className="flex items-center gap-3 mb-4">
-            <div className="flex-1 flex items-center gap-3 bg-[#f9f7f5] border border-[#e8e2de] rounded-xl px-4 h-10">
+        <div className="bg-white border border-[#e8e2de] rounded-2xl px-4 md:px-5 py-4 mb-4 shadow-sm">
+          {/* Row 1 — search + view switcher */}
+          <div className="flex items-center gap-2 mb-3">
+            <div className="flex-1 min-w-0 flex items-center gap-3 bg-[#f9f7f5] border border-[#e8e2de] rounded-xl px-4 h-10">
               <MagnifyingGlassIcon className="w-4 h-4 text-[#999] flex-shrink-0" />
               <input type="text" placeholder="Caută după ID, text sau autor..."
                 value={search} onChange={(e) => setSearch(e.target.value)}
-                className="flex-1 bg-transparent outline-none text-sm text-[#111] placeholder:text-[#bbb]" />
-              {search && <button onClick={() => setSearch('')} className="text-xs text-[#999] hover:text-[#ce0100]">✕</button>}
+                className="flex-1 min-w-0 bg-transparent outline-none text-sm text-[#111] placeholder:text-[#bbb]" />
+              {search && <button onClick={() => setSearch('')} className="text-xs text-[#999] hover:text-[#ce0100] flex-shrink-0">✕</button>}
             </div>
-
-            {/* Sort */}
-            <div className="flex items-center gap-2">
-              {([['created_at','Dată'],['public_id','ID'],['progress','Progres']] as [SortField,string][]).map(([f, label]) => (
-                <button key={f} onClick={() => toggleSort(f)}
-                  className={`h-10 px-3 rounded-xl border flex items-center gap-1.5 text-sm transition-all ${
-                    sortField === f ? 'border-[#ffd3d3] bg-[#fff7f7] text-[#ce0100] font-semibold' : 'border-[#e8e2de] bg-white text-[#555] hover:bg-[#faf7f5]'
-                  }`}>
-                  {label} <SortIcon field={f} />
-                </button>
-              ))}
-            </div>
-
-            {/* View */}
-            <div className="flex items-center gap-1 bg-[#f9f7f5] border border-[#e8e2de] rounded-xl p-1">
+            {/* View switcher */}
+            <div className="flex items-center gap-1 bg-[#f9f7f5] border border-[#e8e2de] rounded-xl p-1 flex-shrink-0">
               {([['cards', Squares2X2Icon],['table', TableCellsIcon],['compact', ListBulletIcon]] as [ViewMode, any][]).map(([v, Icon]) => (
                 <button key={v} onClick={() => setView(v)}
                   className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
@@ -223,7 +210,19 @@ export default function CitatePage() {
             </div>
           </div>
 
-          {/* Row 2 — filters */}
+          {/* Row 2 — sort */}
+          <div className="flex items-center gap-2 mb-3 overflow-x-auto pb-0.5">
+            {([['created_at','Dată'],['public_id','ID'],['progress','Progres']] as [SortField,string][]).map(([f, label]) => (
+              <button key={f} onClick={() => toggleSort(f)}
+                className={`h-8 px-3 rounded-xl border flex items-center gap-1.5 text-sm transition-all flex-shrink-0 ${
+                  sortField === f ? 'border-[#ffd3d3] bg-[#fff7f7] text-[#ce0100] font-semibold' : 'border-[#e8e2de] bg-white text-[#555] hover:bg-[#faf7f5]'
+                }`}>
+                {label} <SortIcon field={f} />
+              </button>
+            ))}
+          </div>
+
+          {/* Row 3 — filters */}
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-sm text-[#666] mr-1">Tip:</span>
             {CITATION_TYPES.map((t) => (
@@ -349,8 +348,8 @@ export default function CitatePage() {
 
             {/* ═══ TABLE ═══ */}
             {view === 'table' && (
-              <div className="bg-white border border-[#e8e2de] rounded-2xl overflow-x-hidden shadow-sm">
-                <table className="w-full">
+              <div className="bg-white border border-[#e8e2de] rounded-2xl overflow-x-auto shadow-sm">
+                <table className="w-full min-w-[700px]">
                   <thead>
                     <tr className="border-b border-[#f0e8e4]">
                       {[['ID','public_id'],['Citat',null],['Autor',null],['Progres','progress'],['Limbi',null],['Stare',null],['Dată','created_at'],['',null]].map(([label, field]) => (
@@ -409,14 +408,14 @@ export default function CitatePage() {
 
             {/* ═══ COMPACT ═══ */}
             {view === 'compact' && (
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-2 overflow-x-auto">
                 {filtered.map((text) => {
                   const count = getCompletedCount(text)
                   const ds = getDisplayStatus(text)
                   const accent = STATUS_ACCENT[ds] ?? '#ce0100'
                   return (
                     <div key={text.id} onClick={() => router.push(`/citate/${text.id}`)}
-                      className="bg-white border border-[#e8e2de] rounded-xl px-5 py-3.5 flex items-center gap-4 cursor-pointer hover:bg-[#faf7f5] hover:border-[#ddd4cf] transition-all">
+                      className="bg-white border border-[#e8e2de] rounded-xl px-4 md:px-5 py-3.5 flex items-center gap-3 md:gap-4 cursor-pointer hover:bg-[#faf7f5] hover:border-[#ddd4cf] transition-all min-w-[600px]">
                       <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: accent }} />
                       <span className="w-16 flex-shrink-0 text-sm font-bold text-[#ce0100]">{text.public_id}</span>
                       <p className="flex-1 text-sm text-[#222] truncate">"{text.citat_ro}"</p>

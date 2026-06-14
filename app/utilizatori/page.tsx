@@ -103,6 +103,7 @@ export default function UtilizatoriPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [roleFilter, setRoleFilter] = useState<string[]>([])
+  const [mobileTab, setMobileTab] = useState<'lista' | 'detalii'>('lista')
 
   useEffect(() => {
     const load = async () => {
@@ -189,17 +190,17 @@ export default function UtilizatoriPage() {
   return (
     <main className="flex min-h-screen bg-[#f9f7f5] overflow-x-hidden">
       <Sidebar />
-      <div className="flex-1 w-0 px-10 py-8 overflow-y-auto">
+      <div className="flex-1 w-0 px-4 py-6 md:px-10 md:py-8 overflow-y-auto overflow-x-hidden">
 
         {/* Header */}
-        <div className="flex items-start justify-between mb-8">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-8">
           <div>
-            <h1 className="text-[52px] leading-none tracking-tight font-light text-[#111] mb-3">Utilizatori</h1>
+            <h1 className="text-[40px] md:text-[52px] leading-none tracking-tight font-light text-[#111] mb-3">Utilizatori</h1>
             <div className="w-10 h-[3px] rounded-full bg-[#ce0100] mb-4" />
             <p className="text-base text-[#666]">Gestionează membrii echipei TP Translator.</p>
           </div>
           <button onClick={() => setOpenCreateModal(true)}
-            className="mt-2 h-11 px-6 rounded-xl bg-[#ce0100] text-white text-sm font-semibold shadow-[0_6px_16px_rgba(206,1,0,0.22)] hover:bg-[#a80000] transition-all">
+            className="sm:mt-2 h-11 px-6 rounded-xl bg-[#ce0100] text-white text-sm font-semibold shadow-[0_6px_16px_rgba(206,1,0,0.22)] hover:bg-[#a80000] transition-all">
             + Utilizator nou
           </button>
         </div>
@@ -212,30 +213,42 @@ export default function UtilizatoriPage() {
             { label: 'Inactivi',   value: users.filter(u => !u.active).length,  color: '#888'    },
             { label: 'Traducători',value: users.filter(u => u.role === 'Traducător').length, color: '#1e40af' },
           ].map(({ label, value, color }) => (
-            <div key={label} className="bg-white border border-[#e8e2de] rounded-2xl px-5 h-20 flex items-center gap-4 shadow-sm">
+            <div key={label} className="bg-white border border-[#e8e2de] rounded-2xl px-4 py-3 md:px-5 md:h-20 flex items-center gap-3 md:gap-4 shadow-sm">
               <div className="w-2 h-8 rounded-full flex-shrink-0" style={{ background: color }} />
-              <div>
-                <p className="text-sm text-[#666]">{label}</p>
+              <div className="min-w-0">
+                <p className="text-sm text-[#666] truncate">{label}</p>
                 <p className="text-2xl font-light text-[#111] leading-none">{value}</p>
               </div>
             </div>
           ))}
         </div>
 
+        {/* Mobile tabs */}
+        <div className="flex md:hidden items-center gap-1.5 mb-4">
+          {(['lista', 'detalii'] as const).map(tab => (
+            <button key={tab} onClick={() => setMobileTab(tab)}
+              className={`h-8 px-4 rounded-xl text-[11px] font-semibold flex-1 transition-all capitalize ${
+                mobileTab === tab ? 'bg-[#ce0100] text-white' : 'bg-white border border-[#e8e2de] text-[#666]'
+              }`}>
+              {tab === 'lista' ? 'Listă' : 'Detalii'}
+            </button>
+          ))}
+        </div>
+
         {/* Main layout */}
-        <div className="grid grid-cols-[1fr_380px] gap-5">
+        <div className="flex flex-col md:grid md:grid-cols-[1fr_380px] gap-5">
 
           {/* Left — user list */}
-          <div className="flex flex-col gap-4">
+          <div className={`${mobileTab !== 'lista' ? 'hidden' : ''} md:flex flex-col gap-4`}>
 
             {/* Search + filter */}
-            <div className="bg-white border border-[#e8e2de] rounded-2xl px-5 py-4 shadow-sm">
+            <div className="bg-white border border-[#e8e2de] rounded-2xl px-4 md:px-5 py-4 shadow-sm">
               <div className="flex items-center gap-3 bg-[#f9f7f5] border border-[#e8e2de] rounded-xl px-4 h-10 mb-4">
                 <MagnifyingGlassIcon className="w-4 h-4 text-[#999] flex-shrink-0" />
                 <input type="text" placeholder="Caută după nume, email sau rol..."
                   value={search} onChange={e => setSearch(e.target.value)}
-                  className="flex-1 bg-transparent outline-none text-sm text-[#111] placeholder:text-[#bbb]" />
-                {search && <button onClick={() => setSearch('')} className="text-xs text-[#999] hover:text-[#ce0100]">✕</button>}
+                  className="flex-1 min-w-0 bg-transparent outline-none text-sm text-[#111] placeholder:text-[#bbb]" />
+                {search && <button onClick={() => setSearch('')} className="text-xs text-[#999] hover:text-[#ce0100] flex-shrink-0">✕</button>}
               </div>
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-sm text-[#666] mr-1">Rol:</span>
@@ -270,8 +283,8 @@ export default function UtilizatoriPage() {
                 const avatarColor = AVATAR_COLOR[user.role] ?? '#888'
                 return (
                   <div key={user.id}
-                    onClick={() => setSelected(user)}
-                    className={`flex items-center gap-4 px-5 py-4 cursor-pointer transition-colors ${
+                    onClick={() => { setSelected(user); setMobileTab('detalii') }}
+                    className={`flex items-center gap-3 md:gap-4 px-4 md:px-5 py-4 cursor-pointer transition-colors ${
                       isSelected ? 'bg-[#fff7f7] border-l-[3px] border-l-[#ce0100]' : 'hover:bg-[#faf7f5] border-l-[3px] border-l-transparent'
                     } ${i < filtered.length - 1 ? 'border-b border-[#f8f3f0]' : ''}`}>
 
@@ -308,11 +321,12 @@ export default function UtilizatoriPage() {
           </div>
 
           {/* Right — detail panel */}
+          <div className={`${mobileTab !== 'detalii' ? 'hidden' : ''} md:flex md:flex-col`}>
           {selected ? (
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-4 w-full">
 
               {/* Profile card */}
-              <div className="bg-white border border-[#e8e2de] rounded-2xl p-6 shadow-sm">
+              <div className="bg-white border border-[#e8e2de] rounded-2xl p-5 md:p-6 shadow-sm">
                 {/* Avatar + name */}
                 <div className="flex flex-col items-center text-center mb-6">
                   <div className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-bold text-white mb-4 shadow-lg"
@@ -336,17 +350,17 @@ export default function UtilizatoriPage() {
                       }
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 mt-4">
+                  <div className="flex items-center gap-2 mt-4 w-full">
                     <button onClick={() => setOpenEditModal(true)}
                       className="flex-1 h-9 px-4 rounded-xl border border-[#e8e2de] bg-white text-sm font-semibold text-[#444] hover:bg-[#faf7f5] transition-all flex items-center justify-center gap-2">
                       Editează
                     </button>
                     <button onClick={() => setShowCredentialsModal(true)}
-                      className="h-9 w-9 rounded-xl border border-[#e8e2de] bg-white flex items-center justify-center text-[#444] hover:bg-[#faf7f5] transition-all" title="Trimite credențiale">
+                      className="h-9 w-9 rounded-xl border border-[#e8e2de] bg-white flex items-center justify-center text-[#444] hover:bg-[#faf7f5] transition-all flex-shrink-0" title="Trimite credențiale">
                       <KeyIcon className="w-4 h-4" />
                     </button>
                     <button onClick={() => setShowDeleteModal(true)}
-                      className="h-9 w-9 rounded-xl bg-[#fff1f1] flex items-center justify-center text-[#ce0100] hover:bg-[#ffe0e0] transition-all" title="Șterge utilizator">
+                      className="h-9 w-9 rounded-xl bg-[#fff1f1] flex items-center justify-center text-[#ce0100] hover:bg-[#ffe0e0] transition-all flex-shrink-0" title="Șterge utilizator">
                       <TrashIcon className="w-4 h-4" />
                     </button>
                   </div>
@@ -359,18 +373,18 @@ export default function UtilizatoriPage() {
                     { icon: ClockIcon, label: 'Membru de',    value: formatJoinDate(selected.created_at) },
                     { icon: ClockIcon, label: 'Timp în echipă', value: `${timeAgo(selected.created_at)} în echipă` },
                   ].map(({ icon: Icon, label, value }) => (
-                    <div key={label} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-sm text-[#666]">
+                    <div key={label} className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 text-sm text-[#666] flex-shrink-0">
                         <Icon className="w-4 h-4" /> {label}
                       </div>
-                      <span className="text-sm font-semibold text-[#111]">{value}</span>
+                      <span className="text-sm font-semibold text-[#111] text-right">{value}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
               {/* Email actions */}
-              <div className="bg-white border border-[#e8e2de] rounded-2xl p-6 shadow-sm">
+              <div className="bg-white border border-[#e8e2de] rounded-2xl p-5 md:p-6 shadow-sm">
                 <h3 className="text-sm font-semibold text-[#111] mb-1">Trimite email</h3>
                 <p className="text-xs text-[#888] mb-5">Emailul va fi trimis către <strong className="text-[#111]">{selected.email}</strong></p>
 
@@ -421,10 +435,11 @@ export default function UtilizatoriPage() {
 
             </div>
           ) : (
-            <div className="bg-white border border-[#e8e2de] rounded-2xl p-6 shadow-sm flex items-center justify-center h-48">
+            <div className="bg-white border border-[#e8e2de] rounded-2xl p-6 shadow-sm flex items-center justify-center h-48 w-full">
               <p className="text-sm text-[#aaa]">Selectează un utilizator</p>
             </div>
           )}
+          </div>
         </div>
       </div>
       <CreateUserModal
@@ -446,14 +461,14 @@ export default function UtilizatoriPage() {
           onClick={(e) => { if (e.target === e.currentTarget) setShowCredentialsModal(false) }}>
           <div className="bg-white rounded-[28px] w-full max-w-[420px] overflow-x-hidden shadow-[0_32px_80px_rgba(0,0,0,0.2)]">
             <div className="h-[4px] bg-[#ce0100]" />
-            <div className="px-[36px] pt-[32px] pb-[28px]">
+            <div className="px-5 pt-6 pb-5 md:px-[36px] md:pt-[32px] md:pb-[28px]">
               <div className="flex items-center gap-3 mb-[20px]">
                 <div className="w-[42px] h-[42px] rounded-full bg-[#fff4f4] border border-[#ffd3d3] flex items-center justify-center flex-shrink-0">
                   <KeyIcon className="w-[18px] h-[18px] text-[#ce0100]" />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <h3 className="text-[18px] font-semibold text-[#111]">Trimite credențiale</h3>
-                  <p className="text-[12px] text-[#888]">{selected.full_name} · {selected.email}</p>
+                  <p className="text-[12px] text-[#888] truncate">{selected.full_name} · {selected.email}</p>
                 </div>
               </div>
               <label className="text-[11px] font-semibold text-[#666] uppercase tracking-wide block mb-[8px]">Parolă temporară</label>
@@ -490,7 +505,7 @@ export default function UtilizatoriPage() {
           onClick={(e) => { if (e.target === e.currentTarget && !isDeleting) setShowDeleteModal(false) }}>
           <div className="bg-white rounded-[28px] w-full max-w-[400px] overflow-x-hidden shadow-[0_32px_80px_rgba(0,0,0,0.2)]">
             <div className="h-[4px] bg-[#ce0100]" />
-            <div className="px-[36px] pt-[36px] pb-[28px]">
+            <div className="px-5 pt-6 pb-5 md:px-[36px] md:pt-[36px] md:pb-[28px]">
               <div className="flex justify-center mb-[20px]">
                 <div className="w-[64px] h-[64px] rounded-full bg-[#fff1f1] border-[2px] border-[#f4d4d4] flex items-center justify-center">
                   <ExclamationTriangleIcon className="w-[28px] h-[28px] text-[#ce0100]" />

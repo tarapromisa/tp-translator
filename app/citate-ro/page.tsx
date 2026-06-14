@@ -97,20 +97,20 @@ function CitatROModal({ item, users, onClose, onSaved }: {
       style={{ background: 'rgba(10,6,4,0.65)', backdropFilter: 'blur(10px)' }}
       onClick={(e) => { if (e.target === e.currentTarget && saveState !== 'saving') onClose() }}>
       <style>{`@keyframes mIn{from{opacity:0;transform:scale(.94) translateY(16px)}to{opacity:1;transform:scale(1) translateY(0)}}.m-in{animation:mIn .28s cubic-bezier(.22,1,.36,1) forwards}`}</style>
-      <div className="m-in bg-white rounded-[32px] w-full max-w-[540px] overflow-x-hidden shadow-[0_48px_100px_rgba(0,0,0,0.22)]">
-        <div className="h-[4px] bg-[#ce0100]" />
-        <div className="px-[40px] pt-[36px] pb-[32px]">
+      <div className="m-in bg-white rounded-[32px] w-full max-w-[540px] overflow-x-hidden shadow-[0_48px_100px_rgba(0,0,0,0.22)] max-h-[90vh] overflow-y-auto">
+        <div className="h-[4px] bg-[#ce0100] sticky top-0" />
+        <div className="px-5 pt-6 pb-5 md:px-[40px] md:pt-[36px] md:pb-[32px]">
           <div className="flex items-start justify-between mb-[28px]">
             <div>
               <p className="text-[11px] font-semibold tracking-[0.16em] text-[#ce0100] uppercase mb-[6px]">
                 {isEdit ? 'Editează citat RO' : 'Citat nou RO'}
               </p>
-              <h2 className="text-[26px] font-light text-[#111] tracking-tight">
+              <h2 className="text-[22px] md:text-[26px] font-light text-[#111] tracking-tight">
                 {isEdit ? item!.public_id : 'Adaugă un citat'}
               </h2>
             </div>
             <button onClick={onClose} disabled={saveState === 'saving'}
-              className="w-[34px] h-[34px] rounded-full bg-[#faf7f5] border border-[#e8e2de] flex items-center justify-center hover:bg-[#ffe0e0] transition-all">
+              className="w-[34px] h-[34px] rounded-full bg-[#faf7f5] border border-[#e8e2de] flex items-center justify-center hover:bg-[#ffe0e0] transition-all flex-shrink-0">
               <XMarkIcon className="w-[14px] h-[14px] text-[#555]" />
             </button>
           </div>
@@ -187,7 +187,7 @@ function DeleteModal({ item, onClose, onDeleted }: {
       onClick={(e) => { if (e.target === e.currentTarget && !loading) onClose() }}>
       <div className="bg-white rounded-[28px] w-full max-w-[400px] overflow-x-hidden shadow-[0_32px_80px_rgba(0,0,0,0.2)]">
         <div className="h-[4px] bg-[#ce0100]" />
-        <div className="px-[36px] pt-[32px] pb-[28px]">
+        <div className="px-5 pt-6 pb-5 md:px-[36px] md:pt-[32px] md:pb-[28px]">
           <div className="flex justify-center mb-[18px]">
             <div className="w-[60px] h-[60px] rounded-full bg-[#fff1f1] border-[2px] border-[#f4d4d4] flex items-center justify-center">
               <ExclamationTriangleIcon className="w-[26px] h-[26px] text-[#ce0100]" />
@@ -223,6 +223,7 @@ export default function CitateROPage() {
   const [showModal, setShowModal] = useState(false)
   const [showDelete, setShowDelete] = useState(false)
   const [deleteItem, setDeleteItem] = useState<CitatRO | null>(null)
+  const [mobileTab, setMobileTab] = useState<'lista' | 'detalii'>('lista')
 
   const fetchData = async () => {
     setLoading(true)
@@ -273,15 +274,15 @@ export default function CitateROPage() {
       <Sidebar />
       <div className="flex-1 w-0 overflow-x-hidden flex flex-col">
 
-        <div className="px-10 pt-8 pb-6 flex-shrink-0">
-          <div className="flex items-start justify-between mb-6">
+        <div className="px-4 pt-6 pb-4 md:px-10 md:pt-8 md:pb-6 flex-shrink-0">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
             <div>
               <h1 className="text-[32px] md:text-[48px] leading-none tracking-tight font-light text-[#111] mb-3">Citate RO</h1>
               <div className="w-10 h-[3px] rounded-full bg-[#ce0100] mb-3" />
               <p className="text-sm text-[#666]">Texte originale în limba română.</p>
             </div>
             <button onClick={() => { setEditItem(null); setShowModal(true) }}
-              className="mt-2 h-11 px-6 rounded-xl bg-[#ce0100] text-white text-sm font-semibold shadow-[0_6px_16px_rgba(206,1,0,0.22)] hover:bg-[#a80000] transition-all flex items-center gap-2">
+              className="sm:mt-2 h-11 px-6 rounded-xl bg-[#ce0100] text-white text-sm font-semibold shadow-[0_6px_16px_rgba(206,1,0,0.22)] hover:bg-[#a80000] transition-all flex items-center justify-center gap-2">
               <PlusIcon className="w-4 h-4" /> Citat nou
             </button>
           </div>
@@ -292,28 +293,28 @@ export default function CitateROPage() {
               { label: 'Completate', value: stats.completat, color: '#166534' },
               { label: 'Incomplete', value: stats.incomplet, color: '#c05c00' },
             ].map(({ label, value, color }) => (
-              <div key={label} className="bg-white border border-[#e8e2de] rounded-xl px-4 h-16 flex items-center gap-3 shadow-sm">
+              <div key={label} className="bg-white border border-[#e8e2de] rounded-xl px-3 md:px-4 h-16 flex items-center gap-2 md:gap-3 shadow-sm">
                 <div className="w-1.5 h-7 rounded-full flex-shrink-0" style={{ background: color }} />
-                <div>
-                  <p className="text-xs text-[#666]">{label}</p>
+                <div className="min-w-0">
+                  <p className="text-xs text-[#666] truncate">{label}</p>
                   <p className="text-2xl font-light text-[#111] leading-none">{value}</p>
                 </div>
               </div>
             ))}
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="flex-1 flex items-center gap-3 bg-white border border-[#e8e2de] rounded-xl px-4 h-10 shadow-sm">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <div className="flex-1 min-w-0 flex items-center gap-3 bg-white border border-[#e8e2de] rounded-xl px-4 h-10 shadow-sm">
               <MagnifyingGlassIcon className="w-4 h-4 text-[#999] flex-shrink-0" />
               <input type="text" placeholder="Caută după ID, text sau autor..."
                 value={search} onChange={e => setSearch(e.target.value)}
-                className="flex-1 bg-transparent outline-none text-sm text-[#111] placeholder:text-[#bbb]" />
-              {search && <button onClick={() => setSearch('')} className="text-xs text-[#999] hover:text-[#ce0100]">✕</button>}
+                className="flex-1 min-w-0 bg-transparent outline-none text-sm text-[#111] placeholder:text-[#bbb]" />
+              {search && <button onClick={() => setSearch('')} className="text-xs text-[#999] hover:text-[#ce0100] flex-shrink-0">✕</button>}
             </div>
-            <div className="flex items-center gap-1.5 bg-white border border-[#e8e2de] rounded-xl p-1 shadow-sm">
+            <div className="flex items-center gap-1.5 bg-white border border-[#e8e2de] rounded-xl p-1 shadow-sm overflow-x-auto">
               {[['all','Toate'],['Completat','Completate'],['Incomplet','Incomplete']].map(([v, l]) => (
                 <button key={v} onClick={() => setStatusFilter(v)}
-                  className={`h-8 px-3 rounded-lg text-xs font-semibold transition-all ${
+                  className={`h-8 px-3 rounded-lg text-xs font-semibold transition-all flex-shrink-0 ${
                     statusFilter === v ? 'bg-[#ce0100] text-white shadow-sm' : 'text-[#666] hover:text-[#111]'
                   }`}>{l}</button>
               ))}
@@ -321,10 +322,22 @@ export default function CitateROPage() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-x-hidden flex px-10 pb-8 gap-4">
+        {/* Mobile tabs */}
+        <div className="flex md:hidden items-center gap-1.5 px-4 pb-3 flex-shrink-0">
+          {(['lista', 'detalii'] as const).map(tab => (
+            <button key={tab} onClick={() => setMobileTab(tab)}
+              className={`h-8 px-4 rounded-xl text-[11px] font-semibold flex-1 transition-all capitalize ${
+                mobileTab === tab ? 'bg-[#ce0100] text-white' : 'bg-white border border-[#e8e2de] text-[#666]'
+              }`}>
+              {tab === 'lista' ? 'Listă' : 'Detalii'}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex-1 overflow-x-hidden flex flex-col md:flex-row px-4 md:px-10 pb-6 md:pb-8 gap-4">
 
           {/* List */}
-          <div className="w-[420px] flex-shrink-0 bg-white border border-[#e8e2de] rounded-2xl overflow-x-hidden shadow-sm flex flex-col">
+          <div className={`${mobileTab !== 'lista' ? 'hidden' : ''} md:flex md:w-[420px] md:flex-shrink-0 bg-white border border-[#e8e2de] rounded-2xl overflow-x-hidden shadow-sm flex flex-col`}>
             <div className="px-5 py-3 border-b border-[#f0e9e5] flex-shrink-0">
               <p className="text-xs text-[#888]">{filtered.length} {filtered.length === 1 ? 'citat' : 'citate'}</p>
             </div>
@@ -334,7 +347,7 @@ export default function CitateROPage() {
               ) : filtered.length === 0 ? (
                 <p className="text-center py-10 text-sm text-[#888]">Niciun citat găsit.</p>
               ) : filtered.map(item => (
-                <div key={item.id} onClick={() => setSelectedItem(item)}
+                <div key={item.id} onClick={() => { setSelectedItem(item); setMobileTab('detalii') }}
                   className={`flex items-start gap-3 px-5 py-4 cursor-pointer transition-colors ${
                     selectedItem?.id === item.id
                       ? 'bg-[#fff7f7] border-l-[3px] border-l-[#ce0100]'
@@ -358,26 +371,26 @@ export default function CitateROPage() {
           </div>
 
           {/* Detail */}
-          <div className="flex-1 min-w-0">
+          <div className={`${mobileTab !== 'detalii' ? 'hidden' : ''} md:flex flex-1 min-w-0`}>
             {selectedItem ? (
               <AnimatePresence mode="wait">
                 <motion.div key={selectedItem.id}
                   initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.18 }}
-                  className="h-full flex flex-col gap-4">
-                  <div className="bg-white border border-[#e8e2de] rounded-2xl p-6 shadow-sm">
+                  className="h-full w-full flex flex-col gap-4">
+                  <div className="bg-white border border-[#e8e2de] rounded-2xl p-4 md:p-6 shadow-sm">
                     <div className="flex items-start justify-between gap-4 mb-5">
                       <div>
                         <p className="text-[11px] font-bold tracking-[0.16em] text-[#ce0100] uppercase mb-1">Citat RO</p>
-                        <h2 className="text-[32px] font-light text-[#ce0100] tracking-tight leading-none">{selectedItem.public_id}</h2>
+                        <h2 className="text-[28px] md:text-[32px] font-light text-[#ce0100] tracking-tight leading-none">{selectedItem.public_id}</h2>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-shrink-0">
                         <button onClick={() => { setEditItem(selectedItem); setShowModal(true) }}
-                          className="h-9 px-4 rounded-xl border border-[#e8e2de] bg-white text-sm font-semibold text-[#444] hover:bg-[#faf7f5] transition-all flex items-center gap-2">
-                          <PencilSquareIcon className="w-4 h-4" /> Editează
+                          className="h-9 px-3 md:px-4 rounded-xl border border-[#e8e2de] bg-white text-sm font-semibold text-[#444] hover:bg-[#faf7f5] transition-all flex items-center gap-2">
+                          <PencilSquareIcon className="w-4 h-4" /> <span className="hidden sm:inline">Editează</span>
                         </button>
                         <button onClick={() => { setDeleteItem(selectedItem); setShowDelete(true) }}
-                          className="h-9 w-9 rounded-xl bg-[#fff1f1] text-[#ce0100] flex items-center justify-center hover:bg-[#ffe0e0] transition-all">
+                          className="h-9 w-9 rounded-xl bg-[#fff1f1] text-[#ce0100] flex items-center justify-center hover:bg-[#ffe0e0] transition-all flex-shrink-0">
                           <TrashIcon className="w-4 h-4" />
                         </button>
                       </div>
@@ -386,7 +399,7 @@ export default function CitateROPage() {
                     {/* Text original */}
                     <div className="mb-4">
                       <p className="text-[11px] font-semibold text-[#888] uppercase tracking-wide mb-2">Text original</p>
-                      <div className="bg-[#faf7f5] border border-[#f0e9e5] rounded-[14px] px-5 py-4">
+                      <div className="bg-[#faf7f5] border border-[#f0e9e5] rounded-[14px] px-4 md:px-5 py-4">
                         <p className="text-[15px] text-[#555] leading-relaxed italic">"{selectedItem.text_original || '—'}"</p>
                         <p className="text-[13px] text-[#aaa] mt-2">— {selectedItem.autor_original}</p>
                       </div>
@@ -396,21 +409,21 @@ export default function CitateROPage() {
                     <div>
                       <p className="text-[11px] font-semibold text-[#888] uppercase tracking-wide mb-2">Traducere română</p>
                       {(selectedItem as any).citat_ro ? (
-                        <div className="border-l-[3px] border-[#ce0100] pl-5 py-1">
-                          <p className="text-[20px] font-light text-[#111] leading-relaxed italic">"{(selectedItem as any).citat_ro}"</p>
+                        <div className="border-l-[3px] border-[#ce0100] pl-4 md:pl-5 py-1">
+                          <p className="text-[18px] md:text-[20px] font-light text-[#111] leading-relaxed italic">"{(selectedItem as any).citat_ro}"</p>
                           <p className="text-[14px] text-[#888] mt-2">— {selectedItem.autor_original}</p>
                         </div>
                       ) : (
-                        <div className="bg-[#fffafa] border border-dashed border-[#ffd3d3] rounded-[14px] px-5 py-4">
+                        <div className="bg-[#fffafa] border border-dashed border-[#ffd3d3] rounded-[14px] px-4 md:px-5 py-4">
                           <p className="text-[13px] text-[#ccc] italic">Traducerea în română nu a fost adăugată încă.</p>
                         </div>
                       )}
                     </div>
                   </div>
 
-                  <div className="bg-white border border-[#e8e2de] rounded-2xl p-6 shadow-sm">
+                  <div className="bg-white border border-[#e8e2de] rounded-2xl p-4 md:p-6 shadow-sm">
                     <h3 className="text-sm font-semibold text-[#111] mb-4">Detalii</h3>
-                    <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
                       {[
                         { label: 'ID public',        value: selectedItem.public_id },
                         { label: 'Stare',            value: <StatusPill status={selectedItem.status} /> },
@@ -430,7 +443,7 @@ export default function CitateROPage() {
                 </motion.div>
               </AnimatePresence>
             ) : (
-              <div className="h-full bg-white border border-[#e8e2de] rounded-2xl flex items-center justify-center shadow-sm">
+              <div className="h-full w-full bg-white border border-[#e8e2de] rounded-2xl flex items-center justify-center shadow-sm min-h-[200px]">
                 <p className="text-sm text-[#aaa]">Selectează un citat din listă</p>
               </div>
             )}

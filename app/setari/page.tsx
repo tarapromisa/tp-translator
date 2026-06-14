@@ -21,7 +21,7 @@ const LANGUAGES = ['RO','ES','EN','DE','PT','FR','IT']
 
 function Section({ title, sub, icon: Icon, children }: { title: string; sub: string; icon: any; children: React.ReactNode }) {
   return (
-    <div className="bg-white border border-[#f0e9e5] rounded-[24px] p-7 shadow-sm">
+    <div className="bg-white border border-[#f0e9e5] rounded-[24px] p-5 md:p-7 shadow-sm">
       <div className="flex items-center gap-3 mb-6 pb-5 border-b border-[#f4ece9]">
         <div className="w-10 h-10 rounded-[12px] bg-[#fff4f4] flex items-center justify-center flex-shrink-0">
           <Icon className="w-5 h-5 text-[#ce0100]" strokeWidth={1.5} />
@@ -39,7 +39,7 @@ function Section({ title, sub, icon: Icon, children }: { title: string; sub: str
 function SaveBtn({ state, onClick, label = 'Salvează' }: { state: SaveState; onClick: () => void; label?: string }) {
   return (
     <button onClick={onClick} disabled={state === 'saving' || state === 'saved'}
-      className={`h-10 px-6 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all ${
+      className={`h-10 px-6 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all w-full sm:w-auto ${
         state === 'saved' ? 'bg-[#edfaf3] text-[#166534] border border-[#166534]' :
         state === 'error' ? 'bg-[#fff1f1] text-[#ce0100] border border-[#ffd3d3]' :
         'bg-[#ce0100] text-white shadow-[0_4px_12px_rgba(206,1,0,0.22)] hover:bg-[#a80000] disabled:opacity-50'
@@ -162,20 +162,20 @@ export default function SetariPage() {
   )
 
   return (
-    <main className="flex min-h-screen bg-[#f9f7f5] overflow-hidden">
+    <main className="flex min-h-screen bg-[#f9f7f5] overflow-x-hidden">
       <Sidebar />
       <div className="flex-1 min-w-0 px-4 md:px-10 py-6 md:py-8 overflow-y-auto">
 
         <div className="mb-8">
           <p className="text-[11px] font-semibold text-[#9c8e87] uppercase tracking-[0.15em] mb-2">Cont personal</p>
-          <h1 className="text-[32px] md:text-[48px] leading-none tracking-tight font-light text-[#111] mb-3">Setari</h1>
+          <h1 className="text-[32px] md:text-[48px] leading-none tracking-tight font-light text-[#111] mb-3">Setări</h1>
           <div className="w-10 h-[3px] rounded-full bg-[#ce0100] mb-4" />
           <p className="text-sm font-light text-[#666]">Gestioneaza profilul si preferintele tale.</p>
         </div>
 
-        <div className="grid gap-5" style={{ gridTemplateColumns: '1fr 360px' }}>
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_360px] gap-5">
 
-          <div className="flex flex-col gap-5">
+          <div className="flex flex-col gap-5 order-2 md:order-1">
 
             <Section title="Profil" sub="Numele tau si limba de lucru" icon={UserIcon}>
               <div className="flex flex-col gap-4">
@@ -239,7 +239,7 @@ export default function SetariPage() {
               </div>
             </Section>
 
-            <div className="bg-white border border-[#ffd3d3] rounded-[24px] p-7 shadow-sm">
+            <div className="bg-white border border-[#ffd3d3] rounded-[24px] p-5 md:p-7 shadow-sm">
               <div className="flex items-center gap-3 mb-6 pb-5 border-b border-[#ffeaea]">
                 <div className="w-10 h-10 rounded-[12px] bg-[#fff1f1] flex items-center justify-center flex-shrink-0">
                   <ExclamationTriangleIcon className="w-5 h-5 text-[#ce0100]" strokeWidth={1.5} />
@@ -250,24 +250,24 @@ export default function SetariPage() {
                 </div>
               </div>
               <div className="flex flex-col gap-4">
-                <div className="flex items-center justify-between py-3 border-b border-[#ffeaea]">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-3 border-b border-[#ffeaea]">
                   <div>
                     <p className="text-sm font-semibold text-[#111]">Deconecteaza toate sesiunile</p>
                     <p className="text-xs text-[#888] mt-0.5 font-light">Inchide sesiunile active pe toate dispozitivele</p>
                   </div>
                   <button onClick={handleSignOutAll}
-                    className="h-9 px-4 rounded-xl border border-[#ffd3d3] bg-white text-sm font-semibold text-[#ce0100] hover:bg-[#fff1f1] transition-all">
+                    className="h-9 px-4 rounded-xl border border-[#ffd3d3] bg-white text-sm font-semibold text-[#ce0100] hover:bg-[#fff1f1] transition-all flex-shrink-0">
                     Deconecteaza
                   </button>
                 </div>
                 {!isAdmin && (
-                  <div className="flex items-center justify-between py-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-3">
                     <div>
                       <p className="text-sm font-semibold text-[#111]">Sterge contul</p>
                       <p className="text-xs text-[#888] mt-0.5 font-light">Aceasta actiune este permanenta si ireversibila</p>
                     </div>
                     <button onClick={() => setShowDeleteConfirm(true)}
-                      className="h-9 px-4 rounded-xl bg-[#ce0100] text-white text-sm font-semibold hover:bg-[#a80000] transition-all">
+                      className="h-9 px-4 rounded-xl bg-[#ce0100] text-white text-sm font-semibold hover:bg-[#a80000] transition-all flex-shrink-0">
                       Sterge contul
                     </button>
                   </div>
@@ -277,9 +277,9 @@ export default function SetariPage() {
 
           </div>
 
-          <div className="flex flex-col gap-5">
+          <div className="flex flex-col gap-5 order-1 md:order-2">
 
-            <div className="bg-white border border-[#f0e9e5] rounded-[24px] p-7 shadow-sm">
+            <div className="bg-white border border-[#f0e9e5] rounded-[24px] p-5 md:p-7 shadow-sm">
               <div className="flex items-center gap-3 mb-6 pb-5 border-b border-[#f4ece9]">
                 <div className="w-10 h-10 rounded-[12px] bg-[#fff4f4] flex items-center justify-center flex-shrink-0">
                   <CameraIcon className="w-5 h-5 text-[#ce0100]" strokeWidth={1.5} />
@@ -319,7 +319,7 @@ export default function SetariPage() {
               </div>
             </div>
 
-            <div className="bg-white border border-[#f0e9e5] rounded-[24px] p-7 shadow-sm">
+            <div className="bg-white border border-[#f0e9e5] rounded-[24px] p-5 md:p-7 shadow-sm">
               <h3 className="text-sm font-semibold text-[#111] mb-4">Informatii cont</h3>
               <div className="flex flex-col gap-3">
                 {[
@@ -345,7 +345,7 @@ export default function SetariPage() {
           onClick={e => { if (e.target === e.currentTarget) setShowDeleteConfirm(false) }}>
           <div className="bg-white rounded-[28px] w-full max-w-[420px] overflow-hidden shadow-[0_32px_80px_rgba(0,0,0,0.2)]">
             <div className="h-[4px] bg-[#ce0100]" />
-            <div className="px-8 pt-8 pb-7">
+            <div className="px-5 pt-6 pb-5 md:px-8 md:pt-8 md:pb-7">
               <div className="flex justify-center mb-5">
                 <div className="w-14 h-14 rounded-full bg-[#fff1f1] border-2 border-[#f4d4d4] flex items-center justify-center">
                   <ExclamationTriangleIcon className="w-6 h-6 text-[#ce0100]" />

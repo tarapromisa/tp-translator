@@ -53,7 +53,7 @@ export default function Sidebar() {
       {/* Logo */}
       <div style={{ padding: '24px 20px 18px', flexShrink: 0 }}>
         <div className="flex items-center justify-between">
-          <img src="/logo.png" alt="TP Translator" style={{ width: '100px' }} />
+          <img src="/logo.png" alt="TP Translator" style={{ height: '52px', width: 'auto', objectFit: 'contain' }} />
           <button onClick={() => setMobileOpen(false)} className="md:hidden w-8 h-8 rounded-full bg-[#f0e9e5] flex items-center justify-center">
             <XMarkIcon className="w-4 h-4 text-[#555]" />
           </button>
@@ -139,9 +139,9 @@ export default function Sidebar() {
   return (
     <>
       {/* Mobile top bar */}
-      <div className="md:hidden fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 h-14"
+      <div className="md:hidden fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 h-16"
         style={{ background: 'rgba(252,251,250,0.95)', backdropFilter: 'blur(20px)', borderBottom: '1px solid #f3ece8' }}>
-        <img src="/logo.png" alt="TP Translator" style={{ width: '80px' }} />
+        <img src="/logo.png" alt="TP Translator" style={{ height: '44px', width: 'auto', objectFit: 'contain' }} />
         <div className="flex items-center gap-3">
           {/* Current page avatar */}
           <div style={{
