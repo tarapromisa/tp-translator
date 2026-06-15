@@ -10,6 +10,7 @@ import {
   HomeIcon, BookOpenIcon, UsersIcon,
   ShieldCheckIcon, ChartBarIcon, Cog8ToothIcon,
   EnvelopeIcon, DocumentTextIcon, Bars3Icon, XMarkIcon,
+  CalendarDaysIcon,
 } from '@heroicons/react/24/outline'
 
 const ALL_NAV = [
@@ -17,6 +18,7 @@ const ALL_NAV = [
   { label: 'Citate',         href: '/citate',         Icon: Quote,            roles: ['Admin','Coordonator principal','Coordonator'] },
   { label: 'Versete',        href: '/versete',        Icon: BookOpenIcon,     roles: ['Admin','Coordonator principal','Coordonator'] },
   { label: 'Citate RO',      href: '/citate-ro',      Icon: DocumentTextIcon, roles: ['Admin','Coordonator principal','Coordonator','Traducător_RO'] },
+  { label: 'Calendar',       href: '/calendar',       Icon: CalendarDaysIcon, roles: ['Admin','Coordonator principal','Coordonator'] },
   { label: 'Utilizatori',    href: '/utilizatori',    Icon: UsersIcon,        roles: ['Admin','Coordonator principal','Coordonator'] },
   { label: 'Validări',       href: '/validari',       Icon: ShieldCheckIcon,  roles: ['Admin','Coordonator principal'] },
   { label: 'Mail TLP',       href: '/mail-tlp',       Icon: EnvelopeIcon,     roles: ['Admin','Coordonator principal','Coordonator'] },

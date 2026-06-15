@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import CreateVersetModal from '@/components/CreateVersetModal'
 import AnimatedCounter from '@/components/AnimatedCounter'
+import ReferinteTab from '@/components/ReferinteTab'
+import { useUser } from '@/context/UserContext'
 import { supabase } from '@/lib/supabase'
 import {
   BellIcon,
@@ -38,6 +40,7 @@ type VersetRow = {
 type ViewMode = 'cards' | 'table' | 'compact'
 type SortField = 'created_at' | 'public_id' | 'progress'
 type SortDir = 'asc' | 'desc'
+type PageTab = 'versete' | 'referinte'
 
 const LANG_FIELDS = [
   { code: 'RO', field: 'verset_ro' }, { code: 'ES', field: 'verset_es' },
@@ -81,6 +84,7 @@ function StatusPill({ status }: { status: string }) {
 // ── Main ─────────────────────────────────────────────────────────
 export default function VersetePage() {
   const router = useRouter()
+  const { profile } = useUser()
   const [versets, setVersets] = useState<VersetRow[]>([])
   const [loading, setLoading] = useState(true)
   const [openCreateModal, setOpenCreateModal] = useState(false)
@@ -89,6 +93,11 @@ export default function VersetePage() {
   const [statusFilter, setStatusFilter] = useState<string[]>([])
   const [sortField, setSortField] = useState<SortField>('created_at')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
+  const [activeTab, setActiveTab] = useState<PageTab>('versete')
+
+  const role = profile?.role
+  const isAdmin = role === 'Admin'
+  const canSeeReferinte = role === 'Admin' || role === 'Coordonator' || role === 'Coordonator principal'
 
   useEffect(() => {
     supabase.from('versete').select('*').order('created_at', { ascending: false })
@@ -152,267 +161,287 @@ export default function VersetePage() {
           </div>
         </div>
 
-        {/* ── STATS ── */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-          {[
-            { title: 'Versete active', value: stats.total,       Icon: BookOpenIcon,    accent: '#ce0100' },
-            { title: 'În traducere',   value: stats.translating,  Icon: ClockIcon,       accent: '#c05c00' },
-            { title: 'În validare',    value: stats.validating,   Icon: ShieldCheckIcon, accent: '#1e40af' },
-            { title: 'Validate',       value: stats.validated,    Icon: CheckCircleIcon, accent: '#166534' },
-          ].map(({ title, value, Icon, accent }) => (
-            <div key={title} className="bg-white border border-[#e8e2de] rounded-2xl px-4 py-3 md:px-5 md:h-24 flex items-center gap-4 shadow-sm">
-              <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${accent}18` }}>
-                <Icon className="w-5 h-5" style={{ color: accent }} strokeWidth={1.6} />
-              </div>
-              <div>
-                <p className="text-sm text-[#666] mb-1">{title}</p>
-                <p className="text-3xl font-light text-[#111] leading-none"><AnimatedCounter value={value} /></p>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* ── TOOLBAR ── */}
-        <div className="bg-white border border-[#e8e2de] rounded-2xl px-4 md:px-5 py-4 mb-4 shadow-sm">
-          {/* Row 1 — search + view switcher */}
-          <div className="flex items-center gap-2 mb-3">
-            <div className="flex-1 min-w-0 flex items-center gap-3 bg-[#f9f7f5] border border-[#e8e2de] rounded-xl px-4 h-10">
-              <MagnifyingGlassIcon className="w-4 h-4 text-[#999] flex-shrink-0" />
-              <input type="text" placeholder="Caută după referință, text sau ID..."
-                value={search} onChange={e => setSearch(e.target.value)}
-                className="flex-1 min-w-0 bg-transparent outline-none text-sm text-[#111] placeholder:text-[#bbb]" />
-              {search && <button onClick={() => setSearch('')} className="text-xs text-[#999] hover:text-[#ce0100] flex-shrink-0">✕</button>}
-            </div>
-            {/* View */}
-            <div className="flex items-center gap-1 bg-[#f9f7f5] border border-[#e8e2de] rounded-xl p-1 flex-shrink-0">
-              {([['cards', Squares2X2Icon],['table', TableCellsIcon],['compact', ListBulletIcon]] as [ViewMode, any][]).map(([v, Icon]) => (
-                <button key={v} onClick={() => setView(v)}
-                  className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
-                    view === v ? 'bg-white shadow-sm text-[#ce0100]' : 'text-[#aaa] hover:text-[#444]'
-                  }`}>
-                  <Icon className="w-4 h-4" />
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Row 2 — sort */}
-          <div className="flex items-center gap-2 mb-3 overflow-x-auto pb-0.5">
-            {([['created_at','Dată'],['public_id','ID'],['progress','Progres']] as [SortField,string][]).map(([f, label]) => (
-              <button key={f} onClick={() => toggleSort(f)}
-                className={`h-8 px-3 rounded-xl border flex items-center gap-1.5 text-sm transition-all flex-shrink-0 ${
-                  sortField === f ? 'border-[#ffd3d3] bg-[#fff7f7] text-[#ce0100] font-semibold' : 'border-[#e8e2de] bg-white text-[#555] hover:bg-[#faf7f5]'
+        {/* ── PAGE TABS ── */}
+        {canSeeReferinte && (
+          <div className="flex items-center gap-1.5 mb-6">
+            {(['versete', 'referinte'] as const).map(tab => (
+              <button key={tab} onClick={() => setActiveTab(tab)}
+                className={`h-9 px-5 rounded-xl text-[13px] font-semibold transition-all ${
+                  activeTab === tab ? 'bg-[#ce0100] text-white' : 'bg-white border border-[#e8e2de] text-[#666] hover:bg-[#faf7f5]'
                 }`}>
-                {label} <SortIcon field={f} />
+                {tab === 'versete' ? 'Versete' : 'Referințe'}
               </button>
             ))}
           </div>
+        )}
 
-          {/* Row 3 — filters */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm text-[#666] mr-1">Stare:</span>
-            {STATUS_FILTERS.map(s => {
-              const st = STATUS_STYLE[s]
-              return (
-                <button key={s} onClick={() => toggleStatus(s)}
-                  className={`h-7 px-3 rounded-full text-sm font-medium border transition-all ${
-                    statusFilter.includes(s) ? `${st.pill} border-transparent` : 'bg-white text-[#444] border-[#e8e2de] hover:border-[#e0d8d4]'
-                  }`}>{s}</button>
-              )
-            })}
-            {statusFilter.length > 0 && (
-              <button onClick={() => setStatusFilter([])}
-                className="h-7 px-3 rounded-full text-sm text-[#ce0100] border border-[#ffd3d3] bg-[#fff7f7] hover:bg-[#ffe8e8] ml-1 transition-all">
-                Șterge filtrele
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Count */}
-        <p className="text-sm text-[#666] mb-4 pl-1">
-          {filtered.length} {filtered.length === 1 ? 'verset' : 'versete'}{statusFilter.length > 0 || search ? ' filtrate' : ' total'}
-        </p>
-
-        {/* ── CONTENT ── */}
-        {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <p className="text-base text-[#888]">Se încarcă...</p>
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-3">
-            <p className="text-3xl">📖</p>
-            <p className="text-base text-[#888]">Niciun verset găsit.</p>
-          </div>
+        {activeTab === 'referinte' && canSeeReferinte ? (
+          <ReferinteTab isAdmin={isAdmin} />
         ) : (
           <>
-            {/* ═══ CARDS ═══ */}
-            {view === 'cards' && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
-                {filtered.map(v => {
-                  const count = getCompletedCount(v)
-                  const pct = (count / 7) * 100
-                  const ds = getDisplayStatus(v)
-                  const accent = STATUS_ACCENT[ds] ?? '#ce0100'
+            {/* ── STATS ── */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+              {[
+                { title: 'Versete active', value: stats.total,       Icon: BookOpenIcon,    accent: '#ce0100' },
+                { title: 'În traducere',   value: stats.translating,  Icon: ClockIcon,       accent: '#c05c00' },
+                { title: 'În validare',    value: stats.validating,   Icon: ShieldCheckIcon, accent: '#1e40af' },
+                { title: 'Validate',       value: stats.validated,    Icon: CheckCircleIcon, accent: '#166534' },
+              ].map(({ title, value, Icon, accent }) => (
+                <div key={title} className="bg-white border border-[#e8e2de] rounded-2xl px-4 py-3 md:px-5 md:h-24 flex items-center gap-4 shadow-sm">
+                  <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${accent}18` }}>
+                    <Icon className="w-5 h-5" style={{ color: accent }} strokeWidth={1.6} />
+                  </div>
+                  <div>
+                    <p className="text-sm text-[#666] mb-1">{title}</p>
+                    <p className="text-3xl font-light text-[#111] leading-none"><AnimatedCounter value={value} /></p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* ── TOOLBAR ── */}
+            <div className="bg-white border border-[#e8e2de] rounded-2xl px-4 md:px-5 py-4 mb-4 shadow-sm">
+              {/* Row 1 — search + view switcher */}
+              <div className="flex items-center gap-2 mb-3">
+                <div className="flex-1 min-w-0 flex items-center gap-3 bg-[#f9f7f5] border border-[#e8e2de] rounded-xl px-4 h-10">
+                  <MagnifyingGlassIcon className="w-4 h-4 text-[#999] flex-shrink-0" />
+                  <input type="text" placeholder="Caută după referință, text sau ID..."
+                    value={search} onChange={e => setSearch(e.target.value)}
+                    className="flex-1 min-w-0 bg-transparent outline-none text-sm text-[#111] placeholder:text-[#bbb]" />
+                  {search && <button onClick={() => setSearch('')} className="text-xs text-[#999] hover:text-[#ce0100] flex-shrink-0">✕</button>}
+                </div>
+                {/* View */}
+                <div className="flex items-center gap-1 bg-[#f9f7f5] border border-[#e8e2de] rounded-xl p-1 flex-shrink-0">
+                  {([['cards', Squares2X2Icon],['table', TableCellsIcon],['compact', ListBulletIcon]] as [ViewMode, any][]).map(([v, Icon]) => (
+                    <button key={v} onClick={() => setView(v)}
+                      className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
+                        view === v ? 'bg-white shadow-sm text-[#ce0100]' : 'text-[#aaa] hover:text-[#444]'
+                      }`}>
+                      <Icon className="w-4 h-4" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Row 2 — sort */}
+              <div className="flex items-center gap-2 mb-3 overflow-x-auto pb-0.5">
+                {([['created_at','Dată'],['public_id','ID'],['progress','Progres']] as [SortField,string][]).map(([f, label]) => (
+                  <button key={f} onClick={() => toggleSort(f)}
+                    className={`h-8 px-3 rounded-xl border flex items-center gap-1.5 text-sm transition-all flex-shrink-0 ${
+                      sortField === f ? 'border-[#ffd3d3] bg-[#fff7f7] text-[#ce0100] font-semibold' : 'border-[#e8e2de] bg-white text-[#555] hover:bg-[#faf7f5]'
+                    }`}>
+                    {label} <SortIcon field={f} />
+                  </button>
+                ))}
+              </div>
+
+              {/* Row 3 — filters */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-sm text-[#666] mr-1">Stare:</span>
+                {STATUS_FILTERS.map(s => {
+                  const st = STATUS_STYLE[s]
                   return (
-                    <div key={v.id} onClick={() => router.push(`/versete/${v.id}`)}
-                      className="group bg-white border border-[#e8e2de] rounded-2xl overflow-x-hidden cursor-pointer hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(0,0,0,0.09)] transition-all duration-300">
-                      <div className="h-[3px]" style={{ background: accent }} />
-                      <div className="p-5">
-                        {/* Header */}
-                        <div className="flex items-start justify-between gap-3 mb-3">
-                          <div>
-                            <span className="text-[13px] font-bold text-[#ce0100]">{v.public_id}</span>
-                            <span className="text-[12px] text-[#aaa] ml-2">
-                              {v.created_at ? new Date(v.created_at).toLocaleDateString('ro-RO',{day:'2-digit',month:'short'}) : ''}
-                            </span>
-                          </div>
-                          <div className="flex flex-col items-end gap-1">
-                            <span className="text-[10px] text-[#999] uppercase tracking-wide">
-                              {count === 7 ? 'Starea validării' : 'Starea traducerii'}
-                            </span>
-                            <StatusPill status={ds} />
-                          </div>
-                        </div>
-
-                        {/* Reference */}
-                        <h2 className="text-xl font-semibold text-[#111] mb-2">{v.referinta_ro}</h2>
-
-                        {/* Verset text */}
-                        <p className="text-sm text-[#555] leading-relaxed line-clamp-3 mb-5">{v.verset_ro}</p>
-
-                        {/* Progress */}
-                        <div className="mb-4">
-                          <div className="flex justify-between items-center mb-1.5">
-                            <span className="text-xs font-medium text-[#777] uppercase tracking-wide">Progres</span>
-                            <span className="text-xs font-bold text-[#111]">{count}<span className="text-[#aaa] font-normal">/7</span></span>
-                          </div>
-                          <div className="h-1 bg-[#f0e8e4] rounded-full overflow-x-hidden">
-                            <div className="h-full rounded-full transition-all duration-700"
-                              style={{ width: `${pct}%`, background: count === 7 ? '#166534' : '#ce0100' }} />
-                          </div>
-                        </div>
-
-                        {/* Lang pills */}
-                        <div className="flex flex-wrap gap-1.5">
-                          {LANG_FIELDS.map(lang => {
-                            const done = !!(v as any)[lang.field]?.trim()
-                            return (
-                              <span key={lang.code}
-                                className={`inline-flex items-center justify-center h-6 px-2.5 rounded-full text-[11px] font-bold leading-none ${
-                                  done ? 'bg-[#ce0100] text-white' : 'bg-[#f0e8e4] text-[#bbb]'
-                                }`}>{lang.code}</span>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    </div>
+                    <button key={s} onClick={() => toggleStatus(s)}
+                      className={`h-7 px-3 rounded-full text-sm font-medium border transition-all ${
+                        statusFilter.includes(s) ? `${st.pill} border-transparent` : 'bg-white text-[#444] border-[#e8e2de] hover:border-[#e0d8d4]'
+                      }`}>{s}</button>
                   )
                 })}
+                {statusFilter.length > 0 && (
+                  <button onClick={() => setStatusFilter([])}
+                    className="h-7 px-3 rounded-full text-sm text-[#ce0100] border border-[#ffd3d3] bg-[#fff7f7] hover:bg-[#ffe8e8] ml-1 transition-all">
+                    Șterge filtrele
+                  </button>
+                )}
               </div>
-            )}
+            </div>
 
-            {/* ═══ TABLE ═══ */}
-            {view === 'table' && (
-              <div className="bg-white border border-[#e8e2de] rounded-2xl overflow-x-auto shadow-sm w-full">
-                <table className="w-full table-fixed min-w-[700px]">
-                  <colgroup>
-                    <col className="w-[110px]" />
-                    <col className="w-[140px]" />
-                    <col />
-                    <col className="w-[130px]" />
-                    <col className="w-[160px]" />
-                    <col className="w-[140px]" />
-                  </colgroup>
-                  <thead>
-                    <tr className="border-b border-[#f0e8e4]">
-                      {([['ID','public_id'],['Referință',null],['Text RO',null],['Progres','progress'],['Limbi',null],['Stare',null]] as [string, SortField|null][]).map(([label, field]) => (
-                        <th key={label}
-                          onClick={() => field && toggleSort(field)}
-                          className={`px-4 py-3 text-left text-xs font-semibold text-[#666] uppercase tracking-wide ${field ? 'cursor-pointer hover:text-[#ce0100]' : ''}`}>
-                          <div className="flex items-center gap-1">
-                            {label}
-                            {field && <SortIcon field={field} />}
+            {/* Count */}
+            <p className="text-sm text-[#666] mb-4 pl-1">
+              {filtered.length} {filtered.length === 1 ? 'verset' : 'versete'}{statusFilter.length > 0 || search ? ' filtrate' : ' total'}
+            </p>
+
+            {/* ── CONTENT ── */}
+            {loading ? (
+              <div className="flex items-center justify-center py-20">
+                <p className="text-base text-[#888]">Se încarcă...</p>
+              </div>
+            ) : filtered.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-3">
+                <p className="text-3xl">📖</p>
+                <p className="text-base text-[#888]">Niciun verset găsit.</p>
+              </div>
+            ) : (
+              <>
+                {/* ═══ CARDS ═══ */}
+                {view === 'cards' && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+                    {filtered.map(v => {
+                      const count = getCompletedCount(v)
+                      const pct = (count / 7) * 100
+                      const ds = getDisplayStatus(v)
+                      const accent = STATUS_ACCENT[ds] ?? '#ce0100'
+                      return (
+                        <div key={v.id} onClick={() => router.push(`/versete/${v.id}`)}
+                          className="group bg-white border border-[#e8e2de] rounded-2xl overflow-x-hidden cursor-pointer hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(0,0,0,0.09)] transition-all duration-300">
+                          <div className="h-[3px]" style={{ background: accent }} />
+                          <div className="p-5">
+                            {/* Header */}
+                            <div className="flex items-start justify-between gap-3 mb-3">
+                              <div>
+                                <span className="text-[13px] font-bold text-[#ce0100]">{v.public_id}</span>
+                                <span className="text-[12px] text-[#aaa] ml-2">
+                                  {v.created_at ? new Date(v.created_at).toLocaleDateString('ro-RO',{day:'2-digit',month:'short'}) : ''}
+                                </span>
+                              </div>
+                              <div className="flex flex-col items-end gap-1">
+                                <span className="text-[10px] text-[#999] uppercase tracking-wide">
+                                  {count === 7 ? 'Starea validării' : 'Starea traducerii'}
+                                </span>
+                                <StatusPill status={ds} />
+                              </div>
+                            </div>
+
+                            {/* Reference */}
+                            <h2 className="text-xl font-semibold text-[#111] mb-2">{v.referinta_ro}</h2>
+
+                            {/* Verset text */}
+                            <p className="text-sm text-[#555] leading-relaxed line-clamp-3 mb-5">{v.verset_ro}</p>
+
+                            {/* Progress */}
+                            <div className="mb-4">
+                              <div className="flex justify-between items-center mb-1.5">
+                                <span className="text-xs font-medium text-[#777] uppercase tracking-wide">Progres</span>
+                                <span className="text-xs font-bold text-[#111]">{count}<span className="text-[#aaa] font-normal">/7</span></span>
+                              </div>
+                              <div className="h-1 bg-[#f0e8e4] rounded-full overflow-x-hidden">
+                                <div className="h-full rounded-full transition-all duration-700"
+                                  style={{ width: `${pct}%`, background: count === 7 ? '#166534' : '#ce0100' }} />
+                              </div>
+                            </div>
+
+                            {/* Lang pills */}
+                            <div className="flex flex-wrap gap-1.5">
+                              {LANG_FIELDS.map(lang => {
+                                const done = !!(v as any)[lang.field]?.trim()
+                                return (
+                                  <span key={lang.code}
+                                    className={`inline-flex items-center justify-center h-6 px-2.5 rounded-full text-[11px] font-bold leading-none ${
+                                      done ? 'bg-[#ce0100] text-white' : 'bg-[#f0e8e4] text-[#bbb]'
+                                    }`}>{lang.code}</span>
+                                )
+                              })}
+                            </div>
                           </div>
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+
+                {/* ═══ TABLE ═══ */}
+                {view === 'table' && (
+                  <div className="bg-white border border-[#e8e2de] rounded-2xl overflow-x-auto shadow-sm w-full">
+                    <table className="w-full table-fixed min-w-[700px]">
+                      <colgroup>
+                        <col className="w-[110px]" />
+                        <col className="w-[140px]" />
+                        <col />
+                        <col className="w-[130px]" />
+                        <col className="w-[160px]" />
+                        <col className="w-[140px]" />
+                      </colgroup>
+                      <thead>
+                        <tr className="border-b border-[#f0e8e4]">
+                          {([['ID','public_id'],['Referință',null],['Text RO',null],['Progres','progress'],['Limbi',null],['Stare',null]] as [string, SortField|null][]).map(([label, field]) => (
+                            <th key={label}
+                              onClick={() => field && toggleSort(field)}
+                              className={`px-4 py-3 text-left text-xs font-semibold text-[#666] uppercase tracking-wide ${field ? 'cursor-pointer hover:text-[#ce0100]' : ''}`}>
+                              <div className="flex items-center gap-1">
+                                {label}
+                                {field && <SortIcon field={field} />}
+                              </div>
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filtered.map((v, i) => {
+                          const count = getCompletedCount(v)
+                          const ds = getDisplayStatus(v)
+                          return (
+                            <tr key={v.id} onClick={() => router.push(`/versete/${v.id}`)}
+                              className={`cursor-pointer hover:bg-[#faf7f5] transition-colors ${i < filtered.length-1 ? 'border-b border-[#f8f3f0]' : ''}`}>
+                              <td className="px-4 py-3"><span className="text-sm font-bold text-[#ce0100]">{v.public_id}</span></td>
+                              <td className="px-4 py-3"><span className="text-sm font-semibold text-[#111] truncate block">{v.referinta_ro}</span></td>
+                              <td className="px-4 py-3"><p className="text-sm text-[#555] truncate">{v.verset_ro}</p></td>
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-2">
+                                  <div className="flex-1 h-1 bg-[#f0e8e4] rounded-full overflow-x-hidden">
+                                    <div className="h-full rounded-full" style={{ width: `${(count/7)*100}%`, background: count===7?'#166534':'#ce0100' }} />
+                                  </div>
+                                  <span className="text-xs font-bold text-[#111] flex-shrink-0">{count}/7</span>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="flex flex-wrap gap-1">
+                                  {LANG_FIELDS.map(lang => {
+                                    const done = !!(v as any)[lang.field]?.trim()
+                                    return <span key={lang.code} className={`inline-flex items-center justify-center h-5 px-1.5 rounded-full text-[10px] font-bold ${done?'bg-[#ce0100] text-white':'bg-[#f0e8e4] text-[#bbb]'}`}>{lang.code}</span>
+                                  })}
+                                </div>
+                              </td>
+                              <td className="px-4 py-3"><StatusPill status={ds} /></td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {/* ═══ COMPACT ═══ */}
+                {view === 'compact' && (
+                  <div className="bg-white border border-[#e8e2de] rounded-2xl overflow-x-auto shadow-sm">
                     {filtered.map((v, i) => {
                       const count = getCompletedCount(v)
                       const ds = getDisplayStatus(v)
+                      const accent = STATUS_ACCENT[ds] ?? '#ce0100'
                       return (
-                        <tr key={v.id} onClick={() => router.push(`/versete/${v.id}`)}
-                          className={`cursor-pointer hover:bg-[#faf7f5] transition-colors ${i < filtered.length-1 ? 'border-b border-[#f8f3f0]' : ''}`}>
-                          <td className="px-4 py-3"><span className="text-sm font-bold text-[#ce0100]">{v.public_id}</span></td>
-                          <td className="px-4 py-3"><span className="text-sm font-semibold text-[#111] truncate block">{v.referinta_ro}</span></td>
-                          <td className="px-4 py-3"><p className="text-sm text-[#555] truncate">{v.verset_ro}</p></td>
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-2">
-                              <div className="flex-1 h-1 bg-[#f0e8e4] rounded-full overflow-x-hidden">
-                                <div className="h-full rounded-full" style={{ width: `${(count/7)*100}%`, background: count===7?'#166534':'#ce0100' }} />
-                              </div>
-                              <span className="text-xs font-bold text-[#111] flex-shrink-0">{count}/7</span>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="flex flex-wrap gap-1">
-                              {LANG_FIELDS.map(lang => {
-                                const done = !!(v as any)[lang.field]?.trim()
-                                return <span key={lang.code} className={`inline-flex items-center justify-center h-5 px-1.5 rounded-full text-[10px] font-bold ${done?'bg-[#ce0100] text-white':'bg-[#f0e8e4] text-[#bbb]'}`}>{lang.code}</span>
-                              })}
-                            </div>
-                          </td>
-                          <td className="px-4 py-3"><StatusPill status={ds} /></td>
-                        </tr>
+                        <div key={v.id} onClick={() => router.push(`/versete/${v.id}`)}
+                          className={`flex items-center cursor-pointer hover:bg-[#faf7f5] transition-colors min-w-[600px] ${i < filtered.length - 1 ? 'border-b border-[#f8f3f0]' : ''}`}
+                          style={{ minWidth: 0 }}>
+                          {/* Accent bar */}
+                          <div className="w-1 self-stretch flex-shrink-0" style={{ background: accent }} />
+                          {/* ID */}
+                          <div className="w-[110px] flex-shrink-0 px-4 py-3">
+                            <span className="text-sm font-bold text-[#ce0100]">{v.public_id}</span>
+                          </div>
+                          {/* Referinta */}
+                          <div className="w-[140px] flex-shrink-0 px-2 py-3">
+                            <span className="text-sm font-semibold text-[#111] truncate block">{v.referinta_ro}</span>
+                          </div>
+                          {/* Text */}
+                          <div className="flex-1 min-w-0 px-2 py-3">
+                            <p className="text-sm text-[#555] truncate">{v.verset_ro}</p>
+                          </div>
+                          {/* Lang pills */}
+                          <div className="w-[160px] flex-shrink-0 px-2 py-3 flex gap-0.5 flex-wrap">
+                            {LANG_FIELDS.map(lang => {
+                              const done = !!(v as any)[lang.field]?.trim()
+                              return <span key={lang.code} className={`inline-flex items-center justify-center h-5 px-1.5 rounded-full text-[10px] font-bold ${done?'bg-[#ce0100] text-white':'bg-[#f0e8e4] text-[#bbb]'}`}>{lang.code}</span>
+                            })}
+                          </div>
+                          {/* Status */}
+                          <div className="w-[140px] flex-shrink-0 px-3 py-3">
+                            <StatusPill status={ds} />
+                          </div>
+                        </div>
                       )
                     })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {/* ═══ COMPACT ═══ */}
-            {view === 'compact' && (
-              <div className="bg-white border border-[#e8e2de] rounded-2xl overflow-x-auto shadow-sm">
-                {filtered.map((v, i) => {
-                  const count = getCompletedCount(v)
-                  const ds = getDisplayStatus(v)
-                  const accent = STATUS_ACCENT[ds] ?? '#ce0100'
-                  return (
-                    <div key={v.id} onClick={() => router.push(`/versete/${v.id}`)}
-                      className={`flex items-center cursor-pointer hover:bg-[#faf7f5] transition-colors min-w-[600px] ${i < filtered.length - 1 ? 'border-b border-[#f8f3f0]' : ''}`}
-                      style={{ minWidth: 0 }}>
-                      {/* Accent bar */}
-                      <div className="w-1 self-stretch flex-shrink-0" style={{ background: accent }} />
-                      {/* ID */}
-                      <div className="w-[110px] flex-shrink-0 px-4 py-3">
-                        <span className="text-sm font-bold text-[#ce0100]">{v.public_id}</span>
-                      </div>
-                      {/* Referinta */}
-                      <div className="w-[140px] flex-shrink-0 px-2 py-3">
-                        <span className="text-sm font-semibold text-[#111] truncate block">{v.referinta_ro}</span>
-                      </div>
-                      {/* Text */}
-                      <div className="flex-1 min-w-0 px-2 py-3">
-                        <p className="text-sm text-[#555] truncate">{v.verset_ro}</p>
-                      </div>
-                      {/* Lang pills */}
-                      <div className="w-[160px] flex-shrink-0 px-2 py-3 flex gap-0.5 flex-wrap">
-                        {LANG_FIELDS.map(lang => {
-                          const done = !!(v as any)[lang.field]?.trim()
-                          return <span key={lang.code} className={`inline-flex items-center justify-center h-5 px-1.5 rounded-full text-[10px] font-bold ${done?'bg-[#ce0100] text-white':'bg-[#f0e8e4] text-[#bbb]'}`}>{lang.code}</span>
-                        })}
-                      </div>
-                      {/* Status */}
-                      <div className="w-[140px] flex-shrink-0 px-3 py-3">
-                        <StatusPill status={ds} />
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
+                  </div>
+                )}
+              </>
             )}
           </>
         )}
