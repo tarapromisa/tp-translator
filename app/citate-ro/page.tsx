@@ -121,9 +121,21 @@ function CitatROModal({ item, users, onClose, onSaved }: {
                 Text original <span className="text-[#ce0100]">*</span>
               </label>
               <textarea value={textOriginal} onChange={e => setTextOriginal(e.target.value)} rows={4}
-                placeholder="Introdu citatul în română..."
+                placeholder="Introdu citatul în limba originală..."
                 className="w-full rounded-[14px] border border-[#f0e9e5] px-[14px] py-[12px] text-[14px] text-[#111] resize-none outline-none focus:border-[#ce0100] focus:shadow-[0_0_0_3px_rgba(206,1,0,0.07)] transition-all placeholder:text-[#ccc] leading-relaxed" />
             </div>
+
+            {/* Traducere RO — câmpul lipsea, acum e prezent */}
+            <div>
+              <label className="text-[11px] font-semibold text-[#666] uppercase tracking-wide block mb-[6px]">
+                Traducere în română
+              </label>
+              <textarea value={citatRo} onChange={e => setCitatRo(e.target.value)} rows={4}
+                placeholder="Introdu traducerea în română..."
+                className="w-full rounded-[14px] border border-[#f0e9e5] px-[14px] py-[12px] text-[14px] text-[#111] resize-none outline-none focus:border-[#ce0100] focus:shadow-[0_0_0_3px_rgba(206,1,0,0.07)] transition-all placeholder:text-[#ccc] leading-relaxed" />
+              <p className="text-[11px] text-[#999] mt-1">Lasă gol dacă traducerea nu a fost făcută încă — statusul va rămâne "Incomplet".</p>
+            </div>
+
             <div>
               <label className="text-[11px] font-semibold text-[#666] uppercase tracking-wide block mb-[6px]">
                 Autor <span className="text-[#ce0100]">*</span>
@@ -407,7 +419,15 @@ export default function CitateROPage() {
 
                     {/* Traducere RO */}
                     <div>
-                      <p className="text-[11px] font-semibold text-[#888] uppercase tracking-wide mb-2">Traducere română</p>
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-[11px] font-semibold text-[#888] uppercase tracking-wide">Traducere română</p>
+                        {!(selectedItem as any).citat_ro && (
+                          <button onClick={() => { setEditItem(selectedItem); setShowModal(true) }}
+                            className="text-[11px] font-semibold text-[#ce0100] hover:underline">
+                            + Adaugă traducerea
+                          </button>
+                        )}
+                      </div>
                       {(selectedItem as any).citat_ro ? (
                         <div className="border-l-[3px] border-[#ce0100] pl-4 md:pl-5 py-1">
                           <p className="text-[18px] md:text-[20px] font-light text-[#111] leading-relaxed italic">"{(selectedItem as any).citat_ro}"</p>
