@@ -15,8 +15,8 @@ type Props = {
   open: boolean
   onClose: () => void
   onSaved: () => void
-  tarea: TareaCalendarWithStatus | null   // null = creare nouă
-  defaultDate: string | null              // 'YYYY-MM-DD'
+  tarea: TareaCalendarWithStatus | null
+  defaultDate: string | null
 }
 
 export default function TareaModal({ open, onClose, onSaved, tarea, defaultDate }: Props) {
@@ -30,6 +30,8 @@ export default function TareaModal({ open, onClose, onSaved, tarea, defaultDate 
   const [error, setError] = useState<string | null>(null)
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
   const { toasts, showToast } = useToast()
+
+  const isVerset = isValidReference(referintaRo.trim())
 
   useEffect(() => {
     if (tarea) {
@@ -47,7 +49,6 @@ export default function TareaModal({ open, onClose, onSaved, tarea, defaultDate 
   }, [tarea, defaultDate, open])
 
   useEffect(() => {
-    // Încarcă lista de coordonatori (Admin, Coordonator, Coordonator principal)
     supabase
       .from('users')
       .select('id, full_name, role')
@@ -62,13 +63,8 @@ export default function TareaModal({ open, onClose, onSaved, tarea, defaultDate 
 
   const handleSave = async () => {
     setError(null)
-
     if (!data) { setError('Selectează o dată.'); return }
-    if (!referintaRo.trim()) { setError('Introdu o referință biblică.'); return }
-    if (!isValidReference(referintaRo)) {
-      setError('Referința nu a fost recunoscută. Verifică formatul (ex: "Isaia 5:1" sau "1 Samuel 17:45").')
-      return
-    }
+    if (!referintaRo.trim()) { setError('Introdu o descriere sau referință biblică.'); return }
 
     setSaving(true)
 
@@ -114,7 +110,6 @@ export default function TareaModal({ open, onClose, onSaved, tarea, defaultDate 
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full max-w-[480px] bg-white rounded-2xl shadow-[0_30px_80px_rgba(0,0,0,0.15)] overflow-hidden max-h-[90vh] overflow-y-auto">
 
-        {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-[#f0e8e4]">
           <h2 className="text-lg font-semibold text-[#111]">
             {tarea ? 'Editează sarcina' : 'Sarcină nouă'}
@@ -124,26 +119,26 @@ export default function TareaModal({ open, onClose, onSaved, tarea, defaultDate 
           </button>
         </div>
 
-        {/* Body */}
         <div className="p-5 space-y-4">
 
-          {/* Date */}
           <div>
             <label className="text-sm font-medium text-[#444] block mb-1.5">Data</label>
             <input type="date" value={data} onChange={e => setData(e.target.value)}
               className="w-full h-11 rounded-xl border border-[#e8e2de] px-3 text-sm text-[#111] outline-none focus:border-[#ce0100] transition-all bg-[#fcfbfa]" />
           </div>
 
-          {/* Referinta */}
           <div>
-            <label className="text-sm font-medium text-[#444] block mb-1.5">Referință biblică</label>
+            <label className="text-sm font-medium text-[#444] block mb-1.5">Descriere / Referință biblică</label>
             <input type="text" value={referintaRo} onChange={e => setReferintaRo(e.target.value)}
-              placeholder="ex: Isaia 5:1"
+              placeholder="ex: Isaia 5:1 sau Trimite emailuri traducători"
               className="w-full h-11 rounded-xl border border-[#e8e2de] px-3 text-sm text-[#111] outline-none focus:border-[#ce0100] transition-all bg-[#fcfbfa] placeholder:text-[#bbb]" />
-            <p className="text-[11px] text-[#999] mt-1">Formatul standard: "Carte Capitol:Versicul" (ex: "Romani 8:28", "1 Samuel 17:45").</p>
+            {referintaRo.trim() && (
+              <p className={`text-[11px] mt-1 ${isVerset ? 'text-[#166534]' : 'text-[#999]'}`}>
+                {isVerset ? '✓ Referință biblică validă — se va verifica automat' : 'Sarcină generală — fără verificare'}
+              </p>
+            )}
           </div>
 
-          {/* Coordonator */}
           <div>
             <label className="text-sm font-medium text-[#444] block mb-1.5">Asignat lui (opțional)</label>
             <select value={coordonatorId} onChange={e => setCoordonatorId(e.target.value)}
@@ -155,7 +150,6 @@ export default function TareaModal({ open, onClose, onSaved, tarea, defaultDate 
             </select>
           </div>
 
-          {/* Nota */}
           <div>
             <label className="text-sm font-medium text-[#444] block mb-1.5">Notă (opțional)</label>
             <textarea value={nota} onChange={e => setNota(e.target.value)} rows={2}
@@ -170,7 +164,6 @@ export default function TareaModal({ open, onClose, onSaved, tarea, defaultDate 
           )}
         </div>
 
-        {/* Footer */}
         <div className="flex items-center gap-2 px-5 py-4 border-t border-[#f0e8e4]">
           {tarea && (
             <button onClick={() => setConfirmDeleteOpen(true)} disabled={saving}
