@@ -42,7 +42,7 @@ export default function CantariPage() {
   const isAdmin = role === 'Admin'
   const isCoordPrincipal = role === 'Coordonator principal'
   const canEdit = isAdmin || isCoordPrincipal
-  const canCreate = isAdmin
+  const canCreate = isAdmin || isCoordPrincipal
 
   const [cantari, setCantari] = useState<Cantare[]>([])
   const [loading, setLoading] = useState(true)
@@ -215,7 +215,7 @@ export default function CantariPage() {
           parti={parti}
           loadingParti={loadingParti}
           canEdit={canEdit}
-          isAdmin={isAdmin}
+          isAdmin={canCreate}
           onClose={() => setSelected(null)}
           onSaved={() => { fetchCantari(); fetchParti(selected.id) }}
           showToast={showToast}
