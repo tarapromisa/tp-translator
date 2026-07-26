@@ -187,7 +187,7 @@ export default function ProductivitatePage() {
   const [sortBy, setSortBy] = useState<'productivity'|'total'|'inTime'|'avgDays'>('productivity')
   const [sortDir, setSortDir] = useState<'desc'|'asc'>('desc')
   const [page, setPage] = useState(1)
-  const PER_PAGE = 12|'asc'>('desc')
+  const PER_PAGE = 12
   const [view, setView] = useState<'grid'|'table'>('grid')
 
   useEffect(() => {
