@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
+import Pagination from '@/components/Pagination'
 import { supabase } from '@/lib/supabase'
 import {
   CheckCircleIcon,
@@ -311,6 +312,8 @@ export default function ValidariPage() {
   const router = useRouter()
   const [contentTab, setContentTab] = useState<ContentTab>('citate')
   const [statusTab, setStatusTab]   = useState<StatusTab>('asteptare')
+  const [page, setPage] = useState(1)
+  const PER_PAGE = 20
   const [allCitate, setAllCitate]   = useState<CitatRow[]>([])
   const [allVersete, setAllVersete] = useState<VersetRow[]>([])
   const [loading, setLoading]       = useState(true)
@@ -355,6 +358,8 @@ export default function ValidariPage() {
 
   const baseItems  = contentTab === 'citate' ? allCitate : allVersete
   const items      = filterByStatus(baseItems, statusTab)
+  const totalPages = Math.ceil(items.length / PER_PAGE)
+  const paginated  = items.slice((page - 1) * PER_PAGE, page * PER_PAGE)
 
   const counts = {
     citate:   { asteptare: allCitate.filter(i=>i.validation==='În așteptare').length,  validat: allCitate.filter(i=>i.validation==='Validat').length,  refuzat: allCitate.filter(i=>i.validation==='Refuzat').length },
@@ -407,7 +412,7 @@ export default function ValidariPage() {
         {/* Content tabs */}
         <div className="flex items-center gap-2 mb-4">
           {(['citate','versete'] as ContentTab[]).map(t => (
-            <button key={t} onClick={() => setContentTab(t)}
+            <button key={t} onClick={() => { setContentTab(t); setPage(1) }}}
               className={`h-9 px-5 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all capitalize ${
                 contentTab === t ? 'bg-[#ce0100] text-white shadow-[0_4px_12px_rgba(206,1,0,0.22)]' : 'bg-white border border-[#e8e2de] text-[#444] hover:bg-[#faf7f5]'
               }`}>
@@ -424,7 +429,7 @@ export default function ValidariPage() {
           {STATUS_TABS.map(({ key, label, color }) => {
             const count = counts[contentTab][key]
             return (
-              <button key={key} onClick={() => setStatusTab(key)}
+              <button key={key} onClick={() => { setStatusTab(key); setPage(1) }}}
                 className={`h-8 px-4 rounded-lg text-[12px] font-semibold flex items-center gap-1.5 transition-all ${
                   statusTab === key ? 'bg-white shadow-sm text-[#111]' : 'text-[#888] hover:text-[#444]'
                 }`}>
@@ -465,7 +470,7 @@ export default function ValidariPage() {
           </div>
         ) : (
           <div className="bg-white border border-[#e8e2de] rounded-2xl overflow-x-hidden shadow-sm divide-y divide-[#f8f3f0]">
-            {items.map(item => (
+            {paginated.map(item => (
               <ItemRow
                 key={item.id}
                 item={item}
@@ -482,6 +487,17 @@ export default function ValidariPage() {
               />
             ))}
           </div>
+        )}
+
+        {items.length > PER_PAGE && (
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            totalItems={items.length}
+            itemsPerPage={PER_PAGE}
+            onPageChange={setPage}
+            label={contentTab === 'citate' ? 'citate' : 'versete'}
+          />
         )}
       </div>
 

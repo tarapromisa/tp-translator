@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Sidebar from '@/components/Sidebar'
+import Pagination from '@/components/Pagination'
 import { supabase } from '@/lib/supabase'
 import {
   UserIcon, ChartBarIcon, ClockIcon, CheckCircleIcon,
@@ -185,6 +186,8 @@ export default function ProductivitatePage() {
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState<'productivity'|'total'|'inTime'|'avgDays'>('productivity')
   const [sortDir, setSortDir] = useState<'desc'|'asc'>('desc')
+  const [page, setPage] = useState(1)
+  const PER_PAGE = 12|'asc'>('desc')
   const [view, setView] = useState<'grid'|'table'>('grid')
 
   useEffect(() => {
@@ -270,6 +273,9 @@ export default function ProductivitatePage() {
       return sortDir === 'desc' ? vb - va : va - vb
     })
 
+  const totalPages = Math.ceil(filtered.length / PER_PAGE)
+  const paginated = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE)
+
   const totalStats = {
     translators: translatorStats.length,
     totalCitate: translatorStats.reduce((s, t) => s + t.total, 0),
@@ -352,7 +358,7 @@ export default function ProductivitatePage() {
           </div>
         ) : view === 'grid' ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {filtered.map((stats, index) => {
+            {paginated.map((stats, index) => {
               const color = getProductivityColor(stats.productivity)
               return (
                 <div key={stats.translator.id} onClick={() => setSelectedStats(stats)}
@@ -436,7 +442,7 @@ export default function ProductivitatePage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((stats, index) => {
+                {paginated.map((stats, index) => {
                   const color = getProductivityColor(stats.productivity)
                   return (
                     <tr key={stats.translator.id} onClick={() => setSelectedStats(stats)}
@@ -474,6 +480,17 @@ export default function ProductivitatePage() {
               </tbody>
             </table>
           </div>
+        )}
+
+        {filtered.length > PER_PAGE && (
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            totalItems={filtered.length}
+            itemsPerPage={PER_PAGE}
+            onPageChange={setPage}
+            label="traducători"
+          />
         )}
       </div>
 

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import CreateCitatModal from '@/components/CreateCitatModal'
 import AnimatedCounter from '@/components/AnimatedCounter'
+import Pagination from '@/components/Pagination'
 import { supabase } from '@/lib/supabase'
 import {
   BellIcon,
@@ -93,6 +94,8 @@ export default function CitatePage() {
   const [statusFilter, setStatusFilter] = useState<string[]>([])
   const [sortField, setSortField] = useState<SortField>('created_at')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
+  const [page, setPage] = useState(1)
+  const PER_PAGE = 20
 
   useEffect(() => {
     supabase.from('texts').select('*').order('created_at', { ascending: false })
@@ -124,9 +127,12 @@ export default function CitatePage() {
       return sortDir === 'asc' ? (va < vb ? -1 : 1) : (va > vb ? -1 : 1)
     })
 
-  const toggleType = (t: string) => setTypeFilter(p => p.includes(t) ? p.filter(x => x !== t) : [...p, t])
-  const toggleStatus = (s: string) => setStatusFilter(p => p.includes(s) ? p.filter(x => x !== s) : [...p, s])
-  const toggleSort = (f: SortField) => { if (sortField === f) setSortDir(d => d === 'asc' ? 'desc' : 'asc'); else { setSortField(f); setSortDir('desc') } }
+  const toggleType = (t: string) => { setTypeFilter(p => p.includes(t) ? p.filter(x => x !== t) : [...p, t]); setPage(1) }
+  const toggleStatus = (s: string) => { setStatusFilter(p => p.includes(s) ? p.filter(x => x !== s) : [...p, s]); setPage(1) }
+  const toggleSort = (f: SortField) => { if (sortField === f) setSortDir(d => d === 'asc' ? 'desc' : 'asc'); else { setSortField(f); setSortDir('desc') }; setPage(1) }
+
+  const totalPages = Math.ceil(filtered.length / PER_PAGE)
+  const paginated = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE)
 
   const sendToWhatsapp = (text: TextRow) => {
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(`*CITAT ${text.public_id}*\n\n${text.citat_ro || ''}\n\n_${text.autor_original || 'Anonim'}_`)}`, '_blank')
@@ -271,7 +277,7 @@ export default function CitatePage() {
             {/* ═══ CARDS ═══ */}
             {view === 'cards' && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
-                {filtered.map((text) => {
+                {paginated.map((text) => {
                   const count = getCompletedCount(text)
                   const pct = (count / 7) * 100
                   const ds = getDisplayStatus(text)
@@ -365,12 +371,12 @@ export default function CitatePage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filtered.map((text, i) => {
+                    {paginated.map((text, i) => {
                       const count = getCompletedCount(text)
                       const ds = getDisplayStatus(text)
                       return (
                         <tr key={text.id} onClick={() => router.push(`/citate/${text.id}`)}
-                          className={`cursor-pointer hover:bg-[#faf7f5] transition-colors ${i < filtered.length - 1 ? 'border-b border-[#f8f3f0]' : ''}`}>
+                          className={`cursor-pointer hover:bg-[#faf7f5] transition-colors ${i < paginated.length - 1 ? 'border-b border-[#f8f3f0]' : ''}`}>
                           <td className="px-5 py-3"><span className="text-sm font-bold text-[#ce0100]">{text.public_id}</span></td>
                           <td className="px-5 py-3"><p className="text-sm text-[#222] line-clamp-1">"{text.citat_ro}"</p></td>
                           <td className="px-5 py-3"><p className="text-sm text-[#666] truncate">{text.autor_original || 'Anonim'}</p></td>
@@ -409,7 +415,7 @@ export default function CitatePage() {
             {/* ═══ COMPACT ═══ */}
             {view === 'compact' && (
               <div className="flex flex-col gap-2 overflow-x-auto">
-                {filtered.map((text) => {
+                {paginated.map((text) => {
                   const count = getCompletedCount(text)
                   const ds = getDisplayStatus(text)
                   const accent = STATUS_ACCENT[ds] ?? '#ce0100'
@@ -437,6 +443,17 @@ export default function CitatePage() {
               </div>
             )}
           </>
+        )}
+
+        {filtered.length > PER_PAGE && (
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            totalItems={filtered.length}
+            itemsPerPage={PER_PAGE}
+            onPageChange={setPage}
+            label="citate"
+          />
         )}
       </div>
 

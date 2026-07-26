@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TP Translator — Platforma de Traduceri Biblice</title>
+  <meta name="description" content="TP Translator este platforma profesională de traduceri biblice a proiectului Țara Promisă — versete, citate și cântări în 7 limbi." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,600;0,700;1,300&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --red: #ce0100; --red-dark: #a80000; --red-light: #fff1f1; --red-mid: #ffd3d3;
+      --bg: #fcfbfa; --white: #fff; --text: #111; --text-mid: #555; --text-light: #999;
+      --border: #e8e2de; --border-light: #f3ece8;
+      --font: 'Open Sans', sans-serif; --font-accent: 'Montserrat', sans-serif;
+    }
+    html { scroll-behavior: smooth; }
+    body { font-family: var(--font); background: var(--bg); color: var(--text); line-height: 1.6; overflow-x: hidden; }
+
+    /* NAV */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      height: 70px; display: flex; align-items: center; justify-content: space-between; padding: 0 6%;
+      background: rgba(252,251,250,0.94); backdrop-filter: blur(24px);
+      border-bottom: 1px solid var(--border-light); transition: box-shadow .3s;
+    }
+    nav.scrolled { box-shadow: 0 4px 24px rgba(0,0,0,.06); }
+    .nav-logo { display: flex; align-items: center; gap: 14px; text-decoration: none; }
+    .nav-logo img { height: 38px; width: auto; }
+    .nav-logo-block { display: flex; flex-direction: column; line-height: 1; }
+    .nav-logo-main { font-family: var(--font-accent); font-size: 16px; font-weight: 700; color: var(--text); letter-spacing: -0.03em; }
+    .nav-logo-sub { font-size: 10px; font-weight: 400; color: var(--text-light); letter-spacing: 0.08em; text-transform: uppercase; margin-top: 2px; }
+    .nav-links { display: flex; align-items: center; gap: 2px; }
+    .nav-links a { text-decoration: none; color: var(--text-mid); font-size: 13.5px; font-weight: 400; padding: 8px 14px; border-radius: 10px; transition: all .15s; }
+    .nav-links a:hover { color: var(--text); background: var(--red-light); }
+    .nav-cta {
+      height: 38px; padding: 0 20px; border-radius: 12px; background: var(--red); color: white !important;
+      font-family: var(--font-accent); font-size: 12px !important; font-weight: 700 !important; letter-spacing: 0.02em;
+      box-shadow: 0 4px 14px rgba(206,1,0,.24); transition: all .2s !important; display: inline-flex; align-items: center; gap: 6px;
+    }
+    .nav-cta:hover { background: var(--red-dark) !important; transform: translateY(-1px); box-shadow: 0 6px 18px rgba(206,1,0,.32) !important; }
+    .nav-hamburger { display: none; background: none; border: none; cursor: pointer; padding: 8px; }
+    .nav-hamburger span { display: block; width: 22px; height: 1.5px; background: var(--text); margin: 5px 0; border-radius: 2px; transition: all .3s; }
+    .mobile-menu {
+      display: none; flex-direction: column; gap: 2px;
+      position: fixed; top: 70px; left: 0; right: 0; z-index: 99;
+      background: rgba(252,251,250,.98); backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border); padding: 12px 6% 24px;
+      box-shadow: 0 8px 32px rgba(0,0,0,.08);
+    }
+    .mobile-menu.open { display: flex; }
+    .mobile-menu a { text-decoration: none; color: var(--text-mid); font-size: 15px; padding: 12px 16px; border-radius: 12px; transition: all .15s; }
+    .mobile-menu a:hover { color: var(--red); background: var(--red-light); }
+    .mobile-menu .nav-cta { text-align: center; margin-top: 6px; justify-content: center; }
+    @media (max-width: 780px) { .nav-links { display: none; } .nav-hamburger { display: block; } }
+
+    /* LAYOUT */
+    section { padding: 110px 6%; }
+    .inner { max-width: 1120px; margin: 0 auto; }
+    .label {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-family: var(--font-accent); font-size: 10px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase;
+      color: var(--red); background: var(--red-light); border: 1px solid var(--red-mid);
+      padding: 5px 14px; border-radius: 100px; margin-bottom: 22px;
+    }
+    .label svg { width: 12px; height: 12px; }
+    .h2 { font-size: clamp(30px, 4.5vw, 50px); font-weight: 300; line-height: 1.1; letter-spacing: -.04em; margin-bottom: 18px; }
+    .h2 em { color: var(--red); font-style: normal; }
+    .lead { font-size: 17px; font-weight: 300; color: var(--text-mid); line-height: 1.75; max-width: 580px; }
+    .red-bar { width: 44px; height: 3px; background: var(--red); border-radius: 2px; margin: 20px 0; }
+    .btn { display: inline-flex; align-items: center; gap: 8px; height: 52px; padding: 0 28px; border-radius: 14px; font-family: var(--font-accent); font-size: 13px; font-weight: 700; text-decoration: none; transition: all .2s; cursor: pointer; border: none; }
+    .btn-red { background: var(--red); color: white; box-shadow: 0 8px 24px rgba(206,1,0,.26); }
+    .btn-red:hover { background: var(--red-dark); transform: translateY(-2px); box-shadow: 0 12px 32px rgba(206,1,0,.34); }
+    .btn-ghost { background: white; color: var(--text); border: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,.04); }
+    .btn-ghost:hover { border-color: var(--red-mid); background: var(--red-light); transform: translateY(-1px); }
+    .btn-white { background: white; color: var(--red); box-shadow: 0 8px 24px rgba(0,0,0,.14); }
+    .btn-white:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(0,0,0,.2); }
+
+    /* HERO */
+    #acasa {
+      min-height: 100vh; padding-top: 150px; padding-bottom: 80px;
+      display: flex; align-items: center;
+      background: linear-gradient(150deg, #fffefe 0%, #fff5f5 50%, #fcfbfa 100%);
+      position: relative; overflow: hidden;
+    }
+    .hero-blob { position: absolute; border-radius: 50%; background: rgba(206,1,0,.035); filter: blur(90px); pointer-events: none; }
+    .hero-blob-1 { width: 700px; height: 700px; top: -300px; right: -200px; }
+    .hero-blob-2 { width: 500px; height: 500px; bottom: -200px; left: -150px; }
+    #acasa .inner { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
+    .hero-eyebrow { display: flex; align-items: center; gap: 10px; font-family: var(--font-accent); font-size: 10px; font-weight: 700; letter-spacing: .22em; text-transform: uppercase; color: var(--red); margin-bottom: 28px; }
+    .hero-eyebrow::before { content: ''; width: 28px; height: 1.5px; background: var(--red); border-radius: 2px; }
+    .hero-title { font-size: clamp(44px, 6vw, 76px); font-weight: 300; line-height: 1.02; letter-spacing: -.055em; margin-bottom: 10px; }
+    .hero-title-brand { font-family: var(--font-accent); font-size: clamp(44px, 6vw, 76px); font-weight: 700; color: var(--red); letter-spacing: -.04em; display: block; }
+    .hero-title-sub { display: block; font-size: clamp(18px, 2.5vw, 28px); font-weight: 300; color: var(--text-mid); letter-spacing: -.02em; margin-top: 6px; }
+    .hero-org { font-family: var(--font-accent); font-size: 11px; font-weight: 500; letter-spacing: .15em; text-transform: uppercase; color: var(--text-light); margin-bottom: 28px; }
+    .hero-desc { font-size: 17px; font-weight: 300; color: var(--text-mid); line-height: 1.75; margin-bottom: 40px; max-width: 480px; }
+    .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 52px; }
+    .hero-stats { display: flex; gap: 36px; padding-top: 36px; border-top: 1px solid var(--border); }
+    .hero-stat-val { font-size: 38px; font-weight: 300; color: var(--text); letter-spacing: -.04em; line-height: 1; }
+    .hero-stat-val sup { font-size: 18px; color: var(--red); vertical-align: super; }
+    .hero-stat-lbl { font-size: 11px; color: var(--text-light); margin-top: 5px; font-family: var(--font-accent); letter-spacing: .05em; text-transform: uppercase; }
+
+    /* Hero card */
+    .hero-visual { position: relative; display: flex; justify-content: center; }
+    .hero-card {
+      background: white; border-radius: 28px; padding: 28px; width: 100%; max-width: 380px;
+      box-shadow: 0 40px 100px rgba(0,0,0,.1); border: 1px solid var(--border); position: relative; z-index: 2;
+    }
+    .hero-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .hero-card-badge { display: inline-flex; align-items: center; gap: 6px; background: #edfaf3; border: 1px solid #bbf0d4; border-radius: 100px; padding: 4px 12px; font-size: 11px; font-weight: 700; color: #166534; font-family: var(--font-accent); }
+    .hero-card-id { font-size: 11px; font-weight: 700; color: var(--red); font-family: var(--font-accent); letter-spacing: .05em; }
+    .hero-card-ref { font-size: 11px; font-weight: 700; color: var(--red); font-family: var(--font-accent); margin-bottom: 8px; }
+    .hero-card-verse { font-size: 15px; font-weight: 300; color: var(--text); line-height: 1.6; font-style: italic; margin-bottom: 20px; }
+    .hero-card-langs { display: flex; gap: 5px; flex-wrap: wrap; padding-top: 18px; border-top: 1px solid var(--border-light); }
+    .lang-pill { height: 24px; padding: 0 10px; border-radius: 100px; font-size: 10px; font-weight: 700; font-family: var(--font-accent); display: inline-flex; align-items: center; }
+    .lang-pill.done { background: var(--red); color: white; }
+    .lang-pill.gray { background: #f0e8e4; color: #bbb; }
+    .hero-float {
+      position: absolute; background: white; border-radius: 16px; padding: 12px 16px;
+      box-shadow: 0 12px 32px rgba(0,0,0,.1); border: 1px solid var(--border); font-size: 12px; font-weight: 600; color: var(--text);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .hero-float svg { flex-shrink: 0; }
+    .hero-float-1 { bottom: -18px; left: -36px; z-index: 3; }
+    .hero-float-2 { top: -16px; right: -28px; z-index: 3; }
+    @media (max-width: 860px) { #acasa .inner { grid-template-columns: 1fr; } .hero-visual { display: none; } }
+
+    /* ABOUT */
+    #despre { background: white; }
+    #despre .inner { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
+    .about-blocks { display: flex; flex-direction: column; gap: 16px; }
+    .about-block { display: flex; gap: 16px; padding: 20px; border-radius: 18px; border: 1px solid var(--border); background: var(--bg); transition: all .2s; }
+    .about-block:hover { border-color: var(--red-mid); background: var(--red-light); box-shadow: 0 8px 24px rgba(206,1,0,.06); }
+    .about-icon { width: 42px; height: 42px; border-radius: 12px; background: var(--red-light); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .about-icon svg { width: 20px; height: 20px; color: var(--red); }
+    .about-block-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+    .about-block-text { font-size: 13px; color: var(--text-mid); line-height: 1.6; font-weight: 300; }
+    .about-quote-side { position: relative; }
+    .about-quote { background: var(--red); color: white; border-radius: 24px; padding: 40px; box-shadow: 0 28px 70px rgba(206,1,0,.3); }
+    .about-quote-mark { font-size: 64px; font-family: Georgia, serif; line-height: .8; opacity: .3; margin-bottom: 10px; }
+    .about-quote-text { font-size: 21px; font-weight: 300; line-height: 1.55; font-style: italic; margin-bottom: 20px; }
+    .about-quote-cite { font-family: var(--font-accent); font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; opacity: .75; }
+    .about-stat-float { position: absolute; bottom: -22px; right: -18px; background: white; border-radius: 16px; padding: 16px 20px; box-shadow: 0 12px 32px rgba(0,0,0,.1); border: 1px solid var(--border); }
+    .about-stat-float strong { display: block; font-size: 28px; font-weight: 300; color: var(--red); letter-spacing: -.03em; line-height: 1; }
+    .about-stat-float span { font-size: 12px; color: var(--text-light); }
+    @media (max-width: 860px) { #despre .inner { grid-template-columns: 1fr; } }
+
+    /* SERVICES */
+    #servicii { background: var(--bg); }
+    .services-head { text-align: center; max-width: 580px; margin: 0 auto 64px; }
+    .services-head .lead { margin: 0 auto; }
+    .services-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+    .svc {
+      background: white; border-radius: 22px; padding: 30px; border: 1px solid var(--border);
+      transition: all .25s; position: relative; overflow: hidden;
+    }
+    .svc::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--red); transform: scaleX(0); transform-origin: left; transition: transform .3s; }
+    .svc:hover { transform: translateY(-5px); box-shadow: 0 20px 56px rgba(0,0,0,.08); border-color: var(--red-mid); }
+    .svc:hover::after { transform: scaleX(1); }
+    .svc-icon { width: 48px; height: 48px; border-radius: 14px; background: var(--red-light); display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
+    .svc-icon svg { width: 22px; height: 22px; color: var(--red); }
+    .svc-title { font-size: 17px; font-weight: 600; color: var(--text); margin-bottom: 10px; }
+    .svc-text { font-size: 13.5px; font-weight: 300; color: var(--text-mid); line-height: 1.7; }
+    .svc-langs { display: flex; gap: 5px; margin-top: 18px; flex-wrap: wrap; }
+    .svc-lang { height: 22px; padding: 0 9px; border-radius: 100px; background: var(--red-light); color: var(--red); font-size: 10px; font-weight: 700; font-family: var(--font-accent); display: flex; align-items: center; }
+    @media (max-width: 860px) { .services-grid { grid-template-columns: 1fr; } }
+    @media (min-width: 600px) and (max-width: 860px) { .services-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 640px) { .ce-traducem-grid { grid-template-columns: 1fr !important; } }
+
+    /* TEAM */
+    #echipa { background: white; }
+    .team-head { text-align: center; max-width: 560px; margin: 0 auto 64px; }
+    .team-head .lead { margin: 0 auto; }
+    .team-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+    .team-card { background: var(--bg); border-radius: 22px; padding: 28px 20px 24px; border: 1px solid var(--border); text-align: center; transition: all .25s; }
+    .team-card:hover { transform: translateY(-4px); box-shadow: 0 16px 44px rgba(0,0,0,.08); border-color: var(--red-mid); }
+    .team-av { width: 68px; height: 68px; border-radius: 50%; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; color: white; background: var(--red); box-shadow: 0 8px 20px rgba(206,1,0,.28); font-family: var(--font-accent); }
+    .team-name { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+    .team-role { font-size: 10px; font-weight: 700; color: var(--red); font-family: var(--font-accent); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 10px; }
+    .team-bio { font-size: 12.5px; font-weight: 300; color: var(--text-mid); line-height: 1.6; }
+    @media (max-width: 860px) { .team-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 480px) { .team-grid { grid-template-columns: 1fr; } }
+
+    /* CTA STRIP */
+    .cta-strip { background: var(--red); padding: 88px 6%; text-align: center; }
+    .cta-strip-title { font-size: clamp(28px, 4vw, 50px); font-weight: 300; letter-spacing: -.04em; color: white; margin-bottom: 14px; line-height: 1.1; }
+    .cta-strip-title strong { font-family: var(--font-accent); font-weight: 700; }
+    .cta-strip-sub { font-size: 17px; font-weight: 300; color: rgba(255,255,255,.8); margin-bottom: 36px; }
+
+    /* CONTACT */
+    #contact { background: var(--bg); }
+    #contact .inner { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: start; }
+    .contact-form { background: white; border-radius: 26px; padding: 36px; border: 1px solid var(--border); box-shadow: 0 8px 32px rgba(0,0,0,.05); }
+    .form-title { font-size: 20px; font-weight: 600; color: var(--text); margin-bottom: 24px; }
+    .form-group { margin-bottom: 16px; }
+    .form-label { display: block; font-family: var(--font-accent); font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--text-mid); margin-bottom: 7px; }
+    .form-input, .form-textarea { width: 100%; border: 1px solid var(--border); border-radius: 12px; padding: 11px 15px; font-family: var(--font); font-size: 14px; color: var(--text); background: var(--bg); outline: none; transition: all .2s; }
+    .form-input:focus, .form-textarea:focus { border-color: var(--red); box-shadow: 0 0 0 3px rgba(206,1,0,.07); background: white; }
+    .form-textarea { resize: vertical; min-height: 116px; }
+    .form-input::placeholder, .form-textarea::placeholder { color: #ccc; }
+    .contact-info-col { display: flex; flex-direction: column; gap: 0; padding-top: 4px; }
+    .contact-info-title { font-size: 36px; font-weight: 300; letter-spacing: -.035em; margin-bottom: 14px; line-height: 1.1; }
+    .contact-info-title em { color: var(--red); font-style: normal; font-family: var(--font-accent); font-weight: 700; }
+    .contact-info-text { font-size: 16px; font-weight: 300; color: var(--text-mid); line-height: 1.75; margin-bottom: 40px; }
+    .contact-item { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 22px; }
+    .contact-item-icon { width: 42px; height: 42px; border-radius: 12px; background: var(--red-light); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .contact-item-icon svg { width: 18px; height: 18px; color: var(--red); }
+    .contact-item-lbl { font-family: var(--font-accent); font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--text-light); }
+    .contact-item-val { font-size: 14px; font-weight: 400; color: var(--text); margin-top: 2px; }
+    @media (max-width: 860px) { #contact .inner { grid-template-columns: 1fr; } }
+
+    /* FOOTER */
+    footer { background: #0e0b09; color: rgba(255,255,255,.45); padding: 44px 6% 32px; }
+    .footer-inner { max-width: 1120px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 18px; }
+    .footer-brand { display: flex; flex-direction: column; }
+    .footer-brand-main { font-family: var(--font-accent); font-size: 16px; font-weight: 700; color: white; letter-spacing: -.02em; }
+    .footer-brand-sub { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; margin-top: 2px; }
+    .footer-copy { font-size: 12px; }
+    .footer-links { display: flex; gap: 20px; }
+    .footer-link { color: rgba(255,255,255,.4); text-decoration: none; font-size: 12px; transition: color .2s; }
+    .footer-link:hover { color: white; }
+
+    /* ANIM */
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes floatUp { 0% { transform: translateY(0) scale(1); opacity: var(--op, .1); } 100% { transform: translateY(-100vh) scale(0.5); opacity: 0; } }
+    .a1 { animation: fadeUp .7s ease-out both; }
+    .a2 { animation: fadeUp .7s .15s ease-out both; }
+    .a3 { animation: fadeUp .7s .3s ease-out both; }
+    @media (max-width: 680px) { #organizatii .inner > div:last-child { grid-template-columns: 1fr !important; } }
+  </style>
+</head>
+<body>
+
+<!-- MODALS -->
+<div id="modal-implic" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(10,6,4,.65);backdrop-filter:blur(12px);align-items:center;justify-content:center;padding:20px">
+  <div style="background:white;border-radius:28px;width:100%;max-width:480px;overflow:hidden;box-shadow:0 40px 100px rgba(0,0,0,.2);animation:fadeUp .3s ease-out both">
+    <div style="height:4px;background:var(--red)"></div>
+    <div style="padding:36px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px">
+        <div>
+          <div style="font-family:var(--font-accent);font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--red);margin-bottom:6px">Implică-te</div>
+          <h3 style="font-size:22px;font-weight:600;color:var(--text);letter-spacing:-.02em">Vreau să mă implic</h3>
+        </div>
+        <button onclick="closeModal('modal-implic')" style="width:34px;height:34px;border-radius:50%;border:1px solid var(--border);background:var(--bg);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:20px">
+        <div>
+          <label style="display:block;font-family:var(--font-accent);font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-mid);margin-bottom:7px">Numele tău</label>
+          <input type="text" placeholder="Ion Popescu" style="width:100%;border:1px solid var(--border);border-radius:12px;padding:11px 15px;font-family:var(--font);font-size:14px;color:var(--text);background:var(--bg);outline:none;transition:border .2s" onfocus="this.style.borderColor='var(--red)'" onblur="this.style.borderColor='var(--border)'" />
+        </div>
+        <div>
+          <label style="display:block;font-family:var(--font-accent);font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-mid);margin-bottom:7px">Email</label>
+          <input type="email" placeholder="ion@email.com" style="width:100%;border:1px solid var(--border);border-radius:12px;padding:11px 15px;font-family:var(--font);font-size:14px;color:var(--text);background:var(--bg);outline:none;transition:border .2s" onfocus="this.style.borderColor='var(--red)'" onblur="this.style.borderColor='var(--border)'" />
+        </div>
+        <div>
+          <label style="display:block;font-family:var(--font-accent);font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-mid);margin-bottom:7px">Cum vrei să te implici?</label>
+          <select style="width:100%;border:1px solid var(--border);border-radius:12px;padding:11px 15px;font-family:var(--font);font-size:14px;color:var(--text);background:var(--bg);outline:none;transition:border .2s" onfocus="this.style.borderColor='var(--red)'" onblur="this.style.borderColor='var(--border)'">
+            <option value="">— Selectează —</option>
+            <option>Traducător</option>
+            <option>Coordonator</option>
+            <option>Validator teologic</option>
+            <option>Altceva</option>
+          </select>
+        </div>
+        <div>
+          <label style="display:block;font-family:var(--font-accent);font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-mid);margin-bottom:7px">Mesaj (opțional)</label>
+          <textarea placeholder="Spune-ne câteva cuvinte despre tine..." rows="3" style="width:100%;border:1px solid var(--border);border-radius:12px;padding:11px 15px;font-family:var(--font);font-size:14px;color:var(--text);background:var(--bg);outline:none;transition:border .2s;resize:none" onfocus="this.style.borderColor='var(--red)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+        </div>
+      </div>
+      <button onclick="submitForm('modal-implic')" class="btn btn-red" style="width:100%;justify-content:center">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Trimite cererea
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="modal-org" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(10,6,4,.65);backdrop-filter:blur(12px);align-items:center;justify-content:center;padding:20px">
+  <div style="background:white;border-radius:28px;width:100%;max-width:480px;overflow:hidden;box-shadow:0 40px 100px rgba(0,0,0,.2);animation:fadeUp .3s ease-out both">
+    <div style="height:4px;background:var(--red)"></div>
+    <div style="padding:36px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px">
+        <div>
+          <div style="font-family:var(--font-accent);font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--red);margin-bottom:6px">Organizație</div>
+          <h3 style="font-size:22px;font-weight:600;color:var(--text);letter-spacing:-.02em">Sunt o organizație</h3>
+        </div>
+        <button onclick="closeModal('modal-org')" style="width:34px;height:34px;border-radius:50%;border:1px solid var(--border);background:var(--bg);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:20px">
+        <div>
+          <label style="display:block;font-family:var(--font-accent);font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-mid);margin-bottom:7px">Numele organizației</label>
+          <input type="text" placeholder="Biserica / Organizația ta" style="width:100%;border:1px solid var(--border);border-radius:12px;padding:11px 15px;font-family:var(--font);font-size:14px;color:var(--text);background:var(--bg);outline:none;transition:border .2s" onfocus="this.style.borderColor='var(--red)'" onblur="this.style.borderColor='var(--border)'" />
+        </div>
+        <div>
+          <label style="display:block;font-family:var(--font-accent);font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-mid);margin-bottom:7px">Persoana de contact</label>
+          <input type="text" placeholder="Numele tău" style="width:100%;border:1px solid var(--border);border-radius:12px;padding:11px 15px;font-family:var(--font);font-size:14px;color:var(--text);background:var(--bg);outline:none;transition:border .2s" onfocus="this.style.borderColor='var(--red)'" onblur="this.style.borderColor='var(--border)'" />
+        </div>
+        <div>
+          <label style="display:block;font-family:var(--font-accent);font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-mid);margin-bottom:7px">Email</label>
+          <input type="email" placeholder="contact@organizatia.com" style="width:100%;border:1px solid var(--border);border-radius:12px;padding:11px 15px;font-family:var(--font);font-size:14px;color:var(--text);background:var(--bg);outline:none;transition:border .2s" onfocus="this.style.borderColor='var(--red)'" onblur="this.style.borderColor='var(--border)'" />
+        </div>
+        <div>
+          <label style="display:block;font-family:var(--font-accent);font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-mid);margin-bottom:7px">Tipul organizației</label>
+          <select style="width:100%;border:1px solid var(--border);border-radius:12px;padding:11px 15px;font-family:var(--font);font-size:14px;color:var(--text);background:var(--bg);outline:none;transition:border .2s" onfocus="this.style.borderColor='var(--red)'" onblur="this.style.borderColor='var(--border)'">
+            <option value="">— Selectează —</option>
+            <option>Biserică locală</option>
+            <option>Organizație misionară</option>
+            <option>Asociație creștină</option>
+            <option>Altceva</option>
+          </select>
+        </div>
+        <div>
+          <label style="display:block;font-family:var(--font-accent);font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-mid);margin-bottom:7px">Ce aveți nevoie?</label>
+          <textarea placeholder="Descrieți pe scurt cum putem colabora..." rows="3" style="width:100%;border:1px solid var(--border);border-radius:12px;padding:11px 15px;font-family:var(--font);font-size:14px;color:var(--text);background:var(--bg);outline:none;transition:border .2s;resize:none" onfocus="this.style.borderColor='var(--red)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+        </div>
+      </div>
+      <button onclick="submitForm('modal-org')" class="btn btn-red" style="width:100%;justify-content:center">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Trimite cererea
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav id="navbar">
+  <a href="#acasa" class="nav-logo">
+    <img src="logo.png" alt="TP Translator" style="height:38px;width:auto" />
+    <div class="nav-logo-block">
+      <span class="nav-logo-main">TP Translator</span>
+      <span class="nav-logo-sub">Țara Promisă</span>
+    </div>
+  </a>
+  <div class="nav-links">
+    <a href="#acasa">Acasă</a>
+    <a href="#despre">Despre</a>
+    <a href="#servicii">Servicii</a>
+    <a href="#echipa">Echipă</a>
+    <a href="#contact">Contact</a>
+    <a href="https://app.tptranslator.com/login" class="nav-cta">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+      Intră în platformă
+    </a>
+  </div>
+  <button class="nav-hamburger" id="hamburger"><span></span><span></span><span></span></button>
+</nav>
+
+<div class="mobile-menu" id="mobile-menu">
+  <a href="#acasa" onclick="closeMobile()">Acasă</a>
+  <a href="#despre" onclick="closeMobile()">Despre noi</a>
+  <a href="#servicii" onclick="closeMobile()">Servicii</a>
+  <a href="#echipa" onclick="closeMobile()">Echipă</a>
+  <a href="#contact" onclick="closeMobile()">Contact</a>
+  <a href="https://app.tptranslator.com/login" class="nav-cta" style="justify-content:center">Intră în platformă</a>
+</div>
+
+<!-- HERO -->
+<section id="acasa">
+  <!-- animated blobs -->
+  <div class="hero-blob hero-blob-1"></div>
+  <div class="hero-blob hero-blob-2"></div>
+
+  <!-- floating particles -->
+  <div id="particles" style="position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:0"></div>
+
+  <!-- animated cross lines -->
+  <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:.06;z-index:0" viewBox="0 0 1200 800" preserveAspectRatio="none">
+    <path d="M0 600C300 400 400 700 700 550C900 430 1000 280 1200 350" stroke="#ce0100" stroke-width="1.5" fill="none"/>
+    <path d="M0 750C250 620 450 820 650 700C850 580 1000 520 1200 580" stroke="#ce0100" stroke-width="1" fill="none" opacity=".5"/>
+    <path d="M100 100C300 200 500 50 800 150C1000 220 1100 100 1200 80" stroke="#ce0100" stroke-width=".8" fill="none" opacity=".4"/>
+  </svg>
+
+  <div class="inner" style="position:relative;z-index:1">
+    <div>
+      <p class="hero-eyebrow a1">Platforma de traduceri Țara Promisă</p>
+      <h1 class="a2" style="margin-bottom:8px">
+        <span class="hero-title-brand" id="brand-anim">TP Translator</span>
+        <span class="hero-title-sub">Cuvântul lui Dumnezeu<br />în fiecare limbă.</span>
+      </h1>
+      <div class="hero-org a2">Un proiect Țara Promisă · Misiune globală</div>
+      <p class="hero-desc a3">
+        Platforma profesională care coordonează traducerea versetelor biblice, citatelor
+        teologice și cântărilor de adorare în 7 limbi, cu validare și management complet al echipei.
+      </p>
+
+      <!-- CTA cards -->
+      <div class="a3" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:40px;max-width:480px">
+        <button onclick="openModal('modal-implic')" style="background:white;border:1px solid var(--border);border-radius:18px;padding:18px 16px;text-align:left;cursor:pointer;transition:all .2s;box-shadow:0 4px 16px rgba(0,0,0,.05)" onmouseenter="this.style.cssText=this.style.cssText+'transform:translateY(-3px);box-shadow:0 12px 28px rgba(0,0,0,.1);border-color:var(--red-mid)'" onmouseleave="this.style.cssText=this.style.cssText.replace('transform:translateY(-3px);','').replace('box-shadow:0 12px 28px rgba(0,0,0,.1);','box-shadow:0 4px 16px rgba(0,0,0,.05);').replace('border-color:var(--red-mid)','border-color:var(--border)')">
+          <div style="width:36px;height:36px;border-radius:10px;background:var(--red-light);display:flex;align-items:center;justify-content:center;margin-bottom:10px">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+          </div>
+          <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;font-family:var(--font-accent)">Vreau să mă implic</div>
+          <div style="font-size:12px;color:var(--text-light);font-weight:300;line-height:1.4">Alătură-te echipei ca traducător sau coordonator</div>
+        </button>
+        <button onclick="openModal('modal-org')" style="background:var(--red);border:1px solid transparent;border-radius:18px;padding:18px 16px;text-align:left;cursor:pointer;transition:all .2s;box-shadow:0 4px 20px rgba(206,1,0,.28)" onmouseenter="this.style.cssText=this.style.cssText+'transform:translateY(-3px);box-shadow:0 12px 32px rgba(206,1,0,.38)'" onmouseleave="this.style.cssText=this.style.cssText.replace('transform:translateY(-3px);','').replace('box-shadow:0 12px 32px rgba(206,1,0,.38)','box-shadow:0 4px 20px rgba(206,1,0,.28)')">
+          <div style="width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;margin-bottom:10px">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          </div>
+          <div style="font-size:14px;font-weight:700;color:white;margin-bottom:4px;font-family:var(--font-accent)">Sunt o organizație</div>
+          <div style="font-size:12px;color:rgba(255,255,255,.75);font-weight:300;line-height:1.4">Biserici și organizații misionare partenere</div>
+        </button>
+      </div>
+
+      <div class="hero-stats a3">
+        <div>
+          <div class="hero-stat-val">7<sup>+</sup></div>
+          <div class="hero-stat-lbl">Limbi active</div>
+        </div>
+        <div>
+          <div class="hero-stat-val">500<sup>+</sup></div>
+          <div class="hero-stat-lbl">Versete traduse</div>
+        </div>
+        <div>
+          <div class="hero-stat-val">12<sup>+</sup></div>
+          <div class="hero-stat-lbl">Colaboratori</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-visual">
+      <!-- floating verse card with typewriter effect -->
+      <div class="hero-card">
+        <div class="hero-card-header">
+          <span class="hero-card-id">VS-0247</span>
+          <span class="hero-card-badge">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Validat
+          </span>
+        </div>
+        <p class="hero-card-ref" id="card-ref">Ioan 3:16</p>
+        <p class="hero-card-verse" id="card-verse">"Căci atât de mult a iubit Dumnezeu lumea, că a dat pe singurul Său Fiu, ca oricine crede în El să nu piară, ci să aibă viața veșnică."</p>
+        <div class="hero-card-langs" id="card-langs">
+          <span class="lang-pill done">RO</span>
+          <span class="lang-pill done">ES</span>
+          <span class="lang-pill done">EN</span>
+          <span class="lang-pill done">DE</span>
+          <span class="lang-pill done">PT</span>
+          <span class="lang-pill done">FR</span>
+          <span class="lang-pill done">IT</span>
+        </div>
+        <!-- progress bar animation -->
+        <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border-light)">
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+            <span style="font-size:11px;color:var(--text-light);font-family:var(--font-accent);font-weight:600;text-transform:uppercase;letter-spacing:.05em">Progres traducere</span>
+            <span style="font-size:11px;font-weight:700;color:var(--text)" id="progress-label">7/7</span>
+          </div>
+          <div style="height:4px;background:var(--border-light);border-radius:2px;overflow:hidden">
+            <div id="progress-bar" style="height:100%;background:var(--red);border-radius:2px;width:0%;transition:width 1.2s cubic-bezier(.22,1,.36,1)"></div>
+          </div>
+        </div>
+      </div>
+      <div class="hero-float hero-float-1">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#166534" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        7/7 limbi complete
+      </div>
+      <div class="hero-float hero-float-2">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ce0100" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        Calitate verificată
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ORGANIZATIONS -->
+<section id="organizatii" style="background:white;padding:90px 6%">
+  <div class="inner">
+    <div style="text-align:center;max-width:580px;margin:0 auto 60px">
+      <span class="label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Parteneri
+      </span>
+      <h2 class="h2">Lucrăm cu <em>organizații</em><br />din toată lumea.</h2>
+      <p class="lead" style="margin:0 auto">Fie că ești o biserică locală care primește materiale traduse, sau o organizație misionară care vrea să colaboreze — TP Translator are loc pentru tine.</p>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+      <!-- Card Biserici -->
+      <div style="border-radius:28px;border:1px solid var(--border);overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.05);transition:all .25s" onmouseenter="this.style.transform='translateY(-4px)';this.style.boxShadow='0 20px 48px rgba(0,0,0,.1)'" onmouseleave="this.style.transform='';this.style.boxShadow='0 8px 32px rgba(0,0,0,.05)'">
+        <div style="background:linear-gradient(135deg,#fff5f5,#fffefe);padding:36px 36px 28px">
+          <div style="width:52px;height:52px;border-radius:16px;background:var(--red-light);border:1px solid var(--red-mid);display:flex;align-items:center;justify-content:center;margin-bottom:20px">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="1.7"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          </div>
+          <h3 style="font-size:22px;font-weight:600;color:var(--text);letter-spacing:-.02em;margin-bottom:10px">Biserici locale</h3>
+          <p style="font-size:15px;font-weight:300;color:var(--text-mid);line-height:1.7;margin-bottom:24px">Primești materiale biblice de calitate — versete, citate și cântări — traduse profesional în limba spaniolă, gata de folosit în predicare, studiu biblic și adorare.</p>
+          <ul style="list-style:none;display:flex;flex-direction:column;gap:10px">
+            <li style="display:flex;align-items:center;gap:10px;font-size:14px;color:var(--text-mid);font-weight:300">
+              <span style="width:20px;height:20px;border-radius:50%;background:#edfaf3;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#166534" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span>
+              Versete biblice traduse în 7 limbi
+            </li>
+            <li style="display:flex;align-items:center;gap:10px;font-size:14px;color:var(--text-mid);font-weight:300">
+              <span style="width:20px;height:20px;border-radius:50%;background:#edfaf3;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#166534" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span>
+              Cântări de adorare în spaniolă
+            </li>
+            <li style="display:flex;align-items:center;gap:10px;font-size:14px;color:var(--text-mid);font-weight:300">
+              <span style="width:20px;height:20px;border-radius:50%;background:#edfaf3;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#166534" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span>
+              Texte validate teologic
+            </li>
+          </ul>
+        </div>
+        <div style="padding:20px 36px 28px;background:white;border-top:1px solid var(--border-light)">
+          <button onclick="openModal('modal-org')" class="btn btn-red" style="width:100%;justify-content:center">
+            Contactează-ne
+          </button>
+        </div>
+      </div>
+
+      <!-- Card Organizatii misionare -->
+      <div style="border-radius:28px;border:1px solid var(--border);overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.05);transition:all .25s" onmouseenter="this.style.transform='translateY(-4px)';this.style.boxShadow='0 20px 48px rgba(0,0,0,.1)'" onmouseleave="this.style.transform='';this.style.boxShadow='0 8px 32px rgba(0,0,0,.05)'">
+        <div style="background:linear-gradient(135deg,#111,#1e1611);padding:36px 36px 28px">
+          <div style="width:52px;height:52px;border-radius:16px;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;margin-bottom:20px">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.7"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          </div>
+          <h3 style="font-size:22px;font-weight:600;color:white;letter-spacing:-.02em;margin-bottom:10px">Organizații misionare</h3>
+          <p style="font-size:15px;font-weight:300;color:rgba(255,255,255,.65);line-height:1.7;margin-bottom:24px">Colaborezi direct cu echipa TP Translator pentru a produce materiale biblice personalizate, adaptate misiunii tale în comunități vorbitoare de spaniolă sau alte limbi.</p>
+          <ul style="list-style:none;display:flex;flex-direction:column;gap:10px">
+            <li style="display:flex;align-items:center;gap:10px;font-size:14px;color:rgba(255,255,255,.6);font-weight:300">
+              <span style="width:20px;height:20px;border-radius:50%;background:rgba(206,1,0,.3);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span>
+              Traduceri personalizate per misiune
+            </li>
+            <li style="display:flex;align-items:center;gap:10px;font-size:14px;color:rgba(255,255,255,.6);font-weight:300">
+              <span style="width:20px;height:20px;border-radius:50%;background:rgba(206,1,0,.3);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span>
+              Acces la echipa de traducători
+            </li>
+            <li style="display:flex;align-items:center;gap:10px;font-size:14px;color:rgba(255,255,255,.6);font-weight:300">
+              <span style="width:20px;height:20px;border-radius:50%;background:rgba(206,1,0,.3);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span>
+              Coordonare și validare completă
+            </li>
+          </ul>
+        </div>
+        <div style="padding:20px 36px 28px;background:#111;border-top:1px solid rgba(255,255,255,.08)">
+          <button onclick="openModal('modal-org')" class="btn btn-red" style="width:100%;justify-content:center">
+            Contactează-ne
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section id="despre">
+  <div class="inner">
+    <div>
+      <span class="label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Despre noi
+      </span>
+      <h2 class="h2">O misiune construită<br /><em>pe Cuvânt.</em></h2>
+      <div class="red-bar"></div>
+      <p class="lead" style="margin-bottom:36px">
+        TP Translator s-a născut din dorința ca fiecare om să poată citi Scriptura în
+        propria sa limbă. Coordonăm echipe de traducători dedicați din România, Spania
+        și alte țări, folosind o platformă construită special pentru acest scop.
+      </p>
+      <div class="about-blocks">
+        <div class="about-block">
+          <div class="about-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          </div>
+          <div>
+            <div class="about-block-title">Fidelitate biblică</div>
+            <div class="about-block-text">Fiecare traducere este verificată și validată de coordonatori cu formare teologică solidă.</div>
+          </div>
+        </div>
+        <div class="about-block">
+          <div class="about-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          </div>
+          <div>
+            <div class="about-block-title">Acoperire globală</div>
+            <div class="about-block-text">Lucrăm în 7 limbi și continuăm să extindem acoperirea geografică a proiectului misionar.</div>
+          </div>
+        </div>
+        <div class="about-block">
+          <div class="about-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <div>
+            <div class="about-block-title">Echipă colaborativă</div>
+            <div class="about-block-text">Platforma TP Translator conectează traducătorii, coordonatorii și validatorii în timp real.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="about-quote-side">
+      <div class="about-quote">
+        <div class="about-quote-mark">"</div>
+        <p class="about-quote-text">Cuvântul Tău este o candelă pentru picioarele mele și o lumină pe cărarea mea.</p>
+        <p class="about-quote-cite">— Psalmi 119:105</p>
+      </div>
+      <div class="about-stat-float">
+        <strong>500+</strong>
+        <span>Versete traduse și validate</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FLOW / CUM FUNCȚIONEAZĂ -->
+<section id="servicii">
+  <div class="inner">
+    <div class="services-head">
+      <span class="label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Cum funcționează
+      </span>
+      <h2 class="h2">De la un verset în română<br /><em>la șapte limbi.</em></h2>
+      <p class="lead">Misiunea noastră este simplă: orice cuvânt din Scriptură să ajungă la orice om, în propria sa limbă. TP Translator coordonează întreg acest proces — de la text la traducere, de la traducere la validare, de la validare la misiune.</p>
+    </div>
+
+    <!-- FLOW STEPS -->
+    <div style="display:flex;flex-direction:column;gap:0;margin-bottom:72px;position:relative">
+      <!-- vertical line -->
+      <div style="position:absolute;left:27px;top:56px;bottom:56px;width:2px;background:linear-gradient(180deg,var(--red-mid),var(--red-mid));opacity:.4;border-radius:2px"></div>
+
+      <!-- Step 1 -->
+      <div style="display:flex;gap:28px;align-items:flex-start;padding:28px 0">
+        <div style="width:56px;height:56px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 8px 20px rgba(206,1,0,.28);position:relative;z-index:1">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        </div>
+        <div style="padding-top:10px">
+          <div style="font-family:var(--font-accent);font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--red);margin-bottom:6px">Pasul 1</div>
+          <div style="font-size:20px;font-weight:600;color:var(--text);margin-bottom:8px;letter-spacing:-.02em">Textul sursă în română</div>
+          <p style="font-size:15px;font-weight:300;color:var(--text-mid);line-height:1.7;max-width:560px">Totul pornește de la textul biblic original în limba română — versete, citate teologice sau cântări de adorare. Coordonatorii introduc și organizează materialul sursă în platformă, cu referințe precise și structură clară.</p>
+        </div>
+      </div>
+
+      <!-- Step 2 -->
+      <div style="display:flex;gap:28px;align-items:flex-start;padding:28px 0">
+        <div style="width:56px;height:56px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 8px 20px rgba(206,1,0,.28);position:relative;z-index:1">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        </div>
+        <div style="padding-top:10px">
+          <div style="font-family:var(--font-accent);font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--red);margin-bottom:6px">Pasul 2</div>
+          <div style="font-size:20px;font-weight:600;color:var(--text);margin-bottom:8px;letter-spacing:-.02em">Traducere în 7 limbi</div>
+          <p style="font-size:15px;font-weight:300;color:var(--text-mid);line-height:1.7;max-width:560px">Echipa de traducători lucrează simultan în spaniolă, engleză, germană, portugheză, franceză și italiană. Fiecare limbă are propriul traducător dedicat, iar progresul este urmărit în timp real. Nicio traducere nu ajunge la pasul următor fără să fie completă.</p>
+          <div style="display:flex;gap:6px;margin-top:14px;flex-wrap:wrap">
+            <span style="height:26px;padding:0 12px;border-radius:100px;background:var(--red);color:white;font-size:10px;font-weight:700;font-family:var(--font-accent);display:inline-flex;align-items:center">RO</span>
+            <span style="height:26px;padding:0 12px;border-radius:100px;background:var(--red-light);color:var(--red);font-size:10px;font-weight:700;font-family:var(--font-accent);display:inline-flex;align-items:center">ES</span>
+            <span style="height:26px;padding:0 12px;border-radius:100px;background:var(--red-light);color:var(--red);font-size:10px;font-weight:700;font-family:var(--font-accent);display:inline-flex;align-items:center">EN</span>
+            <span style="height:26px;padding:0 12px;border-radius:100px;background:var(--red-light);color:var(--red);font-size:10px;font-weight:700;font-family:var(--font-accent);display:inline-flex;align-items:center">DE</span>
+            <span style="height:26px;padding:0 12px;border-radius:100px;background:var(--red-light);color:var(--red);font-size:10px;font-weight:700;font-family:var(--font-accent);display:inline-flex;align-items:center">PT</span>
+            <span style="height:26px;padding:0 12px;border-radius:100px;background:var(--red-light);color:var(--red);font-size:10px;font-weight:700;font-family:var(--font-accent);display:inline-flex;align-items:center">FR</span>
+            <span style="height:26px;padding:0 12px;border-radius:100px;background:var(--red-light);color:var(--red);font-size:10px;font-weight:700;font-family:var(--font-accent);display:inline-flex;align-items:center">IT</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3 -->
+      <div style="display:flex;gap:28px;align-items:flex-start;padding:28px 0">
+        <div style="width:56px;height:56px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 8px 20px rgba(206,1,0,.28);position:relative;z-index:1">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+        <div style="padding-top:10px">
+          <div style="font-family:var(--font-accent);font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--red);margin-bottom:6px">Pasul 3</div>
+          <div style="font-size:20px;font-weight:600;color:var(--text);margin-bottom:8px;letter-spacing:-.02em">Validare teologică</div>
+          <p style="font-size:15px;font-weight:300;color:var(--text-mid);line-height:1.7;max-width:560px">Înainte de a fi folosit, fiecare text trece printr-o etapă de validare teologică. Coordonatorii verifică fidelitatea față de textul original, corectitudinea doctrinară și claritatea exprimării. Numai textele validate sunt considerate complete.</p>
+        </div>
+      </div>
+
+      <!-- Step 4 -->
+      <div style="display:flex;gap:28px;align-items:flex-start;padding:28px 0">
+        <div style="width:56px;height:56px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 8px 20px rgba(206,1,0,.28);position:relative;z-index:1">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </div>
+        <div style="padding-top:10px">
+          <div style="font-family:var(--font-accent);font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--red);margin-bottom:6px">Pasul 4</div>
+          <div style="font-size:20px;font-weight:600;color:var(--text);margin-bottom:8px;letter-spacing:-.02em">Folosit în misiune</div>
+          <p style="font-size:15px;font-weight:300;color:var(--text-mid);line-height:1.7;max-width:560px">Textele validate ajung în materialele de predicare, cântările de adorare și resursele misionare ale proiectului Țara Promisă — în toate limbile, pentru toate popoarele. Acesta este scopul întregului proces.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- What we translate -->
+    <div style="background:white;border-radius:28px;border:1px solid var(--border);padding:48px;box-shadow:0 8px 32px rgba(0,0,0,.05)">
+      <div style="text-align:center;margin-bottom:40px">
+        <div style="font-family:var(--font-accent);font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--red);margin-bottom:10px">Ce traducem</div>
+        <div style="font-size:26px;font-weight:300;letter-spacing:-.03em;color:var(--text)">Trei tipuri de conținut biblic</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px">
+        <div style="text-align:center;padding:28px 20px;border-radius:20px;border:1px solid var(--border-light);background:var(--bg)">
+          <div style="width:52px;height:52px;border-radius:16px;background:var(--red-light);display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="1.7"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          </div>
+          <div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:8px">Versete biblice</div>
+          <div style="font-size:13px;font-weight:300;color:var(--text-mid);line-height:1.65">Versete din Biblia Cornilescu cu referință precisă, traduse în 7 limbi și validate teologic.</div>
+        </div>
+        <div style="text-align:center;padding:28px 20px;border-radius:20px;border:1px solid var(--border-light);background:var(--bg)">
+          <div style="width:52px;height:52px;border-radius:16px;background:var(--red-light);display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="1.7"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:8px">Citate teologice</div>
+          <div style="font-size:13px;font-weight:300;color:var(--text-mid);line-height:1.65">Citate din autori creștini clasici și contemporani, adaptate pentru predicare și materiale misionare.</div>
+        </div>
+        <div style="text-align:center;padding:28px 20px;border-radius:20px;border:1px solid var(--border-light);background:var(--bg)">
+          <div style="width:52px;height:52px;border-radius:16px;background:var(--red-light);display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="1.7"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+          </div>
+          <div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:8px">Cântări de adorare</div>
+          <div style="font-size:13px;font-weight:300;color:var(--text-mid);line-height:1.65">Cântări traduse strofă cu strofă din română în spaniolă, pentru folosire în întrunirile misionare.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- TEAM -->
+<section id="echipa">
+  <div class="inner">
+    <div class="team-head">
+      <span class="label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Echipa
+      </span>
+      <h2 class="h2">Oamenii din<br /><em>spatele proiectului.</em></h2>
+      <p class="lead">O echipă mică, dar dedicată — uniți de credință și de dorința de a face Cuvântul lui Dumnezeu accesibil în orice limbă.</p>
+    </div>
+    <div class="team-grid">
+      <div class="team-card">
+        <div class="team-av">DG</div>
+        <div class="team-name">David Gonzalez</div>
+        <div class="team-role">Director & Admin</div>
+        <div class="team-bio">Coordonează întregul proiect misionar și supervizează platforma de traduceri.</div>
+      </div>
+      <div class="team-card">
+        <div class="team-av">MP</div>
+        <div class="team-name">Maria Popescu</div>
+        <div class="team-role">Coordonator principal</div>
+        <div class="team-bio">Responsabilă de calitatea traducerilor și coordonarea echipei de traducători.</div>
+      </div>
+      <div class="team-card">
+        <div class="team-av">AI</div>
+        <div class="team-name">Andrei Ionescu</div>
+        <div class="team-role">Coordonator</div>
+        <div class="team-bio">Coordonează traducerile în limbile germanice și supervizează procesul de validare.</div>
+      </div>
+      <div class="team-card">
+        <div class="team-av">SC</div>
+        <div class="team-name">Sofia Constantin</div>
+        <div class="team-role">Traducătoare RO</div>
+        <div class="team-bio">Specializată în citate teologice și cântări de adorare în limba română.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA STRIP -->
+<div class="cta-strip">
+  <h2 class="cta-strip-title">Faci parte din misiune?<br /><strong>Accesează TP Translator.</strong></h2>
+  <p class="cta-strip-sub">Conectează-te la platformă și contribuie la răspândirea Cuvântului.</p>
+  <a href="https://app.tptranslator.com/login" class="btn btn-white">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+    Intră în platformă
+  </a>
+</div>
+
+<!-- CONTACT -->
+<section id="contact">
+  <div class="inner">
+    <div class="contact-info-col">
+      <div>
+        <span class="label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          Contact
+        </span>
+        <h2 class="contact-info-title">Ia legătura<br />cu <em>noi.</em></h2>
+        <p class="contact-info-text">Ai întrebări despre proiect, vrei să te alături echipei sau ai nevoie de mai multe informații? Scrie-ne.</p>
+      </div>
+      <div>
+        <div class="contact-item">
+          <div class="contact-item-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          </div>
+          <div>
+            <div class="contact-item-lbl">Email</div>
+            <div class="contact-item-val">echipa@tptranslator.com</div>
+          </div>
+        </div>
+        <div class="contact-item">
+          <div class="contact-item-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          </div>
+          <div>
+            <div class="contact-item-lbl">Locație</div>
+            <div class="contact-item-val">România · España</div>
+          </div>
+        </div>
+        <div class="contact-item">
+          <div class="contact-item-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+          <div>
+            <div class="contact-item-lbl">Platformă</div>
+            <div class="contact-item-val">app.tptranslator.com</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="contact-form">
+      <p class="form-title">Trimite un mesaj</p>
+      <div class="form-group">
+        <label class="form-label">Numele tău</label>
+        <input type="text" class="form-input" placeholder="Ion Popescu" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input type="email" class="form-input" placeholder="ion@email.com" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Subiect</label>
+        <input type="text" class="form-input" placeholder="Vreau să mă alătur echipei..." />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mesaj</label>
+        <textarea class="form-textarea" placeholder="Scrie mesajul tău aici..."></textarea>
+      </div>
+      <button class="btn btn-red" style="width:100%;justify-content:center" onclick="handleContact()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Trimite mesajul
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <span class="footer-brand-main">TP Translator</span>
+      <span class="footer-brand-sub">Un proiect Țara Promisă</span>
+    </div>
+    <span class="footer-copy">© 2025 TP Translator · Țara Promisă. Toate drepturile rezervate.</span>
+    <div class="footer-links">
+      <a href="https://app.tptranslator.com/login" class="footer-link">Platformă</a>
+      <a href="#contact" class="footer-link">Contact</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Nav scroll
+  window.addEventListener('scroll', () => {
+    document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 20)
+  })
+
+  // Hamburger
+  const hamburger = document.getElementById('hamburger')
+  const mobileMenu = document.getElementById('mobile-menu')
+  hamburger.addEventListener('click', () => mobileMenu.classList.toggle('open'))
+  function closeMobile() { mobileMenu.classList.remove('open') }
+  document.addEventListener('click', (e) => {
+    if (!hamburger.contains(e.target) && !mobileMenu.contains(e.target)) mobileMenu.classList.remove('open')
+  })
+
+  // Contact form
+  function handleContact() { alert('Mulțumim pentru mesaj! Te vom contacta în curând.') }
+
+  // Smooth scroll
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      const t = document.querySelector(a.getAttribute('href'))
+      if (t) { e.preventDefault(); t.scrollIntoView({ behavior: 'smooth', block: 'start' }) }
+    })
+  })
+
+  // Modals
+  function openModal(id) {
+    const m = document.getElementById(id)
+    m.style.display = 'flex'
+    document.body.style.overflow = 'hidden'
+  }
+  function closeModal(id) {
+    document.getElementById(id).style.display = 'none'
+    document.body.style.overflow = ''
+  }
+  function submitForm(id) {
+    closeModal(id)
+    setTimeout(() => alert('Mulțumim! Am primit cererea ta și te vom contacta în curând.'), 100)
+  }
+  // Close modal on backdrop click
+  document.querySelectorAll('[id^="modal-"]').forEach(m => {
+    m.addEventListener('click', e => { if (e.target === m) closeModal(m.id) })
+  })
+
+  // Floating particles
+  function createParticles() {
+    const container = document.getElementById('particles')
+    if (!container) return
+    const count = 18
+    for (let i = 0; i < count; i++) {
+      const p = document.createElement('div')
+      const size = Math.random() * 5 + 2
+      const x = Math.random() * 100
+      const delay = Math.random() * 8
+      const duration = Math.random() * 10 + 12
+      const opacity = Math.random() * 0.25 + 0.05
+      p.style.cssText = `
+        position:absolute;
+        width:${size}px;height:${size}px;
+        border-radius:50%;
+        background:var(--red);
+        left:${x}%;
+        bottom:-${size}px;
+        opacity:${opacity};
+        animation:floatUp ${duration}s ${delay}s infinite linear;
+      `
+      container.appendChild(p)
+    }
+  }
+
+  // Progress bar animation on load
+  function animateProgress() {
+    const bar = document.getElementById('progress-bar')
+    if (bar) setTimeout(() => { bar.style.width = '100%' }, 600)
+  }
+
+  // Hero card cycling verses
+  const verses = [
+    { ref: 'Ioan 3:16', text: '"Căci atât de mult a iubit Dumnezeu lumea, că a dat pe singurul Său Fiu, ca oricine crede în El să nu piară, ci să aibă viața veșnică."', langs: 7 },
+    { ref: 'Psalmi 119:105', text: '"Cuvântul Tău este o candelă pentru picioarele mele și o lumină pe cărarea mea."', langs: 7 },
+    { ref: 'Romani 8:28', text: '"De altminteri, știm că toate lucrurile lucrează împreună spre binele celor ce iubesc pe Dumnezeu."', langs: 6 },
+    { ref: 'Isaia 40:31', text: '"Dar cei ce se încred în Domnul își înnoiesc puterea, ei zboară ca vulturii."', langs: 5 },
+  ]
+  let vIdx = 0
+  function cycleVerse() {
+    vIdx = (vIdx + 1) % verses.length
+    const v = verses[vIdx]
+    const refEl = document.getElementById('card-ref')
+    const verseEl = document.getElementById('card-verse')
+    const bar = document.getElementById('progress-bar')
+    const label = document.getElementById('progress-label')
+    if (!refEl || !verseEl) return
+    // fade out
+    refEl.style.transition = verseEl.style.transition = 'opacity .4s'
+    refEl.style.opacity = verseEl.style.opacity = '0'
+    setTimeout(() => {
+      refEl.textContent = v.ref
+      verseEl.textContent = v.text
+      if (label) label.textContent = `${v.langs}/7`
+      if (bar) { bar.style.transition = 'none'; bar.style.width = '0%'; setTimeout(() => { bar.style.transition = 'width 1.2s cubic-bezier(.22,1,.36,1)'; bar.style.width = `${(v.langs/7)*100}%` }, 50) }
+      refEl.style.opacity = verseEl.style.opacity = '1'
+    }, 400)
+  }
+  setInterval(cycleVerse, 4000)
+
+  // Init
+  document.addEventListener('DOMContentLoaded', () => {
+    createParticles()
+    animateProgress()
+  })
+</script>
+</body>
+</html>

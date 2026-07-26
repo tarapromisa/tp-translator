@@ -1,12 +1,13 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import CreateVersetModal from '@/components/CreateVersetModal'
 import AnimatedCounter from '@/components/AnimatedCounter'
 import ReferinteTab from '@/components/ReferinteTab'
+import Pagination from '@/components/Pagination'
 import { useUser } from '@/context/UserContext'
 import { supabase } from '@/lib/supabase'
 import {
@@ -94,6 +95,8 @@ export default function VersetePage() {
   const [sortField, setSortField] = useState<SortField>('created_at')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
   const [activeTab, setActiveTab] = useState<PageTab>('versete')
+  const [page, setPage] = useState(1)
+  const PER_PAGE = 20
 
   const role = profile?.role
   const isAdmin = role === 'Admin'
@@ -130,8 +133,11 @@ export default function VersetePage() {
       return sortDir === 'asc' ? (va < vb ? -1 : 1) : (va > vb ? -1 : 1)
     })
 
-  const toggleStatus = (s: string) => setStatusFilter(p => p.includes(s) ? p.filter(x => x !== s) : [...p, s])
-  const toggleSort = (f: SortField) => { if (sortField === f) setSortDir(d => d === 'asc' ? 'desc' : 'asc'); else { setSortField(f); setSortDir('desc') } }
+  const toggleStatus = (s: string) => { setStatusFilter(p => p.includes(s) ? p.filter(x => x !== s) : [...p, s]); setPage(1) }
+  const toggleSort = (f: SortField) => { if (sortField === f) setSortDir(d => d === 'asc' ? 'desc' : 'asc'); else { setSortField(f); setSortDir('desc') }; setPage(1) }
+
+  const totalPages = Math.ceil(filtered.length / PER_PAGE)
+  const paginated = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE)
 
   const SortIcon = ({ field }: { field: SortField }) => {
     if (sortField !== field) return <ChevronUpDownIcon className="w-3.5 h-3.5 text-[#aaa]" />
@@ -206,7 +212,7 @@ export default function VersetePage() {
                 <div className="flex-1 min-w-0 flex items-center gap-3 bg-[#f9f7f5] border border-[#e8e2de] rounded-xl px-4 h-10">
                   <MagnifyingGlassIcon className="w-4 h-4 text-[#999] flex-shrink-0" />
                   <input type="text" placeholder="Caută după referință, text sau ID..."
-                    value={search} onChange={e => setSearch(e.target.value)}
+                    value={search} onChange={e => { setSearch(e.target.value); setPage(1) }}}
                     className="flex-1 min-w-0 bg-transparent outline-none text-sm text-[#111] placeholder:text-[#bbb]" />
                   {search && <button onClick={() => setSearch('')} className="text-xs text-[#999] hover:text-[#ce0100] flex-shrink-0">✕</button>}
                 </div>
@@ -276,7 +282,7 @@ export default function VersetePage() {
                 {/* ═══ CARDS ═══ */}
                 {view === 'cards' && (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
-                    {filtered.map(v => {
+                    {paginated.map(v => {
                       const count = getCompletedCount(v)
                       const pct = (count / 7) * 100
                       const ds = getDisplayStatus(v)
@@ -366,12 +372,12 @@ export default function VersetePage() {
                         </tr>
                       </thead>
                       <tbody>
-                        {filtered.map((v, i) => {
+                        {paginated.map((v, i) => {
                           const count = getCompletedCount(v)
                           const ds = getDisplayStatus(v)
                           return (
                             <tr key={v.id} onClick={() => router.push(`/versete/${v.id}`)}
-                              className={`cursor-pointer hover:bg-[#faf7f5] transition-colors ${i < filtered.length-1 ? 'border-b border-[#f8f3f0]' : ''}`}>
+                              className={`cursor-pointer hover:bg-[#faf7f5] transition-colors ${i < paginated.length-1 ? 'border-b border-[#f8f3f0]' : ''}`}>
                               <td className="px-4 py-3"><span className="text-sm font-bold text-[#ce0100]">{v.public_id}</span></td>
                               <td className="px-4 py-3"><span className="text-sm font-semibold text-[#111] truncate block">{v.referinta_ro}</span></td>
                               <td className="px-4 py-3"><p className="text-sm text-[#555] truncate">{v.verset_ro}</p></td>
@@ -403,13 +409,13 @@ export default function VersetePage() {
                 {/* ═══ COMPACT ═══ */}
                 {view === 'compact' && (
                   <div className="bg-white border border-[#e8e2de] rounded-2xl overflow-x-auto shadow-sm">
-                    {filtered.map((v, i) => {
+                    {paginated.map((v, i) => {
                       const count = getCompletedCount(v)
                       const ds = getDisplayStatus(v)
                       const accent = STATUS_ACCENT[ds] ?? '#ce0100'
                       return (
                         <div key={v.id} onClick={() => router.push(`/versete/${v.id}`)}
-                          className={`flex items-center cursor-pointer hover:bg-[#faf7f5] transition-colors min-w-[600px] ${i < filtered.length - 1 ? 'border-b border-[#f8f3f0]' : ''}`}
+                          className={`flex items-center cursor-pointer hover:bg-[#faf7f5] transition-colors min-w-[600px] ${i < paginated.length - 1 ? 'border-b border-[#f8f3f0]' : ''}`}
                           style={{ minWidth: 0 }}>
                           {/* Accent bar */}
                           <div className="w-1 self-stretch flex-shrink-0" style={{ background: accent }} />
@@ -444,6 +450,18 @@ export default function VersetePage() {
               </>
             )}
           </>
+        )}
+
+        {/* Pagination */}
+        {activeTab === 'versete' && filtered.length > PER_PAGE && (
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            totalItems={filtered.length}
+            itemsPerPage={PER_PAGE}
+            onPageChange={setPage}
+            label="versete"
+          />
         )}
       </div>
 

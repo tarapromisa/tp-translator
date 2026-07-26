@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Sidebar from '@/components/Sidebar'
+import Pagination from '@/components/Pagination'
 import { supabase } from '@/lib/supabase'
 import {
   MagnifyingGlassIcon, PencilSquareIcon, TrashIcon,
@@ -236,6 +237,8 @@ export default function CitateROPage() {
   const [showDelete, setShowDelete] = useState(false)
   const [deleteItem, setDeleteItem] = useState<CitatRO | null>(null)
   const [mobileTab, setMobileTab] = useState<'lista' | 'detalii'>('lista')
+  const [page, setPage] = useState(1)
+  const PER_PAGE = 20
 
   const fetchData = async () => {
     setLoading(true)
@@ -274,6 +277,9 @@ export default function CitateROPage() {
     }
     return true
   })
+
+  const totalPages = Math.ceil(filtered.length / PER_PAGE)
+  const paginated = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE)
 
   const stats = {
     total:     items.length,
@@ -358,7 +364,7 @@ export default function CitateROPage() {
                 <p className="text-center py-10 text-sm text-[#888]">Se încarcă...</p>
               ) : filtered.length === 0 ? (
                 <p className="text-center py-10 text-sm text-[#888]">Niciun citat găsit.</p>
-              ) : filtered.map(item => (
+              ) : paginated.map(item => (
                 <div key={item.id} onClick={() => { setSelectedItem(item); setMobileTab('detalii') }}
                   className={`flex items-start gap-3 px-5 py-4 cursor-pointer transition-colors ${
                     selectedItem?.id === item.id
@@ -380,6 +386,18 @@ export default function CitateROPage() {
                 </div>
               ))}
             </div>
+            {filtered.length > PER_PAGE && (
+              <div className="px-3 py-2 border-t border-[#f0e8e4] flex-shrink-0">
+                <Pagination
+                  currentPage={page}
+                  totalPages={totalPages}
+                  totalItems={filtered.length}
+                  itemsPerPage={PER_PAGE}
+                  onPageChange={setPage}
+                  label="citate"
+                />
+              </div>
+            )}
           </div>
 
           {/* Detail */}

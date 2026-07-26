@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Sidebar from '@/components/Sidebar'
+import Pagination from '@/components/Pagination'
 import CreateUserModal from '@/components/CreateUserModal'
 import EditUserModal from '@/components/EditUserModal'
 import { supabase } from '@/lib/supabase'
@@ -103,6 +104,8 @@ export default function UtilizatoriPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [roleFilter, setRoleFilter] = useState<string[]>([])
+  const [page, setPage] = useState(1)
+  const PER_PAGE = 20
   const [mobileTab, setMobileTab] = useState<'lista' | 'detalii'>('lista')
 
   useEffect(() => {
@@ -171,6 +174,9 @@ export default function UtilizatoriPage() {
     if (roleFilter.length > 0 && !roleFilter.includes(u.role)) return false
     return true
   })
+
+  const totalPages = Math.ceil(filtered.length / PER_PAGE)
+  const paginated = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE)
 
   const handleSendEmail = async (type: 'welcome' | 'goodbye') => {
     if (!selected) return
@@ -277,7 +283,7 @@ export default function UtilizatoriPage() {
                 <p className="text-center py-12 text-sm text-[#888]">Se încarcă...</p>
               ) : filtered.length === 0 ? (
                 <p className="text-center py-12 text-sm text-[#888]">Niciun utilizator găsit.</p>
-              ) : filtered.map((user, i) => {
+              ) : paginated.map((user, i) => {
                 const isSelected = selected?.id === user.id
                 const roleStyle = ROLE_STYLE[user.role] ?? { bg: 'bg-[#f0e8e4]', text: 'text-[#555]' }
                 const avatarColor = AVATAR_COLOR[user.role] ?? '#888'
@@ -286,7 +292,7 @@ export default function UtilizatoriPage() {
                     onClick={() => { setSelected(user); setMobileTab('detalii') }}
                     className={`flex items-center gap-3 md:gap-4 px-4 md:px-5 py-4 cursor-pointer transition-colors ${
                       isSelected ? 'bg-[#fff7f7] border-l-[3px] border-l-[#ce0100]' : 'hover:bg-[#faf7f5] border-l-[3px] border-l-transparent'
-                    } ${i < filtered.length - 1 ? 'border-b border-[#f8f3f0]' : ''}`}>
+                    } ${i < paginated.length - 1 ? 'border-b border-[#f8f3f0]' : ''}`}>
 
                     {/* Avatar */}
                     <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
@@ -317,7 +323,19 @@ export default function UtilizatoriPage() {
               })}
             </div>
 
-            <p className="text-xs text-[#aaa] pl-1">{filtered.length} utilizatori</p>
+            <div className="mt-2">
+              <p className="text-xs text-[#aaa] pl-1 mb-2">{filtered.length} utilizatori</p>
+              {filtered.length > PER_PAGE && (
+                <Pagination
+                  currentPage={page}
+                  totalPages={totalPages}
+                  totalItems={filtered.length}
+                  itemsPerPage={PER_PAGE}
+                  onPageChange={setPage}
+                  label="utilizatori"
+                />
+              )}
+            </div>
           </div>
 
           {/* Right — detail panel */}
