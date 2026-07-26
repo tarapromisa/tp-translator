@@ -145,7 +145,7 @@ export default function VersetePage() {
   }
 
   return (
-    <main className="flex min-h-screen bg-[#f9f7f5] overflow-x-hidden">
+    <main className="flex h-screen overflow-hidden bg-[#f9f7f5] overflow-x-hidden">
       <Sidebar />
       <div className="flex-1 w-0 px-4 py-6 md:px-10 md:py-8 overflow-y-auto overflow-x-hidden">
 
