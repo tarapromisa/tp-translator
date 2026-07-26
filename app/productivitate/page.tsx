@@ -352,12 +352,14 @@ export default function ProductivitatePage() {
           </div>
         </div>
 
+        <div className="flex flex-col bg-white border border-[#e8e2de] rounded-2xl shadow-sm overflow-hidden">
+          <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 380px)' }}>
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <p className="text-sm text-[#888]">Se încarcă...</p>
           </div>
         ) : view === 'grid' ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 p-4">
             {paginated.map((stats, index) => {
               const color = getProductivityColor(stats.productivity)
               return (
@@ -481,8 +483,7 @@ export default function ProductivitatePage() {
             </table>
           </div>
         )}
-
-        {filtered.length > PER_PAGE && (
+          </div>
           <Pagination
             currentPage={page}
             totalPages={totalPages}
@@ -491,7 +492,7 @@ export default function ProductivitatePage() {
             onPageChange={setPage}
             label="traducători"
           />
-        )}
+        </div>
       </div>
 
       {selectedStats && <TranslatorDetail stats={selectedStats} onClose={() => setSelectedStats(null)} />}

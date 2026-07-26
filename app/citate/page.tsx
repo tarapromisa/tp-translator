@@ -263,6 +263,8 @@ export default function CitatePage() {
         </p>
 
         {/* ── CONTENT ── */}
+        <div className="flex flex-col bg-white border border-[#e8e2de] rounded-2xl shadow-sm overflow-hidden">
+          <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 380px)' }}>
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <p className="text-base text-[#888]">Se încarcă...</p>
@@ -276,7 +278,7 @@ export default function CitatePage() {
           <>
             {/* ═══ CARDS ═══ */}
             {view === 'cards' && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start p-4">
                 {paginated.map((text) => {
                   const count = getCompletedCount(text)
                   const pct = (count / 7) * 100
@@ -354,7 +356,7 @@ export default function CitatePage() {
 
             {/* ═══ TABLE ═══ */}
             {view === 'table' && (
-              <div className="bg-white border border-[#e8e2de] rounded-2xl overflow-x-auto shadow-sm">
+              <div className="overflow-x-auto">
                 <table className="w-full min-w-[700px]">
                   <thead>
                     <tr className="border-b border-[#f0e8e4]">
@@ -444,8 +446,7 @@ export default function CitatePage() {
             )}
           </>
         )}
-
-        {filtered.length > PER_PAGE && (
+          </div>
           <Pagination
             currentPage={page}
             totalPages={totalPages}
@@ -454,7 +455,7 @@ export default function CitatePage() {
             onPageChange={setPage}
             label="citate"
           />
-        )}
+        </div>
       </div>
 
       <CreateCitatModal open={openCreateModal} onClose={() => setOpenCreateModal(false)} />

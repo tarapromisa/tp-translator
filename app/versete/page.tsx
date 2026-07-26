@@ -268,6 +268,9 @@ export default function VersetePage() {
             </p>
 
             {/* ── CONTENT ── */}
+            <div className="flex flex-col bg-white border border-[#e8e2de] rounded-2xl shadow-sm overflow-hidden">
+              {/* List area with max height */}
+              <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 380px)' }}>
             {loading ? (
               <div className="flex items-center justify-center py-20">
                 <p className="text-base text-[#888]">Se încarcă...</p>
@@ -281,7 +284,7 @@ export default function VersetePage() {
               <>
                 {/* ═══ CARDS ═══ */}
                 {view === 'cards' && (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start p-4">
                     {paginated.map(v => {
                       const count = getCompletedCount(v)
                       const pct = (count / 7) * 100
@@ -347,7 +350,7 @@ export default function VersetePage() {
 
                 {/* ═══ TABLE ═══ */}
                 {view === 'table' && (
-                  <div className="bg-white border border-[#e8e2de] rounded-2xl overflow-x-auto shadow-sm w-full">
+                  <div className="w-full overflow-x-auto">
                     <table className="w-full table-fixed min-w-[700px]">
                       <colgroup>
                         <col className="w-[110px]" />
@@ -408,7 +411,7 @@ export default function VersetePage() {
 
                 {/* ═══ COMPACT ═══ */}
                 {view === 'compact' && (
-                  <div className="bg-white border border-[#e8e2de] rounded-2xl overflow-x-auto shadow-sm">
+                  <div className="overflow-x-auto">
                     {paginated.map((v, i) => {
                       const count = getCompletedCount(v)
                       const ds = getDisplayStatus(v)
@@ -449,19 +452,18 @@ export default function VersetePage() {
                 )}
               </>
             )}
+              </div>
+              {/* Pagination always at bottom */}
+              <Pagination
+                currentPage={page}
+                totalPages={totalPages}
+                totalItems={filtered.length}
+                itemsPerPage={PER_PAGE}
+                onPageChange={setPage}
+                label="versete"
+              />
+            </div>
           </>
-        )}
-
-        {/* Pagination */}
-        {activeTab === 'versete' && filtered.length > PER_PAGE && (
-          <Pagination
-            currentPage={page}
-            totalPages={totalPages}
-            totalItems={filtered.length}
-            itemsPerPage={PER_PAGE}
-            onPageChange={setPage}
-            label="versete"
-          />
         )}
       </div>
 

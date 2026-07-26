@@ -469,7 +469,8 @@ export default function ValidariPage() {
             <p className="text-sm text-[#888]">pentru {contentTab === 'citate' ? 'citate' : 'versete'}</p>
           </div>
         ) : (
-          <div className="bg-white border border-[#e8e2de] rounded-2xl overflow-x-hidden shadow-sm divide-y divide-[#f8f3f0]">
+          <div className="bg-white border border-[#e8e2de] rounded-2xl overflow-hidden shadow-sm flex flex-col" style={{ maxHeight: 'calc(100vh - 380px)' }}>
+            <div className="overflow-y-auto flex-1 divide-y divide-[#f8f3f0]">
             {paginated.map(item => (
               <ItemRow
                 key={item.id}
@@ -486,18 +487,16 @@ export default function ValidariPage() {
                 }}
               />
             ))}
+            </div>
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              totalItems={items.length}
+              itemsPerPage={PER_PAGE}
+              onPageChange={setPage}
+              label={contentTab === 'citate' ? 'citate' : 'versete'}
+            />
           </div>
-        )}
-
-        {items.length > PER_PAGE && (
-          <Pagination
-            currentPage={page}
-            totalPages={totalPages}
-            totalItems={items.length}
-            itemsPerPage={PER_PAGE}
-            onPageChange={setPage}
-            label={contentTab === 'citate' ? 'citate' : 'versete'}
-          />
         )}
       </div>
 

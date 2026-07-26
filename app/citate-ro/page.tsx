@@ -352,7 +352,7 @@ export default function CitateROPage() {
           ))}
         </div>
 
-        <div className="flex-1 overflow-x-hidden flex flex-col md:flex-row px-4 md:px-10 pb-6 md:pb-8 gap-4">
+        <div className="overflow-x-hidden flex flex-col md:flex-row px-4 md:px-10 pb-6 md:pb-8 gap-4" style={{ height: 'calc(100vh - 320px)' }}>
 
           {/* List */}
           <div className={`${mobileTab !== 'lista' ? 'hidden' : ''} md:flex md:w-[420px] md:flex-shrink-0 bg-white border border-[#e8e2de] rounded-2xl overflow-x-hidden shadow-sm flex flex-col`}>
@@ -386,18 +386,14 @@ export default function CitateROPage() {
                 </div>
               ))}
             </div>
-            {filtered.length > PER_PAGE && (
-              <div className="px-3 py-2 border-t border-[#f0e8e4] flex-shrink-0">
-                <Pagination
-                  currentPage={page}
-                  totalPages={totalPages}
-                  totalItems={filtered.length}
-                  itemsPerPage={PER_PAGE}
-                  onPageChange={setPage}
-                  label="citate"
-                />
-              </div>
-            )}
+            <Pagination
+                currentPage={page}
+                totalPages={totalPages}
+                totalItems={filtered.length}
+                itemsPerPage={PER_PAGE}
+                onPageChange={setPage}
+                label="citate"
+              />
           </div>
 
           {/* Detail */}
