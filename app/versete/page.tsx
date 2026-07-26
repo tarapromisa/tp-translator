@@ -212,7 +212,7 @@ export default function VersetePage() {
                 <div className="flex-1 min-w-0 flex items-center gap-3 bg-[#f9f7f5] border border-[#e8e2de] rounded-xl px-4 h-10">
                   <MagnifyingGlassIcon className="w-4 h-4 text-[#999] flex-shrink-0" />
                   <input type="text" placeholder="Caută după referință, text sau ID..."
-                    value={search} onChange={e => { setSearch(e.target.value); setPage(1) }}}
+                    value={search} onChange={e => { setSearch(e.target.value); setPage(1) }}
                     className="flex-1 min-w-0 bg-transparent outline-none text-sm text-[#111] placeholder:text-[#bbb]" />
                   {search && <button onClick={() => setSearch('')} className="text-xs text-[#999] hover:text-[#ce0100] flex-shrink-0">✕</button>}
                 </div>

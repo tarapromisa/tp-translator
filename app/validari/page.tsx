@@ -412,7 +412,7 @@ export default function ValidariPage() {
         {/* Content tabs */}
         <div className="flex items-center gap-2 mb-4">
           {(['citate','versete'] as ContentTab[]).map(t => (
-            <button key={t} onClick={() => { setContentTab(t); setPage(1) }}}
+            <button key={t} onClick={() => { setContentTab(t); setPage(1) }}
               className={`h-9 px-5 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all capitalize ${
                 contentTab === t ? 'bg-[#ce0100] text-white shadow-[0_4px_12px_rgba(206,1,0,0.22)]' : 'bg-white border border-[#e8e2de] text-[#444] hover:bg-[#faf7f5]'
               }`}>
@@ -429,7 +429,7 @@ export default function ValidariPage() {
           {STATUS_TABS.map(({ key, label, color }) => {
             const count = counts[contentTab][key]
             return (
-              <button key={key} onClick={() => { setStatusTab(key); setPage(1) }}}
+              <button key={key} onClick={() => { setStatusTab(key); setPage(1) }}
                 className={`h-8 px-4 rounded-lg text-[12px] font-semibold flex items-center gap-1.5 transition-all ${
                   statusTab === key ? 'bg-white shadow-sm text-[#111]' : 'text-[#888] hover:text-[#444]'
                 }`}>
