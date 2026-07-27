@@ -268,9 +268,6 @@ export default function VersetePage() {
             </p>
 
             {/* ── CONTENT ── */}
-            <div className="flex flex-col bg-white border border-[#e8e2de] rounded-2xl shadow-sm overflow-hidden">
-              {/* List area with max height */}
-              <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 380px)' }}>
             {loading ? (
               <div className="flex items-center justify-center py-20">
                 <p className="text-base text-[#888]">Se încarcă...</p>
@@ -284,7 +281,7 @@ export default function VersetePage() {
               <>
                 {/* ═══ CARDS ═══ */}
                 {view === 'cards' && (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start p-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
                     {paginated.map(v => {
                       const count = getCompletedCount(v)
                       const pct = (count / 7) * 100
@@ -452,17 +449,16 @@ export default function VersetePage() {
                 )}
               </>
             )}
-              </div>
-              {/* Pagination always at bottom */}
-              <Pagination
-                currentPage={page}
-                totalPages={totalPages}
-                totalItems={filtered.length}
-                itemsPerPage={PER_PAGE}
-                onPageChange={setPage}
-                label="versete"
-              />
-            </div>
+
+            {/* Pagination */}
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              totalItems={filtered.length}
+              itemsPerPage={PER_PAGE}
+              onPageChange={setPage}
+              label="versete"
+            />
           </>
         )}
       </div>
