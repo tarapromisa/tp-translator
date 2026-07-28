@@ -365,7 +365,7 @@ export default function MailTLPPage() {
   const filteredCitateRO = citateROIncomp.filter(c => !searchCitateRO || c.public_id.toLowerCase().includes(searchCitateRO.toLowerCase()) || c.text_original?.toLowerCase().includes(searchCitateRO.toLowerCase()))
 
   return (
-    <main className="flex min-h-screen bg-[#f9f7f5] overflow-x-hidden">
+    <main className="flex h-screen overflow-hidden bg-[#f9f7f5]">
       <Sidebar />
       <div className="flex-1 w-0 flex flex-col overflow-x-hidden">
 

@@ -153,7 +153,7 @@ export default function SetariPage() {
   const displayAvatar = avatarPreview || avatarUrl
 
   if (loading) return (
-    <main className="flex min-h-screen bg-[#f9f7f5]">
+    <main className="flex h-screen overflow-hidden bg-[#f9f7f5]">
       <Sidebar />
       <div className="flex-1 flex items-center justify-center">
         <p className="text-sm text-[#888]">Se incarca...</p>
@@ -162,7 +162,7 @@ export default function SetariPage() {
   )
 
   return (
-    <main className="flex min-h-screen bg-[#f9f7f5] overflow-x-hidden">
+    <main className="flex h-screen overflow-hidden bg-[#f9f7f5]">
       <Sidebar />
       <div className="flex-1 min-w-0 px-4 md:px-10 py-6 md:py-8 overflow-y-auto">
 
