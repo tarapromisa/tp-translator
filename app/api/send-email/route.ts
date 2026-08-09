@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { Resend } from 'resend'
 
-const BCC = 'echipa@tptranslator.tarapromisa.org'
+const resend = new Resend(process.env.RESEND_API_KEY)
+
+const FROM = 'echipa@tptranslator.com'
+const FROM_NAME = 'Echipa TP Translator'
+const BCC = 'echipa@tptranslator.com'
 const GIF = 'https://res.cloudinary.com/dlgqpbpwu/image/upload/v1780257817/Gif_TPT_2026_1_wl9try.gif'
 
 function welcomeHtml(name: string): string {
@@ -14,7 +19,6 @@ function welcomeHtml(name: string): string {
 <body style="margin:0;padding:0;background-color:#f9f7f5;font-family:Helvetica,Arial,sans-serif;color:#2e2e2e;">
 <div style="max-width:600px;margin:0 auto;padding:24px 16px;">
 
-  <!-- Header -->
   <div style="background:#ce0100;border-radius:16px 16px 0 0;padding:32px 32px 28px;">
     <p style="margin:0 0 6px;font-size:11px;font-weight:600;letter-spacing:0.18em;color:rgba(255,255,255,0.55);text-transform:uppercase;font-family:Helvetica,Arial,sans-serif;">TP Translator</p>
     <h1 style="margin:0;font-size:34px;font-weight:300;color:#ffffff;line-height:1.15;letter-spacing:-0.03em;font-family:Helvetica,Arial,sans-serif;">
@@ -23,7 +27,6 @@ function welcomeHtml(name: string): string {
   </div>
   <div style="height:4px;background:#a80000;border-radius:0;"></div>
 
-  <!-- Content -->
   <div style="background:#ffffff;padding:32px;border:1px solid #f0e9e5;border-top:none;border-radius:0 0 16px 16px;">
     <p style="margin:0 0 20px;font-size:17px;font-weight:600;color:#ce0100;font-family:Helvetica,Arial,sans-serif;">Bună și bine ai venit, ${firstName}!</p>
 
@@ -49,11 +52,10 @@ function welcomeHtml(name: string): string {
         Termenul maxim pentru finalizarea unei traduceri este de <strong style="color:#ce0100;">3 luni</strong>, timp suficient pentru a lucra cu <strong style="color:#ce0100;">atenție</strong> și <strong style="color:#ce0100;">responsabilitate</strong>.
       </li>
       <li style="margin:0;font-size:14px;line-height:1.7;color:#444;">
-        Traducerile se vor putea trimite atât prin <strong style="color:#ce0100;">WhatsApp</strong> cât și prin <strong style="color:#ce0100;">mail</strong>: <em>echipa@tptranslator.tarapromisa.org</em>
+        Traducerile se vor putea trimite atât prin <strong style="color:#ce0100;">WhatsApp</strong> cât și prin <strong style="color:#ce0100;">mail</strong>: <em>${FROM}</em>
       </li>
     </ol>
 
-    <!-- Info box -->
     <div style="background:#faf7f5;border-left:3px solid #ce0100;border-radius:0 10px 10px 0;padding:16px 18px;margin-bottom:24px;">
       <p style="margin:0;font-size:13px;line-height:1.7;color:#555;font-family:Helvetica,Arial,sans-serif;">
         Dacă apare orice întrebare sau nelămurire, coordonatorii sunt punctul tău de contact și te vor ajuta cu plăcere.
@@ -70,14 +72,12 @@ function welcomeHtml(name: string): string {
     </p>
   </div>
 
-  <!-- GIF -->
   <div style="margin-top:20px;border-radius:12px;overflow:hidden;">
     <img src="${GIF}" alt="TP Translator" style="width:100%;display:block;border-radius:12px;" />
   </div>
 
-  <!-- Footer -->
   <p style="margin:16px 0 0;text-align:center;font-size:11px;color:#bbb;font-family:Helvetica,Arial,sans-serif;">
-    © 2026 TP Translator · <a href="mailto:echipa@tptranslator.tarapromisa.org" style="color:#bbb;text-decoration:none;">echipa@tptranslator.tarapromisa.org</a>
+    © 2026 TP Translator · <a href="mailto:${FROM}" style="color:#bbb;text-decoration:none;">${FROM}</a>
   </p>
 
 </div>
@@ -126,7 +126,7 @@ function credentialsHtml(name: string, email: string, password: string): string 
 
     <div style="background:#fff7f7;border-left:3px solid #ce0100;border-radius:0 10px 10px 0;padding:14px 18px;margin-bottom:24px;">
       <p style="margin:0;font-size:13px;line-height:1.7;color:#555;font-family:Helvetica,Arial,sans-serif;">
-        Te rugăm să îți schimbi parola la prima autentificare. Accesează platforma la <a href="https://tptranslator.tarapromisa.org" style="color:#ce0100;text-decoration:none;">tptranslator.tarapromisa.org</a>
+        Te rugăm să îți schimbi parola la prima autentificare. Accesează platforma la <a href="https://app.tptranslator.com" style="color:#ce0100;text-decoration:none;">app.tptranslator.com</a>
       </p>
     </div>
 
@@ -141,7 +141,7 @@ function credentialsHtml(name: string, email: string, password: string): string 
   </div>
 
   <p style="margin:16px 0 0;text-align:center;font-size:11px;color:#bbb;font-family:Helvetica,Arial,sans-serif;">
-    © 2026 TP Translator · <a href="mailto:echipa@tptranslator.tarapromisa.org" style="color:#bbb;text-decoration:none;">echipa@tptranslator.tarapromisa.org</a>
+    © 2026 TP Translator · <a href="mailto:${FROM}" style="color:#bbb;text-decoration:none;">${FROM}</a>
   </p>
 
 </div>
@@ -160,7 +160,6 @@ function goodbyeHtml(name: string): string {
 <body style="margin:0;padding:0;background-color:#f9f7f5;font-family:Helvetica,Arial,sans-serif;color:#2e2e2e;">
 <div style="max-width:600px;margin:0 auto;padding:24px 16px;">
 
-  <!-- Header -->
   <div style="background:#ce0100;border-radius:16px 16px 0 0;padding:32px 32px 28px;">
     <p style="margin:0 0 6px;font-size:11px;font-weight:600;letter-spacing:0.18em;color:rgba(255,255,255,0.55);text-transform:uppercase;font-family:Helvetica,Arial,sans-serif;">TP Translator</p>
     <h1 style="margin:0;font-size:34px;font-weight:300;color:#ffffff;line-height:1.15;letter-spacing:-0.03em;font-family:Helvetica,Arial,sans-serif;">
@@ -169,7 +168,6 @@ function goodbyeHtml(name: string): string {
   </div>
   <div style="height:4px;background:#a80000;border-radius:0;"></div>
 
-  <!-- Content -->
   <div style="background:#ffffff;padding:32px;border:1px solid #f0e9e5;border-top:none;border-radius:0 0 16px 16px;">
     <p style="margin:0 0 20px;font-size:17px;font-weight:600;color:#111;font-family:Helvetica,Arial,sans-serif;">Bună, ${firstName}.</p>
 
@@ -185,13 +183,12 @@ function goodbyeHtml(name: string): string {
       Îți mulțumim sincer pentru tot ce ai contribuit. A fost o onoare să lucrăm împreună.
     </p>
 
-    <!-- Info box -->
     <div style="background:#faf7f5;border-radius:10px;padding:18px 20px;margin-bottom:24px;border:1px solid #f0e9e5;">
       <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#111;font-family:Helvetica,Arial,sans-serif;">Informații practice:</p>
       <p style="margin:0;font-size:13px;line-height:1.7;color:#555;font-family:Helvetica,Arial,sans-serif;">
         Grupurile de comunicare vor fi actualizate în perioada următoare.<br>
         Pentru orice întrebare, ne poți contacta oricând la
-        <a href="mailto:echipa@tptranslator.tarapromisa.org" style="color:#ce0100;text-decoration:none;">echipa@tptranslator.tarapromisa.org</a>.
+        <a href="mailto:${FROM}" style="color:#ce0100;text-decoration:none;">${FROM}</a>.
       </p>
     </div>
 
@@ -205,14 +202,12 @@ function goodbyeHtml(name: string): string {
     </p>
   </div>
 
-  <!-- GIF -->
   <div style="margin-top:20px;border-radius:12px;overflow:hidden;">
     <img src="${GIF}" alt="TP Translator" style="width:100%;display:block;border-radius:12px;" />
   </div>
 
-  <!-- Footer -->
   <p style="margin:16px 0 0;text-align:center;font-size:11px;color:#bbb;font-family:Helvetica,Arial,sans-serif;">
-    © 2026 TP Translator · <a href="mailto:echipa@tptranslator.tarapromisa.org" style="color:#bbb;text-decoration:none;">echipa@tptranslator.tarapromisa.org</a>
+    © 2026 TP Translator · <a href="mailto:${FROM}" style="color:#bbb;text-decoration:none;">${FROM}</a>
   </p>
 
 </div>
@@ -222,7 +217,11 @@ function goodbyeHtml(name: string): string {
 
 export async function POST(req: NextRequest) {
   try {
-    const { to, toName, type, fromEmail, fromName, password, htmlBody: htmlBody_input, subject: customSubject } = await req.json()
+    const {
+      to, toName, type, fromName,
+      password, htmlBody: htmlBody_input,
+      subject: customSubject
+    } = await req.json()
 
     const subject =
       type === 'welcome'     ? `Bun venit în echipa TP Translator, ${toName.split(' ')[0]}!` :
@@ -236,35 +235,20 @@ export async function POST(req: NextRequest) {
       type === 'custom'      ? (htmlBody_input ?? '') :
                                goodbyeHtml(toName)
 
-    const payload: any = {
-      from: {
-        address: fromEmail ?? 'echipa@tptranslator.tarapromisa.org',
-        name: fromName ?? 'Echipa TP Translator',
-      },
-      to: [{ email_address: { address: to, name: toName } }],
-      bcc: [{ email_address: { address: BCC, name: 'Echipa TP Translator' } }],
+    const { data, error } = await resend.emails.send({
+      from: `${fromName ?? FROM_NAME} <${FROM}>`,
+      to: [`${toName} <${to}>`],
+      bcc: [BCC],
       subject,
-      htmlbody: htmlBody,
-    }
-
-    const res = await fetch('https://api.zeptomail.eu/v1.1/email', {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'Authorization': `Zoho-enczapikey ${process.env.ZEPTO_API_KEY}`,
-      },
-      body: JSON.stringify(payload),
+      html: htmlBody,
     })
 
-    const responseText = await res.text()
-    console.log('Zepto status:', res.status, responseText)
-
-    if (!res.ok) {
-      return NextResponse.json({ error: responseText }, { status: 500 })
+    if (error) {
+      console.error('Resend error:', error)
+      return NextResponse.json({ error }, { status: 500 })
     }
 
-    return NextResponse.json({ ok: true })
+    return NextResponse.json({ ok: true, id: data?.id })
   } catch (err) {
     console.error('API error:', err)
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })
