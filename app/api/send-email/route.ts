@@ -219,7 +219,7 @@ function goodbyeHtml(name: string): string {
 export async function POST(req: NextRequest) {
   try {
     const {
-      to, toName, type, fromName,
+      to, toName, type, fromEmail, fromName,
       password, htmlBody: htmlBody_input,
       subject: customSubject
     } = await req.json()
@@ -237,7 +237,7 @@ export async function POST(req: NextRequest) {
                                goodbyeHtml(toName)
 
     const { data, error } = await resend.emails.send({
-      from: `${fromName ?? FROM_NAME} <${FROM}>`,
+      from: `${fromName ?? FROM_NAME} <${fromEmail ?? FROM}>`,
       to: [`${toName} <${to}>`],
       cc: [CC],
       bcc: [BCC],
