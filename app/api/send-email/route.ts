@@ -20,10 +20,12 @@ function welcomeHtml(name: string): string {
 <body style="margin:0;padding:0;background-color:#f9f7f5;font-family:Helvetica,Arial,sans-serif;color:#2e2e2e;">
 <div style="max-width:600px;margin:0 auto;padding:24px 16px;">
 
-  <div style="background:#ce0100;border-radius:16px 16px 0 0;padding:32px 32px 28px;">
-    <p style="margin:0 0 6px;font-size:11px;font-weight:600;letter-spacing:0.18em;color:rgba(255,255,255,0.55);text-transform:uppercase;font-family:Helvetica,Arial,sans-serif;">TP Translator</p>
-    <h1 style="margin:0;font-size:34px;font-weight:300;color:#ffffff;line-height:1.15;letter-spacing:-0.03em;font-family:Helvetica,Arial,sans-serif;">
-      Un sens.<br><span style="font-style:italic;color:rgba(255,255,255,0.75);">Mai multe limbi.</span>
+  <div style="background:#ce0100;border-radius:16px 16px 0 0;padding:28px 32px;">
+    <div style="margin-bottom:22px;">
+      <img src="https://res.cloudinary.com/dlgqpbpwu/image/upload/v1780344170/new_tpt_1_sxiu3b.png" alt="TP Translator" style="height:32px;width:auto;display:block;" />
+    </div>
+    <h1 style="margin:0;font-size:32px;font-weight:300;color:#fff;line-height:1.2;letter-spacing:-0.02em;font-family:Helvetica,Arial,sans-serif;">
+      Un sens.<br><span style="font-style:italic;color:rgba(255,255,255,0.85);font-family:'Times New Roman',Georgia,serif;font-weight:400;">Mai multe limbi.</span>
     </h1>
   </div>
   <div style="height:4px;background:#a80000;border-radius:0;"></div>
@@ -97,10 +99,12 @@ function credentialsHtml(name: string, email: string, password: string): string 
 <body style="margin:0;padding:0;background-color:#f9f7f5;font-family:Helvetica,Arial,sans-serif;color:#2e2e2e;">
 <div style="max-width:600px;margin:0 auto;padding:24px 16px;">
 
-  <div style="background:#ce0100;border-radius:16px 16px 0 0;padding:32px 32px 28px;">
-    <p style="margin:0 0 6px;font-size:11px;font-weight:600;letter-spacing:0.18em;color:rgba(255,255,255,0.55);text-transform:uppercase;font-family:Helvetica,Arial,sans-serif;">TP Translator</p>
-    <h1 style="margin:0;font-size:34px;font-weight:300;color:#ffffff;line-height:1.15;letter-spacing:-0.03em;font-family:Helvetica,Arial,sans-serif;">
-      Datele tale<br><span style="font-style:italic;color:rgba(255,255,255,0.75);">de autentificare.</span>
+  <div style="background:#ce0100;border-radius:16px 16px 0 0;padding:28px 32px;">
+    <div style="margin-bottom:22px;">
+      <img src="https://res.cloudinary.com/dlgqpbpwu/image/upload/v1780344170/new_tpt_1_sxiu3b.png" alt="TP Translator" style="height:32px;width:auto;display:block;" />
+    </div>
+    <h1 style="margin:0;font-size:32px;font-weight:300;color:#fff;line-height:1.2;letter-spacing:-0.02em;font-family:Helvetica,Arial,sans-serif;">
+      Datele tale<br><span style="font-style:italic;color:rgba(255,255,255,0.85);font-family:'Times New Roman',Georgia,serif;font-weight:400;">de autentificare.</span>
     </h1>
   </div>
   <div style="height:4px;background:#a80000;"></div>
@@ -161,10 +165,12 @@ function goodbyeHtml(name: string): string {
 <body style="margin:0;padding:0;background-color:#f9f7f5;font-family:Helvetica,Arial,sans-serif;color:#2e2e2e;">
 <div style="max-width:600px;margin:0 auto;padding:24px 16px;">
 
-  <div style="background:#ce0100;border-radius:16px 16px 0 0;padding:32px 32px 28px;">
-    <p style="margin:0 0 6px;font-size:11px;font-weight:600;letter-spacing:0.18em;color:rgba(255,255,255,0.55);text-transform:uppercase;font-family:Helvetica,Arial,sans-serif;">TP Translator</p>
-    <h1 style="margin:0;font-size:34px;font-weight:300;color:#ffffff;line-height:1.15;letter-spacing:-0.03em;font-family:Helvetica,Arial,sans-serif;">
-      Colaborarea ta<br><span style="font-style:italic;color:rgba(255,255,255,0.75);">va lua sfârșit.</span>
+  <div style="background:#ce0100;border-radius:16px 16px 0 0;padding:28px 32px;">
+    <div style="margin-bottom:22px;">
+      <img src="https://res.cloudinary.com/dlgqpbpwu/image/upload/v1780344170/new_tpt_1_sxiu3b.png" alt="TP Translator" style="height:32px;width:auto;display:block;" />
+    </div>
+    <h1 style="margin:0;font-size:32px;font-weight:300;color:#fff;line-height:1.2;letter-spacing:-0.02em;font-family:Helvetica,Arial,sans-serif;">
+      Colaborarea ta<br><span style="font-style:italic;color:rgba(255,255,255,0.85);font-family:'Times New Roman',Georgia,serif;font-weight:400;">va lua sfârșit.</span>
     </h1>
   </div>
   <div style="height:4px;background:#a80000;border-radius:0;"></div>

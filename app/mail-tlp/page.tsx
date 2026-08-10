@@ -54,7 +54,7 @@ function generateEmailHtml(toName: string, dinZiua: string, panaZiua: string, ci
       <img src="https://res.cloudinary.com/dlgqpbpwu/image/upload/v1780344170/new_tpt_1_sxiu3b.png" alt="TP Translator" style="height:32px;width:auto;display:block;" />
     </div>
     <h1 style="margin:0;font-size:32px;font-weight:300;color:#fff;line-height:1.2;letter-spacing:-0.02em;font-family:Helvetica,Arial,sans-serif;">
-      Citate in asteptare<br>
+      Citate în așteptare<br>
       <span style="font-style:italic;color:rgba(255,255,255,0.85);font-family:'Times New Roman',Georgia,serif;font-weight:400;">pentru traducere.</span>
     </h1>
   </div>
