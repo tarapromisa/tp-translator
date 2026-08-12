@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import CreateCitatModal from '@/components/CreateCitatModal'
@@ -19,6 +19,9 @@ import {
   ChevronUpIcon,
   ChevronDownIcon,
   ChevronUpDownIcon,
+  XMarkIcon,
+  ClipboardDocumentIcon,
+  ClipboardDocumentCheckIcon,
 } from '@heroicons/react/24/outline'
 import { FaWhatsapp, FaRegEnvelope } from 'react-icons/fa'
 
@@ -134,6 +137,8 @@ export default function CitatePage() {
   const totalPages = Math.ceil(filtered.length / PER_PAGE)
   const paginated = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE)
 
+  const [emailModal, setEmailModal] = useState<{ text: TextRow; emails: string } | null>(null)
+
   const sendToWhatsapp = (text: TextRow) => {
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(`*CITAT ${text.public_id}*\n\n${text.citat_ro || ''}\n\n_${text.autor_original || 'Anonim'}_`)}`, '_blank')
   }
@@ -141,7 +146,7 @@ export default function CitatePage() {
     const ids = [text.traductor_es, text.traductor_en, text.traductor_de, text.traductor_pt, text.traductor_fr, text.traductor_it].filter(Boolean)
     const { data: users } = await supabase.from('users').select('id,email').in('id', ids)
     const emails = users?.map((u: any) => u.email).filter(Boolean).join(',') || ''
-    window.open(`https://echipatp.github.io/tptranslator/mailcitatect.html?numarCitat=${encodeURIComponent(text.public_id)}&citatRO=${encodeURIComponent(text.citat_ro || '')}&autorRO=${encodeURIComponent(text.autor_original || '')}&emails=${encodeURIComponent(emails)}`, '_blank')
+    setEmailModal({ text, emails })
   }
 
   const SortIcon = ({ field }: { field: SortField }) => {
@@ -456,6 +461,121 @@ export default function CitatePage() {
       </div>
 
       <CreateCitatModal open={openCreateModal} onClose={() => setOpenCreateModal(false)} />
+
+      {/* ── EMAIL MODAL ── */}
+      {emailModal && (
+        <EmailSablonModal
+          text={emailModal.text}
+          emails={emailModal.emails}
+          onClose={() => setEmailModal(null)}
+        />
+      )}
     </main>
+  )
+}
+
+// ── Email Șablon Modal ────────────────────────────────────────────
+function EmailSablonModal({ text, emails, onClose }: {
+  text: { public_id: string; citat_ro: string | null; autor_original: string | null }
+  emails: string
+  onClose: () => void
+}) {
+  const [copiedMail, setCopiedMail] = useState(false)
+  const [copiedEmails, setCopiedEmails] = useState(false)
+
+  const emailBody = `Bună,
+
+În urma verificării evidențelor noastre, te informăm că ți-a fost atribuită traducerea citatului ${text.public_id}, cu următorul conținut:
+
+"${text.citat_ro || ''}"
+— ${text.autor_original || 'Anonim'}
+
+Te rugăm să realizezi traducerea în funcție de disponibilitatea ta, având în vedere faptul că termenul limită pentru finalizare este de 3 luni.
+
+Traducerea poate fi transmisă prin WhatsApp sau e-mail la adresa echipa@tptranslator.com.
+
+Îți mulțumim pentru disponibilitatea și implicarea ta în echipa TP Translator.`
+
+  const copyMail = () => {
+    navigator.clipboard.writeText(emailBody)
+    setCopiedMail(true)
+    setTimeout(() => setCopiedMail(false), 2000)
+  }
+
+  const copyEmails = () => {
+    navigator.clipboard.writeText(emails)
+    setCopiedEmails(true)
+    setTimeout(() => setCopiedEmails(false), 2000)
+  }
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-[580px] bg-white rounded-2xl shadow-[0_30px_80px_rgba(0,0,0,0.15)] overflow-hidden max-h-[90vh] overflow-y-auto">
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#f0e8e4]">
+          <div>
+            <p className="text-[11px] font-bold text-[#ce0100] tracking-widest uppercase mb-0.5">Șablon email</p>
+            <h2 className="text-base font-semibold text-[#111]">{text.public_id}</h2>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-[#f9f7f5] flex items-center justify-center hover:bg-[#f0e8e4] transition-all">
+            <XMarkIcon className="w-4 h-4 text-[#666]" />
+          </button>
+        </div>
+
+        <div className="p-5 space-y-4">
+          {/* Email body preview */}
+          <div>
+            <label className="text-xs font-semibold text-[#888] uppercase tracking-wide block mb-2">Textul emailului</label>
+            <div className="bg-[#faf7f5] border border-[#e8e2de] rounded-xl p-4 text-sm text-[#444] leading-relaxed whitespace-pre-wrap font-light">
+              {emailBody}
+            </div>
+          </div>
+
+          {/* Buttons */}
+          <div className="flex gap-3">
+            <button onClick={copyMail}
+              className={`flex-1 h-11 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all ${
+                copiedMail
+                  ? 'bg-[#166534] text-white'
+                  : 'bg-[#ce0100] text-white hover:bg-[#a80000] shadow-[0_4px_12px_rgba(206,1,0,0.22)]'
+              }`}>
+              {copiedMail
+                ? <><ClipboardDocumentCheckIcon className="w-4 h-4" /> Copiat!</>
+                : <><ClipboardDocumentIcon className="w-4 h-4" /> Copiați mailul</>}
+            </button>
+            <button onClick={copyEmails}
+              className={`flex-1 h-11 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all border ${
+                copiedEmails
+                  ? 'bg-[#166534] text-white border-transparent'
+                  : 'bg-white text-[#444] border-[#e8e2de] hover:bg-[#f9f7f5]'
+              }`}>
+              {copiedEmails
+                ? <><ClipboardDocumentCheckIcon className="w-4 h-4" /> Copiat!</>
+                : <><ClipboardDocumentIcon className="w-4 h-4" /> Copiați adresele</>}
+            </button>
+          </div>
+
+          {/* Emails preview */}
+          {emails && (
+            <div className="bg-[#f0f4ff] border border-[#c7d8ff] rounded-xl px-4 py-3">
+              <p className="text-[11px] font-semibold text-[#1e40af] uppercase tracking-wide mb-1">Adrese traducători</p>
+              <p className="text-xs text-[#444] break-all">{emails}</p>
+            </div>
+          )}
+
+          {/* Instructions */}
+          <div className="bg-[#fffdf0] border border-[#e8e2c0] rounded-xl p-4">
+            <p className="text-[11px] font-bold text-[#888] uppercase tracking-wide mb-2">Instrucțiuni</p>
+            <ul className="text-xs text-[#555] leading-relaxed space-y-1.5">
+              <li>• În <strong>BCC sau CCO</strong> (nici CC, nici TO) introdu toate adresele traducătorilor, ca adresele să fie private.</li>
+              <li>• În <strong>TO sau PARA</strong> introdu întotdeauna <strong className="text-[#ce0100]">echipa@tptranslator.com</strong>, ca să primim o copie.</li>
+              <li>• În subiect scrie <strong>CITAT</strong> urmat de numărul citatului.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
