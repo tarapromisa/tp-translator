@@ -533,7 +533,29 @@ Traducerea poate fi transmisă prin WhatsApp sau e-mail la adresa echipa@tptrans
           <div>
             <label className="text-xs font-semibold text-[#888] uppercase tracking-wide block mb-2">Textul emailului</label>
             <div className="bg-[#faf7f5] border border-[#e8e2de] rounded-xl p-4 text-sm text-[#444] leading-relaxed whitespace-pre-wrap font-light">
-              {emailBody}
+              <p style={{ fontFamily: 'Helvetica, Arial, sans-serif', fontSize: '13px', color: '#555', marginBottom: '16px', lineHeight: '1.7' }}>
+                Bună,
+              </p>
+              <p style={{ fontFamily: 'Helvetica, Arial, sans-serif', fontSize: '13px', color: '#555', marginBottom: '16px', lineHeight: '1.7' }}>
+                În urma verificării evidențelor noastre, te informăm că ți-a fost atribuită traducerea citatului <strong style={{ color: '#111' }}>{text.public_id}</strong>, cu următorul conținut:
+              </p>
+              <div style={{ borderLeft: '3px solid #ce0100', paddingLeft: '16px', margin: '20px 0' }}>
+                <p style={{ fontFamily: 'Montserrat, var(--font-montserrat), sans-serif', fontSize: '15px', fontWeight: 700, color: '#ce0100', lineHeight: '1.6', marginBottom: '8px' }}>
+                  "{text.citat_ro || ''}"
+                </p>
+                <p style={{ fontFamily: "'Times New Roman', Georgia, serif", fontSize: '13px', fontStyle: 'italic', color: '#777' }}>
+                  — {text.autor_original || 'Anonim'}
+                </p>
+              </div>
+              <p style={{ fontFamily: 'Helvetica, Arial, sans-serif', fontSize: '13px', color: '#555', marginBottom: '10px', lineHeight: '1.7' }}>
+                Te rugăm să realizezi traducerea în funcție de disponibilitatea ta, având în vedere faptul că termenul limită pentru finalizare este de 3 luni.
+              </p>
+              <p style={{ fontFamily: 'Helvetica, Arial, sans-serif', fontSize: '13px', color: '#555', lineHeight: '1.7' }}>
+                Traducerea poate fi transmisă prin WhatsApp sau e-mail la adresa <strong style={{ color: '#ce0100' }}>echipa@tptranslator.com</strong>.
+              </p>
+              <p style={{ fontFamily: 'Helvetica, Arial, sans-serif', fontSize: '13px', color: '#555', marginTop: '16px', lineHeight: '1.7' }}>
+                Îți mulțumim pentru disponibilitatea și implicarea ta în echipa TP Translator.
+              </p>
             </div>
           </div>
 
