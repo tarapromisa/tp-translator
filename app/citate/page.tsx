@@ -465,7 +465,11 @@ export default function CitatePage() {
       {/* ── EMAIL MODAL ── */}
       {emailModal && (
         <EmailSablonModal
-          text={emailModal.text}
+          text={{
+            public_id: emailModal.text.public_id,
+            citat_ro: emailModal.text.citat_ro ?? null,
+            autor_original: emailModal.text.autor_original ?? null,
+          }}
           emails={emailModal.emails}
           onClose={() => setEmailModal(null)}
         />
