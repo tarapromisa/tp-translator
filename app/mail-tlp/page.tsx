@@ -600,6 +600,33 @@ function RecordCard({ record, canManage, isSending, isSent, onSend, onDelete, fm
   onSend: ()=>void; onDelete: ()=>void; fmt: (d:string)=>string
 }) {
   const ids = record.citate_lipsesc?.split(',').map(s => s.trim()).filter(Boolean) ?? []
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = () => {
+    const name = record.traducator_user?.full_name?.split(' ')[0] ?? ''
+    const lang = record.traducator_user?.language ?? ''
+    const dateRange = `${fmt(record.din_ziua)} — ${fmt(record.pana_ziua)}`
+    const idList = ids.join(', ')
+    const text = `Bună, ${name}!
+
+Îți mulțumim pentru contribuția ta la proiectul nostru de traduceri.
+Conform evidenței noastre, ai următoarele citate netraduse:
+
+CITATELE CARE LIPSESC DE TRADUS [${lang}]
+${dateRange}
+
+${idList}
+
+Te rugăm să realizezi traducerile în funcție de disponibilitatea ta.
+Traducerea poate fi transmisă prin WhatsApp sau e-mail la adresa echipa@tptranslator.com.
+
+Cu recunoștință,
+Echipa TP Translator`
+    navigator.clipboard.writeText(text)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
   return (
     <div className={`bg-white border border-[#e8e2de] rounded-xl mb-2 overflow-x-hidden ${record.trimis ? 'opacity-70' : ''}`}>
       <div className={`h-1 ${record.trimis ? 'bg-[#166534]' : 'bg-[#c05c00]'}`} />
@@ -619,6 +646,14 @@ function RecordCard({ record, canManage, isSending, isSent, onSend, onDelete, fm
                   isSent ? 'bg-[#edfaf3] text-[#166534]' : 'bg-[#ce0100] text-white shadow-[0_3px_8px_rgba(206,1,0,0.2)] hover:bg-[#a80000] disabled:opacity-50'
                 }`}>
                 {isSent ? <><CheckSolid className="w-3 h-3"/>Trimis!</> : isSending ? '...' : <><PaperAirplaneIcon className="w-3 h-3"/>TLP</>}
+              </button>
+            )}
+            {canManage && ids.length > 0 && (
+              <button onClick={handleCopy}
+                className={`h-8 px-3 rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition-all border ${
+                  copied ? 'bg-[#edfaf3] text-[#166534] border-transparent' : 'bg-white text-[#555] border-[#e8e2de] hover:bg-[#f9f7f5]'
+                }`}>
+                {copied ? '✓ Copiat!' : '⎘ Șablon'}
               </button>
             )}
             {canManage && (
