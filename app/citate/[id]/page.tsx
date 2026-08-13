@@ -120,6 +120,7 @@ export default function CitationDetailPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [showEditDrawer, setShowEditDrawer] = useState(false)
+  const [showEmailModal, setShowEmailModal] = useState(false)
 
   useEffect(() => {
     const fetchCitation = async () => {
@@ -179,7 +180,6 @@ export default function CitationDetailPage() {
   const translatorCards = translationCards
 
   const emails = translatorCards.map((c) => c.email).filter(Boolean).join(',')
-  const [showEmailModal, setShowEmailModal] = useState(false)
 
   const whatsappText = encodeURIComponent(
     `*CITAT ${citation.public_id || ''}*\n\n${citation.citat_ro || ''}\n\n_${citation.autor_original || ''}_`
