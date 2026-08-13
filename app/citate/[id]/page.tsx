@@ -17,6 +17,9 @@ import {
   ShieldCheckIcon,
   HashtagIcon,
   CheckCircleIcon,
+  XMarkIcon,
+  ClipboardDocumentIcon,
+  ClipboardDocumentCheckIcon,
 } from '@heroicons/react/24/outline'
 import { CheckCircleIcon as CheckCircleSolid } from '@heroicons/react/24/solid'
 import { FaWhatsapp } from 'react-icons/fa'
@@ -176,12 +179,12 @@ export default function CitationDetailPage() {
   const translatorCards = translationCards
 
   const emails = translatorCards.map((c) => c.email).filter(Boolean).join(',')
+  const [showEmailModal, setShowEmailModal] = useState(false)
 
   const whatsappText = encodeURIComponent(
     `*CITAT ${citation.public_id || ''}*\n\n${citation.citat_ro || ''}\n\n_${citation.autor_original || ''}_`
   )
   const whatsappUrl = `https://api.whatsapp.com/send?text=${whatsappText}`
-  const mailUrl = `https://echipatp.github.io/tptranslator/mailcitatect.html?numarCitat=${encodeURIComponent(citation.public_id || '')}&citatRO=${encodeURIComponent(citation.citat_ro || '')}&autorRO=${encodeURIComponent(citation.autor_original || '')}&emails=${encodeURIComponent(emails)}`
 
   const handleDeleteConfirm = async () => {
     setIsDeleting(true)
@@ -228,14 +231,13 @@ export default function CitationDetailPage() {
               WhatsApp
             </a>
 
-            <a
-              href={mailUrl}
-              target="_blank"
+            <button
+              onClick={() => setShowEmailModal(true)}
               className="h-[42px] px-[18px] rounded-[12px] bg-[#111] text-white flex items-center gap-[8px] text-[14px] font-[600] hover:bg-[#2a2a2a] transition-all"
             >
               <EnvelopeIcon className="w-[17px] h-[17px]" />
               Email
-            </a>
+            </button>
 
             <button
               onClick={() => setShowEditDrawer(true)}
@@ -490,6 +492,131 @@ export default function CitationDetailPage() {
         onClose={() => setShowEditDrawer(false)}
         onSaved={handleEdited}
       />
+
+      {showEmailModal && (
+        <EmailSablonModal
+          text={{
+            public_id: citation.public_id ?? '',
+            citat_ro: citation.citat_ro ?? null,
+            autor_original: citation.autor_original ?? null,
+          }}
+          emails={emails}
+          onClose={() => setShowEmailModal(false)}
+        />
+      )}
     </main>
+  )
+}
+
+// ── Email Șablon Modal ────────────────────────────────────────────
+function EmailSablonModal({ text, emails, onClose }: {
+  text: { public_id: string; citat_ro: string | null; autor_original: string | null }
+  emails: string
+  onClose: () => void
+}) {
+  const [copiedMail, setCopiedMail] = useState(false)
+  const [copiedEmails, setCopiedEmails] = useState(false)
+
+  const emailBody = `Bună,
+
+În urma verificării evidențelor noastre, te informăm că ți-a fost atribuită traducerea citatului ${text.public_id}, cu următorul conținut:
+
+"${text.citat_ro || ''}"
+— ${text.autor_original || 'Anonim'}
+
+Te rugăm să realizezi traducerea în funcție de disponibilitatea ta, având în vedere faptul că termenul limită pentru finalizare este de 3 luni.
+
+Traducerea poate fi transmisă prin WhatsApp sau e-mail la adresa echipa@tptranslator.com.
+
+Îți mulțumim pentru disponibilitatea și implicarea ta în echipa TP Translator.`
+
+  const copyMail = () => {
+    navigator.clipboard.writeText(emailBody)
+    setCopiedMail(true)
+    setTimeout(() => setCopiedMail(false), 2000)
+  }
+
+  const copyEmails = () => {
+    navigator.clipboard.writeText(emails)
+    setCopiedEmails(true)
+    setTimeout(() => setCopiedEmails(false), 2000)
+  }
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-[580px] bg-white rounded-2xl shadow-[0_30px_80px_rgba(0,0,0,0.15)] overflow-hidden max-h-[90vh] overflow-y-auto">
+
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#f0e8e4]">
+          <div>
+            <p className="text-[11px] font-bold text-[#ce0100] tracking-widest uppercase mb-0.5">Șablon email</p>
+            <h2 className="text-base font-semibold text-[#111]">{text.public_id}</h2>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-[#f9f7f5] flex items-center justify-center hover:bg-[#f0e8e4] transition-all">
+            <XMarkIcon className="w-4 h-4 text-[#666]" />
+          </button>
+        </div>
+
+        <div className="p-5 space-y-4">
+          <div>
+            <label className="text-xs font-semibold text-[#888] uppercase tracking-wide block mb-2">Textul emailului</label>
+            <div className="bg-[#faf7f5] border border-[#e8e2de] rounded-xl p-4 text-sm text-[#444] leading-relaxed">
+              <p style={{ fontFamily: 'Helvetica, Arial, sans-serif', fontSize: '13px', color: '#555', marginBottom: '16px', lineHeight: '1.7' }}>Bună,</p>
+              <p style={{ fontFamily: 'Helvetica, Arial, sans-serif', fontSize: '13px', color: '#555', marginBottom: '16px', lineHeight: '1.7' }}>
+                În urma verificării evidențelor noastre, te informăm că ți-a fost atribuită traducerea citatului <strong style={{ color: '#111' }}>{text.public_id}</strong>, cu următorul conținut:
+              </p>
+              <div style={{ borderLeft: '3px solid #ce0100', paddingLeft: '16px', margin: '20px 0' }}>
+                <p style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '15px', fontWeight: 700, color: '#ce0100', lineHeight: '1.6', marginBottom: '8px' }}>
+                  "{text.citat_ro || ''}"
+                </p>
+                <p style={{ fontFamily: "'Times New Roman', Georgia, serif", fontSize: '13px', fontStyle: 'italic', color: '#777' }}>
+                  — {text.autor_original || 'Anonim'}
+                </p>
+              </div>
+              <p style={{ fontFamily: 'Helvetica, Arial, sans-serif', fontSize: '13px', color: '#555', marginBottom: '10px', lineHeight: '1.7' }}>
+                Te rugăm să realizezi traducerea în funcție de disponibilitatea ta, având în vedere faptul că termenul limită pentru finalizare este de 3 luni.
+              </p>
+              <p style={{ fontFamily: 'Helvetica, Arial, sans-serif', fontSize: '13px', color: '#555', lineHeight: '1.7' }}>
+                Traducerea poate fi transmisă prin WhatsApp sau e-mail la adresa <strong style={{ color: '#ce0100' }}>echipa@tptranslator.com</strong>.
+              </p>
+              <p style={{ fontFamily: 'Helvetica, Arial, sans-serif', fontSize: '13px', color: '#555', marginTop: '16px', lineHeight: '1.7' }}>
+                Îți mulțumim pentru disponibilitatea și implicarea ta în echipa TP Translator.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+            <button onClick={copyMail}
+              className={`flex-1 h-11 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all ${
+                copiedMail ? 'bg-[#166534] text-white' : 'bg-[#ce0100] text-white hover:bg-[#a80000] shadow-[0_4px_12px_rgba(206,1,0,0.22)]'
+              }`}>
+              {copiedMail ? <><ClipboardDocumentCheckIcon className="w-4 h-4" /> Copiat!</> : <><ClipboardDocumentIcon className="w-4 h-4" /> Copiați mailul</>}
+            </button>
+            <button onClick={copyEmails}
+              className={`flex-1 h-11 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all border ${
+                copiedEmails ? 'bg-[#166534] text-white border-transparent' : 'bg-white text-[#444] border-[#e8e2de] hover:bg-[#f9f7f5]'
+              }`}>
+              {copiedEmails ? <><ClipboardDocumentCheckIcon className="w-4 h-4" /> Copiat!</> : <><ClipboardDocumentIcon className="w-4 h-4" /> Copiați adresele</>}
+            </button>
+          </div>
+
+          {emails && (
+            <div className="bg-[#f0f4ff] border border-[#c7d8ff] rounded-xl px-4 py-3">
+              <p className="text-[11px] font-semibold text-[#1e40af] uppercase tracking-wide mb-1">Adrese traducători</p>
+              <p className="text-xs text-[#444] break-all">{emails}</p>
+            </div>
+          )}
+
+          <div className="bg-[#fffdf0] border border-[#e8e2c0] rounded-xl p-4">
+            <p className="text-[11px] font-bold text-[#888] uppercase tracking-wide mb-2">Instrucțiuni</p>
+            <ul className="text-xs text-[#555] leading-relaxed space-y-1.5">
+              <li>• În <strong>BCC sau CCO</strong> (nici CC, nici TO) introdu toate adresele traducătorilor, ca adresele să fie private.</li>
+              <li>• În <strong>TO sau PARA</strong> introdu întotdeauna <strong className="text-[#ce0100]">echipa@tptranslator.com</strong>, ca să primim o copie.</li>
+              <li>• În subiect scrie <strong>CITAT</strong> urmat de numărul citatului.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
