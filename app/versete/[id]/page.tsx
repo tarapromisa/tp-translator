@@ -6,7 +6,7 @@ import Sidebar from '@/components/Sidebar'
 import { supabase } from '@/lib/supabase'
 import {
   ArrowLeftIcon, PencilSquareIcon, TrashIcon,
-  CalendarIcon, ClockIcon, UserIcon, ShieldCheckIcon,
+  CalendarIcon, ClockIcon, UserIcon, ShieldCheckIcon, CheckCircleIcon,
   HashtagIcon,
 } from '@heroicons/react/24/outline'
 import { CheckCircleIcon as CheckCircleSolid } from '@heroicons/react/24/solid'
@@ -136,7 +136,7 @@ export default function VersetDetailPage() {
     const fetch = async () => {
       const { data } = await supabase
         .from('versete')
-        .select('*, created_by_user:created_by(full_name, role)')
+        .select('*, created_by_user:created_by(full_name, role), validated_by_user:validated_by(full_name)')
         .eq('id', params.id)
         .single()
       setVerset(data); setLoading(false)
@@ -342,6 +342,17 @@ export default function VersetDetailPage() {
                   </div>
                   <ValidationBadge validation={verset.validation} status={verset.status ?? 'Incomplet'} />
                 </div>
+
+                {verset.validation === 'Validat' && (verset as any).validated_by_user?.full_name && (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-sm text-[#666]">
+                      <CheckCircleIcon className="w-4 h-4" /> Validat de
+                    </div>
+                    <span className="text-sm font-semibold text-[#166534]">
+                      {(verset as any).validated_by_user.full_name}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 

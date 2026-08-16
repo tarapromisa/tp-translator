@@ -38,6 +38,7 @@ type TextRow = {
   traducator_ro?: string | null; traductor_es?: string | null; traductor_en?: string | null
   traductor_de?: string | null; traductor_pt?: string | null; traductor_fr?: string | null
   traductor_it?: string | null; created_at?: string
+  validated_by_user?: { full_name: string } | null
 }
 type ViewMode = 'cards' | 'table' | 'compact'
 type SortField = 'created_at' | 'public_id' | 'progress'
@@ -101,7 +102,7 @@ export default function CitatePage() {
   const PER_PAGE = 20
 
   useEffect(() => {
-    supabase.from('texts').select('*').order('created_at', { ascending: false })
+    supabase.from('texts').select('*, validated_by_user:validated_by(full_name)').order('created_at', { ascending: false })
       .then(({ data }) => { setTexts(data || []); setLoading(false) })
   }, [])
 
@@ -327,7 +328,7 @@ export default function CitatePage() {
                         </div>
 
                         {/* Lang pills */}
-                        <div className="flex flex-wrap gap-1.5 mb-4">
+                        <div className="flex flex-wrap gap-1.5 mb-2">
                           {LANG_FIELDS.map((lang) => {
                             const done = !!(text as any)[lang.field]?.trim()
                             return (
@@ -338,6 +339,16 @@ export default function CitatePage() {
                             )
                           })}
                         </div>
+
+                        {/* Validat de */}
+                        {text.validation === 'Validat' && text.validated_by_user?.full_name && (
+                          <div className="flex items-center gap-1.5 mb-3">
+                            <CheckCircleIcon className="w-3.5 h-3.5 text-[#166534] flex-shrink-0" />
+                            <span className="text-[11px] font-semibold text-[#166534]">
+                              Validat de {text.validated_by_user.full_name}
+                            </span>
+                          </div>
+                        )}
 
                         {/* Actions */}
                         <div className="flex gap-2 pt-4 border-t border-[#f4ece9]">

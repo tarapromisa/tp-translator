@@ -135,7 +135,8 @@ export default function CitationDetailPage() {
           translator_pt:traductor_pt ( full_name, role, active ),
           translator_fr:traductor_fr ( full_name, role, active ),
           translator_it:traductor_it ( full_name, role, active ),
-          created_by_user:created_by ( full_name, role )
+          created_by_user:created_by ( full_name, role ),
+          validated_by_user:validated_by ( full_name )
         `)
         .eq('id', params.id)
         .single()
@@ -460,6 +461,21 @@ export default function CitationDetailPage() {
                     citationStatus={citation.status ?? 'Incomplet'}
                   />
                 </div>
+
+                {citation.validation === 'Validat' && citation.validated_by_user?.full_name && (
+                  <>
+                    <div className="h-px bg-[#f4ece9]" />
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-[8px] text-[13px] text-[#8f8179]">
+                        <CheckCircleIcon className="w-[15px] h-[15px]" />
+                        Validat de
+                      </div>
+                      <span className="text-[13px] font-semibold text-[#166534]">
+                        {citation.validated_by_user.full_name}
+                      </span>
+                    </div>
+                  </>
+                )}
 
                 <div className="h-px bg-[#f4ece9]" />
 

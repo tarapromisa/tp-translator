@@ -37,6 +37,7 @@ type VersetRow = {
   referinta_es?: string | null; referinta_en?: string | null; referinta_de?: string | null
   referinta_pt?: string | null; referinta_fr?: string | null; referinta_it?: string | null
   created_at?: string
+  validated_by_user?: { full_name: string } | null
 }
 type ViewMode = 'cards' | 'table' | 'compact'
 type SortField = 'created_at' | 'public_id' | 'progress'
@@ -103,7 +104,7 @@ export default function VersetePage() {
   const canSeeReferinte = role === 'Admin' || role === 'Coordonator' || role === 'Coordonator principal'
 
   useEffect(() => {
-    supabase.from('versete').select('*').order('created_at', { ascending: false })
+    supabase.from('versete').select('*, validated_by_user:validated_by(full_name)').order('created_at', { ascending: false })
       .then(({ data }) => { setVersets(data || []); setLoading(false) })
   }, [])
 
@@ -327,7 +328,7 @@ export default function VersetePage() {
                             </div>
 
                             {/* Lang pills */}
-                            <div className="flex flex-wrap gap-1.5">
+                            <div className="flex flex-wrap gap-1.5 mb-2">
                               {LANG_FIELDS.map(lang => {
                                 const done = !!(v as any)[lang.field]?.trim()
                                 return (
@@ -338,6 +339,14 @@ export default function VersetePage() {
                                 )
                               })}
                             </div>
+                            {v.validation === 'Validat' && (v as any).validated_by_user?.full_name && (
+                              <div className="flex items-center gap-1.5 mt-1">
+                                <CheckCircleIcon className="w-3.5 h-3.5 text-[#166534] flex-shrink-0" />
+                                <span className="text-[11px] font-semibold text-[#166534]">
+                                  Validat de {(v as any).validated_by_user.full_name}
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </div>
                       )
