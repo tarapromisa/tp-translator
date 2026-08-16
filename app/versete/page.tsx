@@ -104,7 +104,7 @@ export default function VersetePage() {
   const canSeeReferinte = role === 'Admin' || role === 'Coordonator' || role === 'Coordonator principal'
 
   useEffect(() => {
-    supabase.from('versete').select('*, validated_by_user:validated_by(full_name)').order('created_at', { ascending: false })
+    supabase.from('versete').select('*').order('created_at', { ascending: false })
       .then(({ data }) => { setVersets(data || []); setLoading(false) })
   }, [])
 
