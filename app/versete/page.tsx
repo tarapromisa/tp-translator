@@ -38,7 +38,6 @@ type VersetRow = {
   referinta_pt?: string | null; referinta_fr?: string | null; referinta_it?: string | null
   created_at?: string
   validated_by_user?: { full_name: string } | null
-  validated_by_user?: { full_name: string } | null
 }
 type ViewMode = 'cards' | 'table' | 'compact'
 type SortField = 'created_at' | 'public_id' | 'progress'
