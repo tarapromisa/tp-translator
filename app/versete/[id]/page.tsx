@@ -136,7 +136,7 @@ export default function VersetDetailPage() {
     const fetch = async () => {
       const { data } = await supabase
         .from('versete')
-        .select('*, created_by_user:created_by(full_name, role)')
+        .select('*, created_by_user:created_by(full_name, role), validated_by_user:validated_by(full_name)')
         .eq('id', params.id)
         .single()
       setVerset(data); setLoading(false)
