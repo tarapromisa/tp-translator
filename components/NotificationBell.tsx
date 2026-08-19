@@ -62,8 +62,12 @@ export default function NotificationBell() {
     if (!profile?.id) return
     fetchNotificari()
 
+    const channelName = `notificari-${profile.id}`
+    // Remove any existing channel first
+    supabase.removeChannel(supabase.channel(channelName))
+
     const channel = supabase
-      .channel(`notificari:${profile.id}`)
+      .channel(channelName)
       .on('postgres_changes', {
         event: 'INSERT', schema: 'public', table: 'notificari',
         filter: `user_id=eq.${profile.id}`,
