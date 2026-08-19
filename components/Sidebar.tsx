@@ -6,6 +6,7 @@ import { useUser } from '@/context/UserContext'
 import { supabase } from '@/lib/supabase'
 import { useState } from 'react'
 import { Quote } from 'lucide-react'
+import NotificationBell from '@/components/NotificationBell'
 import {
   HomeIcon, BookOpenIcon, UsersIcon,
   ShieldCheckIcon, ChartBarIcon, Cog8ToothIcon,
@@ -95,8 +96,12 @@ export default function Sidebar() {
 
       <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, #e8e2de, transparent)', margin: '0 16px', flexShrink: 0 }} />
 
-      {/* User */}
+      {/* User + Bell */}
       <div style={{ padding: '12px 10px 18px', flexShrink: 0 }}>
+        {/* Bell row */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px', paddingRight: '4px' }}>
+          <NotificationBell />
+        </div>
         <div style={{ background: '#f7f3f0', borderRadius: '18px', padding: '12px 14px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
             <div style={{
