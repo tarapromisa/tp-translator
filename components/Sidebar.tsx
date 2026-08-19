@@ -54,13 +54,16 @@ export default function Sidebar() {
 
   const sidebarContent = (
     <>
-      {/* Logo */}
-      <div style={{ padding: '24px 20px 18px', flexShrink: 0 }}>
+      {/* Logo + Bell */}
+      <div style={{ padding: '20px 16px 16px', flexShrink: 0 }}>
         <div className="flex items-center justify-between">
-          <img src="/logo.png" alt="TP Translator" style={{ height: '52px', width: 'auto', objectFit: 'contain' }} />
-          <button onClick={() => setMobileOpen(false)} className="md:hidden w-8 h-8 rounded-full bg-[#f0e9e5] flex items-center justify-center">
-            <XMarkIcon className="w-4 h-4 text-[#555]" />
-          </button>
+          <img src="/logo.png" alt="TP Translator" style={{ height: '48px', width: 'auto', objectFit: 'contain' }} />
+          <div className="flex items-center gap-1">
+            <NotificationBell />
+            <button onClick={() => setMobileOpen(false)} className="md:hidden w-8 h-8 rounded-full bg-[#f0e9e5] flex items-center justify-center ml-1">
+              <XMarkIcon className="w-4 h-4 text-[#555]" />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -96,12 +99,8 @@ export default function Sidebar() {
 
       <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, #e8e2de, transparent)', margin: '0 16px', flexShrink: 0 }} />
 
-      {/* User + Bell */}
+      {/* User */}
       <div style={{ padding: '12px 10px 18px', flexShrink: 0 }}>
-        {/* Bell row */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px', paddingRight: '4px' }}>
-          <NotificationBell />
-        </div>
         <div style={{ background: '#f7f3f0', borderRadius: '18px', padding: '12px 14px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
             <div style={{
@@ -150,8 +149,8 @@ export default function Sidebar() {
       <div className="md:hidden fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 h-16"
         style={{ background: 'rgba(252,251,250,0.95)', backdropFilter: 'blur(20px)', borderBottom: '1px solid #f3ece8' }}>
         <img src="/logo.png" alt="TP Translator" style={{ height: '44px', width: 'auto', objectFit: 'contain' }} />
-        <div className="flex items-center gap-3">
-          {/* Current page avatar */}
+        <div className="flex items-center gap-2">
+          <NotificationBell />
           <div style={{
             width: '32px', height: '32px', borderRadius: '50%',
             background: profile?.avatar_url ? 'transparent' : '#ce0100',
