@@ -245,6 +245,62 @@ export default function DashboardPage() {
         </div>
 
         {/* ── STAT CARDS ── */}
+        {/* ── ANUNȚURI (compact, top) ── */}
+        {anunturi.length > 0 && (
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '20px' }}>
+            {anunturi.map(a => (
+              <div key={a.id} style={{
+                background: 'white', border: '1px solid #f0e8e4', borderRadius: '16px',
+                overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                width: '320px', flexShrink: 0,
+              }}>
+                <div style={{ height: '3px', background: '#ce0100' }} />
+                <div style={{ padding: '14px 16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px' }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                        <MegaphoneIcon style={{ width: '12px', height: '12px', color: '#ce0100', flexShrink: 0 }} />
+                        <p style={{ fontSize: '12px', fontWeight: 700, color: '#ce0100', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Anunț</p>
+                      </div>
+                      <p style={{ fontSize: '14px', fontWeight: 700, color: '#111', marginBottom: '4px' }}>{a.titlu}</p>
+                      <p style={{ fontSize: '12px', color: '#555', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>{a.corp}</p>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px', flexWrap: 'wrap' }}>
+                        {a.created_by_user?.full_name && (
+                          <span style={{ fontSize: '10px', color: '#888' }}>— {a.created_by_user.full_name}</span>
+                        )}
+                        <span style={{ fontSize: '10px', color: '#bbb' }}>
+                          {new Date(a.created_at).toLocaleDateString('ro-RO', { day: '2-digit', month: 'short' })}
+                        </span>
+                      </div>
+                    </div>
+                    {canManageAnunturi && (
+                      <button onClick={() => setConfirmDeleteAnuntId(a.id)}
+                        style={{ width: '28px', height: '28px', borderRadius: '8px', background: '#fff1f1', border: '1px solid #ffd3d3', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+                        <TrashIcon style={{ width: '12px', height: '12px', color: '#ce0100' }} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+            {canManageAnunturi && (
+              <button onClick={() => setShowAnuntModal(true)}
+                style={{ width: '44px', height: '44px', borderRadius: '14px', background: '#fff1f1', border: '1px dashed #ffa0a0', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', alignSelf: 'flex-start', marginTop: '3px' }}>
+                <PlusIcon style={{ width: '18px', height: '18px', color: '#ce0100' }} />
+              </button>
+            )}
+          </div>
+        )}
+        {anunturi.length === 0 && canManageAnunturi && (
+          <div style={{ marginBottom: '20px' }}>
+            <button onClick={() => setShowAnuntModal(true)}
+              style={{ height: '38px', padding: '0 16px', borderRadius: '12px', background: 'white', border: '1px dashed #ffa0a0', fontSize: '13px', fontWeight: 600, color: '#ce0100', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <PlusIcon style={{ width: '14px', height: '14px' }} />
+              Adaugă anunț
+            </button>
+          </div>
+        )}
+
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
           {[
             { label: 'Citate',     sub: `${stats?.citateInTraducere ?? 0} în traducere`, value: stats?.totalCitate ?? 0,    Icon: ChatBubbleBottomCenterTextIcon, href: '/citate'     },
@@ -356,13 +412,23 @@ export default function DashboardPage() {
             </div>
             <div style={{ display:'flex', flexDirection:'column', gap:'8px', marginTop:'24px' }}>
               {[
-                { label:'+ Citat nou',    path:'/citate'      },
-                { label:'+ Verset nou',   path:'/versete'     },
-                { label:'Validări',       path:'/validari'    },
-                { label:'Mail TLP',       path:'/mail-tlp'    },
-                { label:'Productivitate', path:'/productivitate' },
+                { label:'+ Citat nou',         path:'/citate'         },
+                { label:'+ Verset nou',         path:'/versete'        },
+                { label:'+ Cântare nouă',       path:'/cantari'        },
+                { label:'+ Citat RO nou',       path:'/citate-ro'      },
+                { label:'+ Sarcină calendar',   path:'/calendar'       },
+                { label:'+ Anunț nou',          path:'#anunturi'       },
+                { label:'Mail TLP / TLG',       path:'/mail-tlp'       },
+                { label:'Validări',             path:'/validari'       },
+                { label:'Productivitate',       path:'/productivitate' },
               ].map(({ label, path }) => (
-                <button key={label} onClick={() => router.push(path)}
+                <button key={label} onClick={() => {
+                  if (path === '#anunturi') {
+                    setShowAnuntModal(true)
+                  } else {
+                    router.push(path)
+                  }
+                }}
                   style={{
                     height:'40px', borderRadius:'13px', padding:'0 16px', textAlign:'left',
                     background:'rgba(255,255,255,0.15)', color:'white',
@@ -480,85 +546,6 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* ── ANUNȚURI ── */}
-        <div style={{ marginTop: '32px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div style={{ width: '32px', height: '32px', borderRadius: '10px', background: '#fff1f1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <MegaphoneIcon style={{ width: '16px', height: '16px', color: '#ce0100' }} />
-              </div>
-              <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#111' }}>Anunțuri</h2>
-              {anunturi.length > 0 && (
-                <span style={{ background: '#ce0100', color: 'white', borderRadius: '100px', padding: '1px 8px', fontSize: '11px', fontWeight: 700 }}>
-                  {anunturi.length}
-                </span>
-              )}
-            </div>
-            {canManageAnunturi && (
-              <button onClick={() => setShowAnuntModal(true)}
-                style={{
-                  height: '36px', padding: '0 16px', borderRadius: '12px',
-                  background: '#ce0100', color: 'white', border: 'none',
-                  fontSize: '13px', fontWeight: 600, cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', gap: '6px',
-                  boxShadow: '0 4px 12px rgba(206,1,0,0.22)',
-                }}>
-                <PlusIcon style={{ width: '14px', height: '14px' }} />
-                Anunț nou
-              </button>
-            )}
-          </div>
-
-          {anunturi.length === 0 ? (
-            <div style={{ background: 'white', border: '1px solid #f0e8e4', borderRadius: '16px', padding: '32px', textAlign: 'center' }}>
-              <MegaphoneIcon style={{ width: '32px', height: '32px', color: '#ddd', margin: '0 auto 8px' }} />
-              <p style={{ fontSize: '13px', color: '#aaa' }}>Niciun anunț momentan.</p>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {anunturi.map(a => (
-                <div key={a.id} style={{
-                  background: 'white', border: '1px solid #f0e8e4', borderRadius: '16px',
-                  overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-                }}>
-                  <div style={{ height: '3px', background: '#ce0100' }} />
-                  <div style={{ padding: '16px 20px' }}>
-                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ fontSize: '15px', fontWeight: 700, color: '#111', marginBottom: '6px' }}>{a.titlu}</p>
-                        <p style={{ fontSize: '13px', color: '#555', lineHeight: '1.65', whiteSpace: 'pre-wrap' }}>{a.corp}</p>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '12px', flexWrap: 'wrap' }}>
-                          {a.created_by_user?.full_name && (
-                            <span style={{ fontSize: '11px', color: '#888', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                              <UserGroupIcon style={{ width: '12px', height: '12px' }} />
-                              {a.created_by_user.full_name}
-                            </span>
-                          )}
-                          <span style={{ fontSize: '11px', color: '#bbb' }}>
-                            {new Date(a.created_at).toLocaleDateString('ro-RO', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        </div>
-                      </div>
-                      {canManageAnunturi && (
-                        <button
-                          onClick={() => setConfirmDeleteAnuntId(a.id)}
-                          style={{
-                            width: '32px', height: '32px', borderRadius: '10px',
-                            background: '#fff1f1', border: '1px solid #ffd3d3',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            cursor: 'pointer', flexShrink: 0,
-                          }}>
-                          <TrashIcon style={{ width: '14px', height: '14px', color: '#ce0100' }} />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
       </div>
     </main>
 
@@ -654,17 +641,20 @@ function AnuntModal({ onClose, onSaved, userRole, userEmail, userName }: {
             type: 'custom',
             fromEmail: userEmail,
             fromName: userName,
-            subject: `[Anunț TP Translator] ${titlu.trim()}`,
+            subject: titlu.trim(),
             htmlBody: `<!DOCTYPE html><html><body style="font-family:Helvetica,Arial,sans-serif;background:#f9f7f5;margin:0;padding:0">
 <div style="max-width:600px;margin:0 auto;padding:24px 16px">
   <div style="background:#ce0100;border-radius:16px 16px 0 0;padding:28px 32px">
     <img src="https://res.cloudinary.com/dlgqpbpwu/image/upload/v1780344170/new_tpt_1_sxiu3b.png" alt="TP Translator" style="height:32px;width:auto;display:block;margin-bottom:20px" />
-    <h1 style="margin:0;font-size:28px;font-weight:300;color:#fff;line-height:1.2">Anunț nou<br><span style="font-style:italic;color:rgba(255,255,255,0.85);font-family:'Times New Roman',serif">${titlu.trim()}</span></h1>
+    <h1 style="margin:0;font-size:28px;font-weight:300;color:#fff;line-height:1.2">Anunț<br><span style="font-style:italic;color:rgba(255,255,255,0.85);font-family:'Times New Roman',serif">${titlu.trim()}</span></h1>
   </div>
   <div style="height:4px;background:#a80000"></div>
   <div style="background:white;padding:32px;border:1px solid #f0e9e5;border-top:none;border-radius:0 0 16px 16px">
     <p style="font-size:14px;line-height:1.75;color:#444;white-space:pre-wrap">${corp.trim()}</p>
-    <p style="font-size:13px;color:#888;margin-top:24px">— ${userName}, TP Translator</p>
+    <p style="font-size:13px;color:#888;margin-top:24px;border-top:1px solid #f0e9e5;padding-top:16px">Cu drag,<br><strong style="color:#111">${userName}</strong><br><span style="color:#ce0100;font-size:12px">TP Translator</span></p>
+  </div>
+  <div style="margin-top:20px;border-radius:12px;overflow:hidden">
+    <img src="https://res.cloudinary.com/dlgqpbpwu/image/upload/v1780257817/Gif_TPT_2026_1_wl9try.gif" alt="TP Translator" style="width:100%;display:block;border-radius:12px" />
   </div>
 </div>
 </body></html>`,

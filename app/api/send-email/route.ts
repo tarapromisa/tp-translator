@@ -6,7 +6,7 @@ const resend = new Resend(process.env.RESEND_API_KEY)
 const FROM = 'echipa@tptranslator.com'
 const FROM_NAME = 'Echipa TP Translator'
 const BCC = 'echipa@tptranslator.com'
-const CC = 'coordonatori@tptranslator.com'
+const BCC_COORD = 'coordonatoritptranslator@gmail.com'
 const GIF = 'https://res.cloudinary.com/dlgqpbpwu/image/upload/v1780257817/Gif_TPT_2026_1_wl9try.gif'
 
 function welcomeHtml(name: string): string {
@@ -245,8 +245,7 @@ export async function POST(req: NextRequest) {
     const { data, error } = await resend.emails.send({
       from: `${fromName ?? FROM_NAME} <${fromEmail ?? FROM}>`,
       to: [`${toName} <${to}>`],
-      cc: [CC],
-      bcc: [BCC],
+      bcc: [BCC, BCC_COORD],
       subject,
       html: htmlBody,
     })
