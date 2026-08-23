@@ -88,7 +88,7 @@ function generateEmailHtml(toName: string, dinZiua: string, panaZiua: string, ci
 
     <!-- Instructions -->
     <p style="margin:0 0 20px;font-size:14px;line-height:1.75;color:#444;font-family:Helvetica,Arial,sans-serif;">
-      Te rugăm să le traduci în măsura în care timpul îți permite având în vedere că termenul limită este de <strong style="color:#111;">3 luni</strong>. De asemenea, poți transmite traducerile atât prin adresa de mail <a href="mailto:echipa@tptranslator.tarapromisa.org" style="color:#ce0100;text-decoration:none;">echipa@tptranslator.tarapromisa.org</a> cât și prin grupul de WhatsApp.<br>
+      Te rugăm să le traduci în măsura în care timpul îți permite având în vedere că termenul limită este de <strong style="color:#111;">3 luni</strong>. De asemenea, poți transmite traducerile atât prin adresa de mail <a href="mailto:echipa@tptranslator.com" style="color:#ce0100;text-decoration:none;">echipa@tptranslator.com</a> cât și prin grupul de WhatsApp.<br>
       Dacă ai întrebări, nu ezita să ne contactezi.
     </p>
 
@@ -112,7 +112,7 @@ function generateEmailHtml(toName: string, dinZiua: string, panaZiua: string, ci
 
   <!-- Footer -->
   <p style="margin:16px 0 0;text-align:center;font-size:11px;color:#bbb;font-family:Helvetica,Arial,sans-serif;">
-    © 2026 TP Translator · <a href="mailto:echipa@tptranslator.tarapromisa.org" style="color:#bbb;text-decoration:none;">echipa@tptranslator.tarapromisa.org</a>
+    © 2026 TP Translator · <a href="mailto:echipa@tptranslator.com" style="color:#bbb;text-decoration:none;">echipa@tptranslator.com</a>
   </p>
 
 </div>
@@ -328,7 +328,7 @@ export default function MailTLPPage() {
   const sendEmail = async (record: MailRecord) => {
     if (!record.traducator_user || !record.citate_lipsesc) return
     setSendingId(record.id)
-    const fromEmail = currentUser?.email ?? 'echipa@tptranslator.tarapromisa.org'
+    const fromEmail = currentUser?.email ?? 'echipa@tptranslator.com'
     const fromName  = currentUser?.full_name ?? 'Echipa TP Translator'
     const fromRole = currentUser?.role ?? 'Coordonator'
     const html = generateEmailHtml(record.traducator_user.full_name, record.din_ziua, record.pana_ziua, record.citate_lipsesc, fromName, fromEmail, record.traducator_user.language, fromRole)
