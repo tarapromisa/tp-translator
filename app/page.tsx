@@ -6,6 +6,7 @@ import Sidebar from '@/components/Sidebar'
 import AnimatedCounter from '@/components/AnimatedCounter'
 import { useUser } from '@/context/UserContext'
 import { supabase } from '@/lib/supabase'
+import EmailSentAlert from '@/components/EmailSentAlert'
 import {
   ArrowUpRightIcon,
   ChatBubbleBottomCenterTextIcon,
@@ -603,6 +604,8 @@ function AnuntModal({ onClose, onSaved, userRole, userEmail, userName }: {
   const [users, setUsers] = useState<{ id: string; full_name: string; email: string; role: string }[]>([])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showEmailAlert, setShowEmailAlert] = useState(false)
+  const [sentCount, setSentCount] = useState(0)
   const { profile } = useUser()
 
   useEffect(() => {
@@ -661,13 +664,19 @@ function AnuntModal({ onClose, onSaved, userRole, userEmail, userName }: {
           }),
         })
       }
+      setSentCount(recipients.length)
     }
 
     setSaving(false)
-    onSaved()
+    if (sendEmail && sentCount > 0) {
+      setShowEmailAlert(true)
+    } else {
+      onSaved()
+    }
   }
 
   return (
+    <>
     <div style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
       <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)' }} onClick={onClose} />
       <div style={{ position: 'relative', background: 'white', borderRadius: '22px', width: '100%', maxWidth: '520px', boxShadow: '0 30px 80px rgba(0,0,0,0.15)', overflow: 'hidden', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
@@ -754,5 +763,15 @@ function AnuntModal({ onClose, onSaved, userRole, userEmail, userName }: {
         </div>
       </div>
     </div>
+
+    {showEmailAlert && (
+      <EmailSentAlert
+        recipientName={`${sentCount} destinatar${sentCount !== 1 ? 'i' : ''}`}
+        recipientEmail={toAll ? 'toți utilizatorii' : `${sentCount} selectați`}
+        senderEmail={userEmail}
+        onClose={() => { setShowEmailAlert(false); onSaved() }}
+      />
+    )}
+  </>
   )
 }

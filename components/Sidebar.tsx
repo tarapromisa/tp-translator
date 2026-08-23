@@ -28,6 +28,8 @@ const ALL_NAV = [
   { label: 'Setări',         href: '/setari',         Icon: Cog8ToothIcon,    roles: ['Admin','Coordonator principal','Coordonator','Traducător','Traducător_RO'] },
 ]
 
+const ZOHO_MAIL_URL = 'https://mail.tptranslator.com'
+
 function getEffectiveRole(role: string, language: string): string {
   if (role === 'Traducător' && language === 'RO') return 'Traducător_RO'
   return role
@@ -95,6 +97,36 @@ export default function Sidebar() {
             </Link>
           )
         })}
+
+        {/* Zoho Mail external link */}
+        <a href={ZOHO_MAIL_URL} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '12px',
+            height: '42px', padding: '0 12px', borderRadius: '14px',
+            cursor: 'pointer', background: 'transparent',
+            transition: 'all 0.15s ease',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.background = '#fdf0ee')}
+          onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+          >
+            {/* Zoho Mail icon — Z letter in our red style */}
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
+              <rect x="2" y="2" width="20" height="20" rx="5" fill="#ce0100" fillOpacity="0.12"/>
+              <path d="M7 8h10L7 16h10" stroke="#7a6e69" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <span style={{
+              fontSize: '14px', fontWeight: 300,
+              color: '#6e625d',
+              fontFamily: 'var(--font-openSans)',
+              whiteSpace: 'nowrap',
+            }}>Zoho Mail</span>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#bbb" strokeWidth="2" style={{ marginLeft: 'auto', flexShrink: 0 }}>
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+              <polyline points="15 3 21 3 21 9"/>
+              <line x1="10" y1="14" x2="21" y2="3"/>
+            </svg>
+          </div>
+        </a>
       </nav>
 
       <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, #e8e2de, transparent)', margin: '0 16px', flexShrink: 0 }} />

@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import Sidebar from '@/components/Sidebar'
 import { supabase } from '@/lib/supabase'
+import EmailSentAlert from '@/components/EmailSentAlert'
 import {
   PlusIcon, XMarkIcon, PaperAirplaneIcon, TrashIcon,
   MagnifyingGlassIcon, CheckCircleIcon, ExclamationTriangleIcon,
@@ -240,6 +241,7 @@ export default function MailTLPPage() {
   const [sendingId, setSendingId] = useState<string|null>(null)
   const [sendingAll, setSendingAll] = useState(false)
   const [sentIds, setSentIds] = useState<string[]>([])
+  const [emailAlert, setEmailAlert] = useState<{ name: string; email: string } | null>(null)
 
   // Reference panels data
   const [citateIncomp, setCitateIncomp] = useState<CitatIncomplete[]>([])
@@ -337,6 +339,7 @@ export default function MailTLPPage() {
     if (res.ok) {
       await supabase.from('mail_tlp').update({ trimis: true, trimis_at: new Date().toISOString(), trimis_de: currentUser?.id }).eq('id', record.id)
       setSentIds(p => [...p, record.id])
+      setEmailAlert({ name: record.traducator_user.full_name, email: record.traducator_user.email })
       setTimeout(() => { setSentIds(p => p.filter(id => id !== record.id)); fetchData() }, 2000)
     }
     setSendingId(null)
@@ -590,6 +593,15 @@ export default function MailTLPPage() {
       </div>
 
       <DeleteModal item={deleteItem} onClose={() => setDeleteItem(null)} onDeleted={fetchData} />
+
+      {emailAlert && (
+        <EmailSentAlert
+          recipientName={emailAlert.name}
+          recipientEmail={emailAlert.email}
+          senderEmail={currentUser?.email ?? ''}
+          onClose={() => setEmailAlert(null)}
+        />
+      )}
     </main>
   )
 }

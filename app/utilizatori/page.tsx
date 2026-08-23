@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Sidebar from '@/components/Sidebar'
+import EmailSentAlert from '@/components/EmailSentAlert'
 import Pagination from '@/components/Pagination'
 import CreateUserModal from '@/components/CreateUserModal'
 import EditUserModal from '@/components/EditUserModal'
@@ -95,6 +96,7 @@ export default function UtilizatoriPage() {
   const [selected, setSelected] = useState<User | null>(null)
   const [sendingEmail, setSendingEmail] = useState<'welcome' | 'goodbye' | null>(null)
   const [emailSent, setEmailSent] = useState<string | null>(null)
+  const [emailAlert, setEmailAlert] = useState<{ name: string; email: string } | null>(null)
   const [openCreateModal, setOpenCreateModal] = useState(false)
   const [openEditModal, setOpenEditModal] = useState(false)
   const [showCredentialsModal, setShowCredentialsModal] = useState(false)
@@ -138,7 +140,11 @@ export default function UtilizatoriPage() {
       }),
     })
     setSendingCredentials(false)
-    if (res.ok) { setCredentialsSent(true); setTimeout(() => { setCredentialsSent(false); setShowCredentialsModal(false); setCredentialsPassword('') }, 2000) }
+    if (res.ok) {
+      setCredentialsSent(true)
+      setEmailAlert({ name: selected.full_name, email: selected.email })
+      setTimeout(() => { setCredentialsSent(false); setShowCredentialsModal(false); setCredentialsPassword('') }, 2000)
+    }
     else alert('Eroare la trimiterea emailului.')
   }
 
@@ -187,6 +193,7 @@ export default function UtilizatoriPage() {
     setSendingEmail(null)
     if (ok) {
       setEmailSent(type)
+      setEmailAlert({ name: selected.full_name, email: selected.email })
       setTimeout(() => setEmailSent(null), 3000)
     } else {
       alert('Eroare la trimiterea emailului.')
@@ -570,6 +577,15 @@ export default function UtilizatoriPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {emailAlert && (
+        <EmailSentAlert
+          recipientName={emailAlert.name}
+          recipientEmail={emailAlert.email}
+          senderEmail={currentUser?.email ?? ''}
+          onClose={() => setEmailAlert(null)}
+        />
       )}
     </main>
   )
