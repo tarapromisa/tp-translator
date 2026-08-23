@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import AnimatedCounter from '@/components/AnimatedCounter'
+import { useUser } from '@/context/UserContext'
 import { supabase } from '@/lib/supabase'
 import {
   ArrowUpRightIcon,
@@ -14,6 +15,12 @@ import {
   ShieldCheckIcon,
   ClockIcon,
   CheckCircleIcon,
+  PlusIcon,
+  TrashIcon,
+  XMarkIcon,
+  MegaphoneIcon,
+  EnvelopeIcon,
+  UserGroupIcon,
 } from '@heroicons/react/24/outline'
 
 // ── Types ─────────────────────────────────────────────────────────
@@ -29,6 +36,10 @@ type ActivityLog = {
 type RecentItem = {
   id: string; public_id: string; type: 'citat' | 'verset'; text: string
   status: string; validation: string | null; created_at: string; progress: number
+}
+type Anunt = {
+  id: string; titlu: string; corp: string; created_at: string
+  created_by_user?: { full_name: string; email: string } | null
 }
 
 const LANG_FIELDS_CITATE  = ['citat_es','citat_en','citat_de','citat_pt','citat_fr','citat_it','citat_ro']
@@ -85,6 +96,7 @@ function DonutChart({ validat, validare, traducere, refuzat, total }: { validat:
 // ── Main ─────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const router = useRouter()
+  const { profile } = useUser()
   const [stats, setStats]     = useState<Stats|null>(null)
   const [activity, setActivity] = useState<ActivityLog[]>([])
   const [recent, setRecent]   = useState<RecentItem[]>([])
@@ -95,6 +107,22 @@ export default function DashboardPage() {
   const [phraseIndex, setPhraseIndex] = useState(0)
   const [phraseVisible, setPhraseVisible] = useState(true)
   const [greeting, setGreeting] = useState('')
+  const [anunturi, setAnunturi] = useState<Anunt[]>([])
+  const [showAnuntModal, setShowAnuntModal] = useState(false)
+  const [confirmDeleteAnuntId, setConfirmDeleteAnuntId] = useState<string | null>(null)
+
+  const canManageAnunturi = ['Admin', 'Coordonator principal', 'Coordonator'].includes(userRole)
+
+  const fetchAnunturi = useCallback(async () => {
+    const { data } = await supabase
+      .from('anunturi')
+      .select('*, created_by_user:created_by(full_name, email)')
+      .order('created_at', { ascending: false })
+      .limit(20)
+    setAnunturi(data || [])
+  }, [])
+
+  useEffect(() => { fetchAnunturi() }, [fetchAnunturi])
 
   useEffect(() => {
     const h = new Date().getHours()
@@ -174,6 +202,7 @@ export default function DashboardPage() {
   const isCoordinator = userRole === 'Coordonator' || userRole === 'Coordonator principal' || userRole === 'Admin'
 
   return (
+    <>
     <main className="flex min-h-screen bg-[#fcfbfa]" style={{ fontFamily: 'var(--font-openSans)' }}>
       <Sidebar />
       <div className="flex-1 min-w-0 px-4 md:px-10 py-6 md:py-8 overflow-y-auto overflow-x-hidden">
@@ -447,10 +476,289 @@ export default function DashboardPage() {
                   </div>
                 </div>
               ))}
+        {/* ── ANUNȚURI ── */}
+        <div style={{ marginTop: '32px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ width: '32px', height: '32px', borderRadius: '10px', background: '#fff1f1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <MegaphoneIcon style={{ width: '16px', height: '16px', color: '#ce0100' }} />
+              </div>
+              <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#111' }}>Anunțuri</h2>
+              {anunturi.length > 0 && (
+                <span style={{ background: '#ce0100', color: 'white', borderRadius: '100px', padding: '1px 8px', fontSize: '11px', fontWeight: 700 }}>
+                  {anunturi.length}
+                </span>
+              )}
             </div>
+            {canManageAnunturi && (
+              <button onClick={() => setShowAnuntModal(true)}
+                style={{
+                  height: '36px', padding: '0 16px', borderRadius: '12px',
+                  background: '#ce0100', color: 'white', border: 'none',
+                  fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                  boxShadow: '0 4px 12px rgba(206,1,0,0.22)',
+                }}>
+                <PlusIcon style={{ width: '14px', height: '14px' }} />
+                Anunț nou
+              </button>
+            )}
+          </div>
+
+          {anunturi.length === 0 ? (
+            <div style={{ background: 'white', border: '1px solid #f0e8e4', borderRadius: '16px', padding: '32px', textAlign: 'center' }}>
+              <MegaphoneIcon style={{ width: '32px', height: '32px', color: '#ddd', margin: '0 auto 8px' }} />
+              <p style={{ fontSize: '13px', color: '#aaa' }}>Niciun anunț momentan.</p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {anunturi.map(a => (
+                <div key={a.id} style={{
+                  background: 'white', border: '1px solid #f0e8e4', borderRadius: '16px',
+                  overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                }}>
+                  <div style={{ height: '3px', background: '#ce0100' }} />
+                  <div style={{ padding: '16px 20px' }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ fontSize: '15px', fontWeight: 700, color: '#111', marginBottom: '6px' }}>{a.titlu}</p>
+                        <p style={{ fontSize: '13px', color: '#555', lineHeight: '1.65', whiteSpace: 'pre-wrap' }}>{a.corp}</p>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '12px', flexWrap: 'wrap' }}>
+                          {a.created_by_user?.full_name && (
+                            <span style={{ fontSize: '11px', color: '#888', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <UserGroupIcon style={{ width: '12px', height: '12px' }} />
+                              {a.created_by_user.full_name}
+                            </span>
+                          )}
+                          <span style={{ fontSize: '11px', color: '#bbb' }}>
+                            {new Date(a.created_at).toLocaleDateString('ro-RO', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                      </div>
+                      {canManageAnunturi && (
+                        <button
+                          onClick={() => setConfirmDeleteAnuntId(a.id)}
+                          style={{
+                            width: '32px', height: '32px', borderRadius: '10px',
+                            background: '#fff1f1', border: '1px solid #ffd3d3',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            cursor: 'pointer', flexShrink: 0,
+                          }}>
+                          <TrashIcon style={{ width: '14px', height: '14px', color: '#ce0100' }} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+      </div>
+    </main>
+
+    {/* Modal creare anunț */}
+    {showAnuntModal && (
+      <AnuntModal
+        onClose={() => setShowAnuntModal(false)}
+        onSaved={() => { setShowAnuntModal(false); fetchAnunturi() }}
+        userRole={userRole}
+        userEmail={profile?.email ?? ''}
+        userName={userName}
+      />
+    )}
+
+    {/* Confirm delete */}
+    {confirmDeleteAnuntId && (
+      <div style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)' }} onClick={() => setConfirmDeleteAnuntId(null)} />
+        <div style={{ position: 'relative', background: 'white', borderRadius: '20px', padding: '28px', maxWidth: '400px', width: '100%', boxShadow: '0 30px 80px rgba(0,0,0,0.15)' }}>
+          <h3 style={{ fontSize: '17px', fontWeight: 700, color: '#111', marginBottom: '10px' }}>Șterge anunțul</h3>
+          <p style={{ fontSize: '14px', color: '#666', marginBottom: '24px', lineHeight: '1.6' }}>Sigur vrei să ștergi acest anunț? Acțiunea nu poate fi anulată.</p>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button onClick={() => setConfirmDeleteAnuntId(null)}
+              style={{ flex: 1, height: '44px', borderRadius: '12px', border: '1px solid #e8e2de', background: 'white', fontSize: '14px', fontWeight: 600, color: '#666', cursor: 'pointer' }}>
+              Anulează
+            </button>
+            <button onClick={async () => {
+              await supabase.from('anunturi').delete().eq('id', confirmDeleteAnuntId)
+              setConfirmDeleteAnuntId(null)
+              fetchAnunturi()
+            }}
+              style={{ flex: 1, height: '44px', borderRadius: '12px', background: '#ce0100', border: 'none', fontSize: '14px', fontWeight: 600, color: 'white', cursor: 'pointer' }}>
+              Șterge
+            </button>
           </div>
         </div>
       </div>
-    </main>
+    )}
+  </>
+  )
+}
+// ── Modal creare anunț ────────────────────────────────────────────
+function AnuntModal({ onClose, onSaved, userRole, userEmail, userName }: {
+  onClose: () => void
+  onSaved: () => void
+  userRole: string
+  userEmail: string
+  userName: string
+}) {
+  const [titlu, setTitlu] = useState('')
+  const [corp, setCorp] = useState('')
+  const [sendEmail, setSendEmail] = useState(false)
+  const [toAll, setToAll] = useState(true)
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([])
+  const [users, setUsers] = useState<{ id: string; full_name: string; email: string; role: string }[]>([])
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const { profile } = useUser()
+
+  useEffect(() => {
+    supabase.from('users').select('id, full_name, email, role').eq('active', true).order('full_name')
+      .then(({ data }) => setUsers(data || []))
+  }, [])
+
+  const handleSave = async () => {
+    if (!titlu.trim()) { setError('Titlul este obligatoriu.'); return }
+    if (!corp.trim()) { setError('Corpul anunțului este obligatoriu.'); return }
+    setSaving(true)
+
+    // Insert anunt
+    const { error: insertError } = await supabase.from('anunturi').insert({
+      titlu: titlu.trim(),
+      corp: corp.trim(),
+      created_by: profile?.id ?? null,
+    })
+
+    if (insertError) { setError(insertError.message); setSaving(false); return }
+
+    // Send email if checked
+    if (sendEmail) {
+      const recipients = toAll
+        ? users.filter(u => u.email).map(u => u.email)
+        : selectedUsers.map(id => users.find(u => u.id === id)?.email).filter(Boolean) as string[]
+
+      for (const email of recipients) {
+        const user = users.find(u => u.email === email)
+        await fetch('/api/send-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: email,
+            toName: user?.full_name ?? email,
+            type: 'custom',
+            fromEmail: userEmail,
+            fromName: userName,
+            subject: `[Anunț TP Translator] ${titlu.trim()}`,
+            htmlBody: `<!DOCTYPE html><html><body style="font-family:Helvetica,Arial,sans-serif;background:#f9f7f5;margin:0;padding:0">
+<div style="max-width:600px;margin:0 auto;padding:24px 16px">
+  <div style="background:#ce0100;border-radius:16px 16px 0 0;padding:28px 32px">
+    <img src="https://res.cloudinary.com/dlgqpbpwu/image/upload/v1780344170/new_tpt_1_sxiu3b.png" alt="TP Translator" style="height:32px;width:auto;display:block;margin-bottom:20px" />
+    <h1 style="margin:0;font-size:28px;font-weight:300;color:#fff;line-height:1.2">Anunț nou<br><span style="font-style:italic;color:rgba(255,255,255,0.85);font-family:'Times New Roman',serif">${titlu.trim()}</span></h1>
+  </div>
+  <div style="height:4px;background:#a80000"></div>
+  <div style="background:white;padding:32px;border:1px solid #f0e9e5;border-top:none;border-radius:0 0 16px 16px">
+    <p style="font-size:14px;line-height:1.75;color:#444;white-space:pre-wrap">${corp.trim()}</p>
+    <p style="font-size:13px;color:#888;margin-top:24px">— ${userName}, TP Translator</p>
+  </div>
+</div>
+</body></html>`,
+          }),
+        })
+      }
+    }
+
+    setSaving(false)
+    onSaved()
+  }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+      <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)' }} onClick={onClose} />
+      <div style={{ position: 'relative', background: 'white', borderRadius: '22px', width: '100%', maxWidth: '520px', boxShadow: '0 30px 80px rgba(0,0,0,0.15)', overflow: 'hidden', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ height: '4px', background: '#ce0100' }} />
+        <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid #f0e8e4', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+          <div>
+            <p style={{ fontSize: '10px', fontWeight: 700, color: '#ce0100', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '4px' }}>Anunț nou</p>
+            <h2 style={{ fontSize: '17px', fontWeight: 700, color: '#111' }}>Creează un anunț</h2>
+          </div>
+          <button onClick={onClose} style={{ width: '32px', height: '32px', borderRadius: '50%', border: '1px solid #e8e2de', background: '#f9f7f5', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+            <XMarkIcon style={{ width: '14px', height: '14px', color: '#666' }} />
+          </button>
+        </div>
+
+        <div style={{ padding: '20px 24px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {/* Titlu */}
+          <div>
+            <label style={{ fontSize: '10px', fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '7px' }}>Titlu *</label>
+            <input value={titlu} onChange={e => setTitlu(e.target.value)}
+              placeholder="Titlul anunțului..."
+              style={{ width: '100%', border: '1px solid #e8e2de', borderRadius: '12px', padding: '11px 14px', fontSize: '14px', color: '#111', background: '#faf7f5', outline: 'none', boxSizing: 'border-box' }}
+              onFocus={e => e.target.style.borderColor = '#ce0100'}
+              onBlur={e => e.target.style.borderColor = '#e8e2de'} />
+          </div>
+
+          {/* Corp */}
+          <div>
+            <label style={{ fontSize: '10px', fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '7px' }}>Mesaj *</label>
+            <textarea value={corp} onChange={e => setCorp(e.target.value)} rows={5}
+              placeholder="Scrie anunțul aici..."
+              style={{ width: '100%', border: '1px solid #e8e2de', borderRadius: '12px', padding: '11px 14px', fontSize: '14px', color: '#111', background: '#faf7f5', outline: 'none', resize: 'vertical', boxSizing: 'border-box', fontFamily: 'inherit' }}
+              onFocus={e => e.target.style.borderColor = '#ce0100'}
+              onBlur={e => e.target.style.borderColor = '#e8e2de'} />
+          </div>
+
+          {/* Email option */}
+          <div style={{ background: '#faf7f5', border: '1px solid #f0e8e4', borderRadius: '14px', padding: '14px 16px' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+              <input type="checkbox" checked={sendEmail} onChange={e => setSendEmail(e.target.checked)}
+                style={{ width: '16px', height: '16px', accentColor: '#ce0100', cursor: 'pointer' }} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <EnvelopeIcon style={{ width: '14px', height: '14px', color: '#ce0100' }} />
+                <span style={{ fontSize: '13px', fontWeight: 600, color: '#111' }}>Trimite și prin email</span>
+              </div>
+            </label>
+
+            {sendEmail && (
+              <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #f0e8e4' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', marginBottom: '10px' }}>
+                  <input type="checkbox" checked={toAll} onChange={e => setToAll(e.target.checked)}
+                    style={{ width: '14px', height: '14px', accentColor: '#ce0100', cursor: 'pointer' }} />
+                  <span style={{ fontSize: '12px', fontWeight: 600, color: '#444' }}>Trimite la toți utilizatorii</span>
+                </label>
+
+                {!toAll && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '160px', overflowY: 'auto' }}>
+                    {users.map(u => (
+                      <label key={u.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                        <input type="checkbox"
+                          checked={selectedUsers.includes(u.id)}
+                          onChange={e => setSelectedUsers(prev => e.target.checked ? [...prev, u.id] : prev.filter(id => id !== u.id))}
+                          style={{ width: '14px', height: '14px', accentColor: '#ce0100', cursor: 'pointer' }} />
+                        <span style={{ fontSize: '12px', color: '#444' }}>{u.full_name}</span>
+                        <span style={{ fontSize: '11px', color: '#aaa' }}>{u.role}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {error && <p style={{ fontSize: '12px', color: '#ce0100', fontWeight: 600 }}>{error}</p>}
+        </div>
+
+        <div style={{ padding: '16px 24px', borderTop: '1px solid #f0e8e4', display: 'flex', gap: '10px', flexShrink: 0 }}>
+          <button onClick={onClose} style={{ flex: 1, height: '44px', borderRadius: '12px', border: '1px solid #e8e2de', background: 'white', fontSize: '14px', fontWeight: 600, color: '#666', cursor: 'pointer' }}>
+            Anulează
+          </button>
+          <button onClick={handleSave} disabled={saving}
+            style={{ flex: 1, height: '44px', borderRadius: '12px', background: '#ce0100', border: 'none', fontSize: '14px', fontWeight: 600, color: 'white', cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
+            {saving ? 'Se salvează...' : 'Publică anunțul'}
+          </button>
+        </div>
+      </div>
+    </div>
   )
 }
