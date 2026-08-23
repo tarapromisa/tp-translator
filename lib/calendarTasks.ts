@@ -12,7 +12,8 @@
  */
 
 import { SupabaseClient } from '@supabase/supabase-js'
-import { parseReference } from './bibleReference'
+import { parseReference, isValidReference } from './bibleReference'
+import { markReferenceAsUsed } from './referinteBiblice'
 
 export type TareaCalendar = {
   id: string
@@ -133,6 +134,12 @@ export async function createTarea(
     console.error('createTarea error:', error)
     return { success: false, error: error.message }
   }
+
+  // Dacă referința este biblică validă, marchează-o ca folosită în referinte_biblice
+  if (isValidReference(input.referinta_ro)) {
+    await markReferenceAsUsed(supabase, input.referinta_ro, data.id)
+  }
+
   return { success: true, id: data.id }
 }
 
@@ -154,6 +161,12 @@ export async function updateTarea(
     console.error('updateTarea error:', error)
     return { success: false, error: error.message }
   }
+
+  // Dacă referința s-a schimbat și e biblică validă, marchează-o ca folosită
+  if (updates.referinta_ro && isValidReference(updates.referinta_ro)) {
+    await markReferenceAsUsed(supabase, updates.referinta_ro, id)
+  }
+
   return { success: true }
 }
 
