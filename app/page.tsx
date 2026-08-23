@@ -202,7 +202,7 @@ export default function DashboardPage() {
   const isCoordinator = userRole === 'Coordonator' || userRole === 'Coordonator principal' || userRole === 'Admin'
 
   return (
-    <>
+  <>
     <main className="flex min-h-screen bg-[#fcfbfa]" style={{ fontFamily: 'var(--font-openSans)' }}>
       <Sidebar />
       <div className="flex-1 min-w-0 px-4 md:px-10 py-6 md:py-8 overflow-y-auto overflow-x-hidden">
@@ -476,6 +476,10 @@ export default function DashboardPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+
         {/* ── ANUNȚURI ── */}
         <div style={{ marginTop: '32px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
