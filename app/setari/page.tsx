@@ -150,13 +150,14 @@ export default function SetariPage() {
   }
 
   const isAdmin = profile?.role === 'Admin' || profile?.role === 'Coordonator principal'
+  const isTranslator = profile?.role === 'Traducător'
   const displayAvatar = avatarPreview || avatarUrl
 
   if (loading) return (
     <main className="flex h-screen overflow-hidden bg-[#f9f7f5]">
       <Sidebar />
       <div className="flex-1 flex items-center justify-center">
-        <p className="text-sm text-[#888]">Se incarca...</p>
+        <p className="text-sm text-[#888]">Se încarcă...</p>
       </div>
     </main>
   )
@@ -170,14 +171,15 @@ export default function SetariPage() {
           <p className="text-[11px] font-semibold text-[#9c8e87] uppercase tracking-[0.15em] mb-2">Cont personal</p>
           <h1 className="text-[32px] md:text-[48px] leading-none tracking-tight font-light text-[#111] mb-3">Setări</h1>
           <div className="w-10 h-[3px] rounded-full bg-[#ce0100] mb-4" />
-          <p className="text-sm font-light text-[#666]">Gestioneaza profilul si preferintele tale.</p>
+          <p className="text-sm font-light text-[#666]">Gestionează profilul și preferințele tale.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-[1fr_360px] gap-5">
 
           <div className="flex flex-col gap-5 order-2 md:order-1">
 
-            <Section title="Profil" sub="Numele tau si limba de lucru" icon={UserIcon}>
+            {!isTranslator && (
+            <Section title="Profil" sub="Numele tău și limba de lucru" icon={UserIcon}>
               <div className="flex flex-col gap-4">
                 <div>
                   <label className="text-[11px] font-semibold text-[#666] uppercase tracking-wide block mb-2">Nume complet</label>
@@ -200,31 +202,34 @@ export default function SetariPage() {
                 </div>
               </div>
             </Section>
+            )}
 
-            <Section title="Adresa de email" sub="Adresa folosita pentru autentificare" icon={EnvelopeIcon}>
+            {!isTranslator && (
+            <Section title="Adresa de email" sub="Adresa folosită pentru autentificare" icon={EnvelopeIcon}>
               <div className="flex flex-col gap-4">
                 <div>
                   <label className="text-[11px] font-semibold text-[#666] uppercase tracking-wide block mb-2">Email</label>
                   <input value={email} onChange={e => setEmail(e.target.value)} type="email"
                     className="w-full h-11 rounded-[14px] border border-[#f0e9e5] px-4 text-sm text-[#111] outline-none focus:border-[#ce0100] transition-all" />
-                  <p className="text-[11px] text-[#aaa] mt-2">Vei primi un email de confirmare la noua adresa.</p>
+                  <p className="text-[11px] text-[#aaa] mt-2">Vei primi un email de confirmare la noua adresă.</p>
                 </div>
                 <div className="flex justify-end">
-                  <SaveBtn state={emailState} onClick={handleSaveEmail} label="Actualizeaza emailul" />
+                  <SaveBtn state={emailState} onClick={handleSaveEmail} label="Actualizează emailul" />
                 </div>
               </div>
             </Section>
+            )}
 
-            <Section title="Parola" sub="Schimba parola de acces" icon={LockClosedIcon}>
+            <Section title="Parola" sub="Schimbă parola de acces" icon={LockClosedIcon}>
               <div className="flex flex-col gap-4">
                 <div>
-                  <label className="text-[11px] font-semibold text-[#666] uppercase tracking-wide block mb-2">Parola noua</label>
+                  <label className="text-[11px] font-semibold text-[#666] uppercase tracking-wide block mb-2">Parolă nouă</label>
                   <input value={newPassword} onChange={e => setNewPassword(e.target.value)} type="password" placeholder="Minimum 6 caractere"
                     className="w-full h-11 rounded-[14px] border border-[#f0e9e5] px-4 text-sm text-[#111] outline-none focus:border-[#ce0100] transition-all placeholder:text-[#ccc]" />
                 </div>
                 <div>
-                  <label className="text-[11px] font-semibold text-[#666] uppercase tracking-wide block mb-2">Confirma parola</label>
-                  <input value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} type="password" placeholder="Repeta parola noua"
+                  <label className="text-[11px] font-semibold text-[#666] uppercase tracking-wide block mb-2">Confirmă parola</label>
+                  <input value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} type="password" placeholder="Repetă parola nouă"
                     className={`w-full h-11 rounded-[14px] border px-4 text-sm text-[#111] outline-none focus:border-[#ce0100] transition-all placeholder:text-[#ccc] ${
                       confirmPassword && confirmPassword !== newPassword ? 'border-[#ffd3d3]' : 'border-[#f0e9e5]'
                     }`} />
@@ -234,7 +239,7 @@ export default function SetariPage() {
                 </div>
                 {passwordError && <p className="text-[12px] text-[#ce0100] font-medium">{passwordError}</p>}
                 <div className="flex justify-end">
-                  <SaveBtn state={passwordState} onClick={handleSavePassword} label="Schimba parola" />
+                  <SaveBtn state={passwordState} onClick={handleSavePassword} label="Schimbă parola" />
                 </div>
               </div>
             </Section>
@@ -245,15 +250,15 @@ export default function SetariPage() {
                   <ExclamationTriangleIcon className="w-5 h-5 text-[#ce0100]" strokeWidth={1.5} />
                 </div>
                 <div>
-                  <h2 className="text-base font-semibold text-[#ce0100]">Zona de pericol</h2>
-                  <p className="text-xs text-[#888] font-light mt-0.5">Actiuni ireversibile</p>
+                  <h2 className="text-base font-semibold text-[#ce0100]">Zonă de pericol</h2>
+                  <p className="text-xs text-[#888] font-light mt-0.5">Acțiuni ireversibile</p>
                 </div>
               </div>
               <div className="flex flex-col gap-4">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-3 border-b border-[#ffeaea]">
                   <div>
-                    <p className="text-sm font-semibold text-[#111]">Deconecteaza toate sesiunile</p>
-                    <p className="text-xs text-[#888] mt-0.5 font-light">Inchide sesiunile active pe toate dispozitivele</p>
+                    <p className="text-sm font-semibold text-[#111]">Deconectează toate sesiunile</p>
+                    <p className="text-xs text-[#888] mt-0.5 font-light">Închide sesiunile active pe toate dispozitivele</p>
                   </div>
                   <button onClick={handleSignOutAll}
                     className="h-9 px-4 rounded-xl border border-[#ffd3d3] bg-white text-sm font-semibold text-[#ce0100] hover:bg-[#fff1f1] transition-all flex-shrink-0">
@@ -263,12 +268,12 @@ export default function SetariPage() {
                 {!isAdmin && (
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-3">
                     <div>
-                      <p className="text-sm font-semibold text-[#111]">Sterge contul</p>
-                      <p className="text-xs text-[#888] mt-0.5 font-light">Aceasta actiune este permanenta si ireversibila</p>
+                      <p className="text-sm font-semibold text-[#111]">Șterge contul</p>
+                      <p className="text-xs text-[#888] mt-0.5 font-light">Această acțiune este permanentă și ireversibilă</p>
                     </div>
                     <button onClick={() => setShowDeleteConfirm(true)}
                       className="h-9 px-4 rounded-xl bg-[#ce0100] text-white text-sm font-semibold hover:bg-[#a80000] transition-all flex-shrink-0">
-                      Sterge contul
+                      Șterge contul
                     </button>
                   </div>
                 )}
@@ -307,20 +312,20 @@ export default function SetariPage() {
                   </button>
                 </div>
                 <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
-                {avatarPreview && <SaveBtn state={avatarState} onClick={handleSaveAvatar} label="Salveaza fotografia" />}
+                {avatarPreview && <SaveBtn state={avatarState} onClick={handleSaveAvatar} label="Salvează fotografia" />}
                 {!avatarPreview && displayAvatar && (
                   <button onClick={async () => {
                     await supabase.from('users').update({ avatar_url: null }).eq('id', profile!.id)
                     setAvatarUrl(null); setAvatarPreview(null)
                   }} className="text-xs text-[#ce0100] hover:underline">
-                    Elimina fotografia
+                    Elimină fotografia
                   </button>
                 )}
               </div>
             </div>
 
             <div className="bg-white border border-[#f0e9e5] rounded-[24px] p-5 md:p-7 shadow-sm">
-              <h3 className="text-sm font-semibold text-[#111] mb-4">Informatii cont</h3>
+              <h3 className="text-sm font-semibold text-[#111] mb-4">Informații cont</h3>
               <div className="flex flex-col gap-3">
                 {[
                   { label: 'Rol', value: profile?.role || '' },
