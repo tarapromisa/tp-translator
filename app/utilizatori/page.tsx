@@ -365,10 +365,38 @@ export default function UtilizatoriPage() {
                     </span>
                   </div>
                   <div className="flex items-center gap-2 mt-4 w-full">
-                    <button onClick={() => setOpenEditModal(true)}
-                      className="flex-1 h-9 px-4 rounded-xl border border-[#e8e2de] bg-white text-sm font-semibold text-[#444] hover:bg-[#faf7f5] transition-all flex items-center justify-center gap-2">
-                      Editează
-                    </button>
+                    {(() => {
+                      const myRole = currentUser?.role ?? ''
+                      const targetRole = selected.role ?? ''
+                      const isAdmin = myRole === 'Admin'
+                      const isCoordPrincipal = myRole === 'Coordonator principal'
+                      const isCoord = myRole === 'Coordonator'
+
+                      // Coordonator nu poate edita alți coordonatori sau superiori
+                      if (isCoord && ['Coordonator', 'Coordonator principal', 'Admin'].includes(targetRole)) {
+                        return (
+                          <div className="flex-1 bg-[#fff5eb] border border-[#ffd9a8] rounded-xl px-3 py-2">
+                            <p className="text-[11px] text-[#c05c00] font-medium">🔒 Doar Admin sau Coordonator principal pot edita acest profil.</p>
+                          </div>
+                        )
+                      }
+
+                      // Coordonator principal nu poate edita alți Coordonatori principali sau Admin
+                      if (isCoordPrincipal && ['Coordonator principal', 'Admin'].includes(targetRole)) {
+                        return (
+                          <div className="flex-1 bg-[#fff5eb] border border-[#ffd9a8] rounded-xl px-3 py-2">
+                            <p className="text-[11px] text-[#c05c00] font-medium">🔒 Doar Admin poate edita profilurile Coordonatorilor principali.</p>
+                          </div>
+                        )
+                      }
+
+                      return (
+                        <button onClick={() => setOpenEditModal(true)}
+                          className="flex-1 h-9 px-4 rounded-xl border border-[#e8e2de] bg-white text-sm font-semibold text-[#444] hover:bg-[#faf7f5] transition-all flex items-center justify-center gap-2">
+                          Editează
+                        </button>
+                      )
+                    })()}
                     <button onClick={() => setShowCredentialsModal(true)}
                       className="h-9 w-9 rounded-xl border border-[#e8e2de] bg-white flex items-center justify-center text-[#444] hover:bg-[#faf7f5] transition-all flex-shrink-0" title="Trimite credențiale">
                       <KeyIcon className="w-4 h-4" />

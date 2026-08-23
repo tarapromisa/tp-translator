@@ -178,47 +178,41 @@ export default function SetariPage() {
 
           <div className="flex flex-col gap-5 order-2 md:order-1">
 
-            {!isTranslator && (
             <Section title="Profil" sub="Numele tău și limba de lucru" icon={UserIcon}>
               <div className="flex flex-col gap-4">
                 <div>
                   <label className="text-[11px] font-semibold text-[#666] uppercase tracking-wide block mb-2">Nume complet</label>
-                  <input value={fullName} onChange={e => setFullName(e.target.value)}
-                    className="w-full h-11 rounded-[14px] border border-[#f0e9e5] px-4 text-sm text-[#111] outline-none focus:border-[#ce0100] transition-all" />
+                  <input value={fullName} disabled
+                    className="w-full h-11 rounded-[14px] border border-[#f0e9e5] px-4 text-sm text-[#111] bg-[#faf7f5] opacity-70 cursor-not-allowed" />
                 </div>
                 <div>
                   <label className="text-[11px] font-semibold text-[#666] uppercase tracking-wide block mb-2">Limba de lucru</label>
                   <div className="flex flex-wrap gap-2">
                     {LANGUAGES.map(l => (
-                      <button key={l} onClick={() => setLanguage(l)}
-                        className={`h-9 px-4 rounded-xl border-2 text-sm font-bold transition-all ${
-                          language === l ? 'border-[#ce0100] bg-[#ce0100] text-white' : 'border-[#f0e9e5] text-[#555] hover:border-[#ffd3d3]'
-                        }`}>{l}</button>
+                      <div key={l} className={`h-9 px-4 rounded-xl border-2 text-sm font-bold flex items-center ${
+                        language === l ? 'border-[#ce0100] bg-[#ce0100] text-white' : 'border-[#f0e9e5] text-[#ccc]'
+                      }`}>{l}</div>
                     ))}
                   </div>
                 </div>
-                <div className="flex justify-end pt-2">
-                  <SaveBtn state={profileState} onClick={handleSaveProfile} />
-                </div>
+                <p className="text-[11px] text-[#aaa] flex items-center gap-1.5">
+                  <span>🔒</span> Aceste date pot fi modificate doar de Admin sau Coordonator principal.
+                </p>
               </div>
             </Section>
-            )}
 
-            {!isTranslator && (
             <Section title="Adresa de email" sub="Adresa folosită pentru autentificare" icon={EnvelopeIcon}>
               <div className="flex flex-col gap-4">
                 <div>
                   <label className="text-[11px] font-semibold text-[#666] uppercase tracking-wide block mb-2">Email</label>
-                  <input value={email} onChange={e => setEmail(e.target.value)} type="email"
-                    className="w-full h-11 rounded-[14px] border border-[#f0e9e5] px-4 text-sm text-[#111] outline-none focus:border-[#ce0100] transition-all" />
-                  <p className="text-[11px] text-[#aaa] mt-2">Vei primi un email de confirmare la noua adresă.</p>
+                  <input value={email} disabled type="email"
+                    className="w-full h-11 rounded-[14px] border border-[#f0e9e5] px-4 text-sm text-[#111] bg-[#faf7f5] opacity-70 cursor-not-allowed" />
                 </div>
-                <div className="flex justify-end">
-                  <SaveBtn state={emailState} onClick={handleSaveEmail} label="Actualizează emailul" />
-                </div>
+                <p className="text-[11px] text-[#aaa] flex items-center gap-1.5">
+                  <span>🔒</span> Adresa de email poate fi modificată doar de Admin sau Coordonator principal.
+                </p>
               </div>
             </Section>
-            )}
 
             <Section title="Parola" sub="Schimbă parola de acces" icon={LockClosedIcon}>
               <div className="flex flex-col gap-4">

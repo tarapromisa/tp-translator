@@ -28,6 +28,7 @@ export default function EditUserModal({ open, user, onClose, onSaved }: Props) {
   const [role, setRole] = useState('')
   const [language, setLanguage] = useState('')
   const [active, setActive] = useState(true)
+  const [createdAt, setCreatedAt] = useState('')
   const [saveState, setSaveState] = useState<SaveState>('idle')
 
   useEffect(() => {
@@ -37,6 +38,7 @@ export default function EditUserModal({ open, user, onClose, onSaved }: Props) {
       setRole(user.role ?? '')
       setLanguage(user.language ?? '')
       setActive(user.active ?? true)
+      setCreatedAt(user.created_at ? user.created_at.slice(0, 10) : '')
       setSaveState('idle')
     }
   }, [user, open])
@@ -52,7 +54,8 @@ export default function EditUserModal({ open, user, onClose, onSaved }: Props) {
     email !== user.email ||
     role !== user.role ||
     language !== user.language ||
-    active !== user.active
+    active !== user.active ||
+    createdAt !== (user.created_at ? user.created_at.slice(0, 10) : '')
   )
 
   const handleSave = async () => {
@@ -60,7 +63,14 @@ export default function EditUserModal({ open, user, onClose, onSaved }: Props) {
     setSaveState('saving')
     const { data, error } = await supabase
       .from('users')
-      .update({ full_name: fullName, email, role, language, active })
+      .update({
+        full_name: fullName,
+        email,
+        role,
+        language,
+        active,
+        created_at: createdAt ? new Date(createdAt).toISOString() : user.created_at,
+      })
       .eq('id', user.id)
       .select()
       .single()
@@ -165,6 +175,14 @@ export default function EditUserModal({ open, user, onClose, onSaved }: Props) {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Data intrării în echipă */}
+          <div>
+            <label className="text-[11px] font-semibold text-[#666] uppercase tracking-wide block mb-[8px]">Data intrării în echipă</label>
+            <input type="date" value={createdAt} onChange={e => setCreatedAt(e.target.value)}
+              className="w-full h-[48px] rounded-[14px] border border-[#f0e9e5] px-[14px] text-[14px] text-[#111] outline-none focus:border-[#ce0100] focus:shadow-[0_0_0_3px_rgba(206,1,0,0.07)] transition-all" />
+            <p className="text-[11px] text-[#aaa] mt-1">Aceasta este data afișată ca „Membru de" în profilul utilizatorului.</p>
           </div>
 
         </div>
