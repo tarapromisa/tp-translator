@@ -27,6 +27,7 @@ export default function CalendarPage() {
   const { profile } = useUser()
   const role = profile?.role
   const isAdmin = role === 'Admin'
+  const canManage = isAdmin || role === 'Coordonator principal'
   const canSeeCalendar = role === 'Admin' || role === 'Coordonator' || role === 'Coordonator principal'
 
   const [view, setView] = useState<ViewMode>('month')
@@ -134,7 +135,7 @@ export default function CalendarPage() {
             <div className="w-10 h-[3px] rounded-full bg-[#ce0100] mb-4" />
             <p className="text-base text-[#666]">Sarcini zilnice — referințe biblice și alte activități.</p>
           </div>
-          {isAdmin && (
+          {canManage && (
             <button onClick={() => openCreateModal()}
               className="h-11 px-6 rounded-xl bg-[#ce0100] text-white text-sm font-semibold shadow-[0_6px_16px_rgba(206,1,0,0.22)] hover:bg-[#a80000] transition-all flex items-center gap-2">
               <PlusIcon className="w-4 h-4" /> Sarcină nouă
@@ -194,10 +195,10 @@ export default function CalendarPage() {
                 const isToday = dateStr === todayStr()
                 return (
                   <div key={i}
-                    onClick={() => isAdmin && openCreateModal(dateStr)}
+                    onClick={() => canManage && openCreateModal(dateStr)}
                     className={`min-h-[80px] md:min-h-[120px] border-b border-r border-[#f5efec] p-1 md:p-2 flex flex-col gap-1 ${
                       !inMonth ? 'bg-[#fbfaf9]' : 'bg-white'
-                    } ${isAdmin ? 'cursor-pointer hover:bg-[#fff7f7]' : ''}`}>
+                    } ${canManage ? 'cursor-pointer hover:bg-[#fff7f7]' : ''}`}>
                     <span className={`text-[11px] md:text-[12px] font-semibold ${
                       isToday ? 'inline-flex items-center justify-center w-5 h-5 md:w-6 md:h-6 rounded-full bg-[#ce0100] text-white' :
                       inMonth ? 'text-[#444]' : 'text-[#ccc]'
@@ -206,12 +207,12 @@ export default function CalendarPage() {
                       {dayTareas.map(t => {
                         const isBible = isValidReference(t.referinta_ro)
                         return (
-                          <div key={t.id} onClick={(e) => { e.stopPropagation(); isAdmin && openEditModal(t) }}
+                          <div key={t.id} onClick={(e) => { e.stopPropagation(); canManage && openEditModal(t) }}
                             className={`flex items-center gap-1 px-1 py-0.5 rounded-md text-[9px] md:text-[10px] font-semibold leading-tight ${
                               isBible
                                 ? t.gasit ? 'bg-[#edfaf3] text-[#166534]' : 'bg-[#fff1f1] text-[#991b1b]'
                                 : 'bg-[#f4f0ed] text-[#555]'
-                            } ${isAdmin ? 'hover:opacity-80' : ''}`}>
+                            } ${canManage ? 'hover:opacity-80' : ''}`}>
                             {isBible && (t.gasit
                               ? <CheckCircleIcon className="w-2.5 h-2.5 flex-shrink-0" />
                               : <XCircleIcon className="w-2.5 h-2.5 flex-shrink-0" />
@@ -272,7 +273,7 @@ export default function CalendarPage() {
                       </div>
                     </div>
 
-                    {isAdmin && (
+                    {canManage && (
                       <div className="flex items-center gap-1 flex-shrink-0">
                         <button onClick={() => openEditModal(t)} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#f9f7f5] transition-all">
                           <PencilIcon className="w-4 h-4 text-[#999]" />
