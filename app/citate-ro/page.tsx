@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Sidebar from '@/components/Sidebar'
 import Pagination from '@/components/Pagination'
 import { supabase } from '@/lib/supabase'
+import { useUser } from '@/context/UserContext'
 import {
   MagnifyingGlassIcon, PencilSquareIcon, TrashIcon,
   XMarkIcon, PlusIcon, ExclamationTriangleIcon,
@@ -18,6 +19,9 @@ type CitatRO = {
   autor_original: string
   status: string
   traducator_ro: string | null
+  citat_ro?: string | null
+  data_asignarii?: string | null
+  data_limita?: string | null
   created_at: string
   traducator_ro_user?: { full_name: string } | null
 }
@@ -51,37 +55,45 @@ function timeAgo(dateStr: string): string {
   return `${Math.floor(m/12)} ani`
 }
 
-function CitatROModal({ item, users, onClose, onSaved }: {
+function CitatROModal({ item, users, onClose, onSaved, isCoordinator }: {
   item: CitatRO | null
   users: { id: string; full_name: string }[]
   onClose: () => void
   onSaved: () => void
+  isCoordinator: boolean
 }) {
   const isEdit = !!item
   const [textOriginal, setTextOriginal] = useState(item?.text_original ?? '')
   const [citatRo, setCitatRo] = useState<string>((item as any)?.citat_ro ?? '')
   const [autorOriginal, setAutorOriginal] = useState(item?.autor_original ?? '')
   const [traducatorRo, setTraducatorRo] = useState(item?.traducator_ro ?? '')
+  const [dataAsignarii, setDataAsignarii] = useState(item?.data_asignarii ?? '')
+  const [dataLimita, setDataLimita] = useState(item?.data_limita ?? '')
   const [saveState, setSaveState] = useState<SaveState>('idle')
   const [error, setError] = useState<string | null>(null)
 
   const handleSave = async () => {
-    if (!textOriginal.trim() || !autorOriginal.trim()) {
+    if (isCoordinator && (!textOriginal.trim() || !autorOriginal.trim())) {
       setError('Textul și autorul sunt obligatorii.')
-      return
-    }
-    if (!traducatorRo) {
-      setError('Traducătorul RO este obligatoriu.')
       return
     }
     setSaveState('saving')
     setError(null)
 
-    const payload = {
-      text_original: textOriginal.trim(),
-      citat_ro: citatRo.trim() || null,
-      autor_original: autorOriginal.trim(),
-      traducator_ro: traducatorRo || null,
+    let payload: any
+
+    if (isCoordinator) {
+      payload = {
+        text_original: textOriginal.trim(),
+        citat_ro: citatRo.trim() || null,
+        autor_original: autorOriginal.trim(),
+        traducator_ro: traducatorRo || null,
+        data_asignarii: dataAsignarii || null,
+        data_limita: dataLimita || null,
+      }
+    } else {
+      // Traducător RO — poate edita doar citat_ro
+      payload = { citat_ro: citatRo.trim() || null }
     }
 
     const { error: e } = isEdit
@@ -117,16 +129,8 @@ function CitatROModal({ item, users, onClose, onSaved }: {
           </div>
 
           <div className="flex flex-col gap-[16px] mb-[24px]">
-            <div>
-              <label className="text-[11px] font-semibold text-[#666] uppercase tracking-wide block mb-[6px]">
-                Text original <span className="text-[#ce0100]">*</span>
-              </label>
-              <textarea value={textOriginal} onChange={e => setTextOriginal(e.target.value)} rows={4}
-                placeholder="Introdu citatul în limba originală..."
-                className="w-full rounded-[14px] border border-[#f0e9e5] px-[14px] py-[12px] text-[14px] text-[#111] resize-none outline-none focus:border-[#ce0100] focus:shadow-[0_0_0_3px_rgba(206,1,0,0.07)] transition-all placeholder:text-[#ccc] leading-relaxed" />
-            </div>
 
-            {/* Traducere RO — câmpul lipsea, acum e prezent */}
+            {/* Traducere RO — visible pentru toți */}
             <div>
               <label className="text-[11px] font-semibold text-[#666] uppercase tracking-wide block mb-[6px]">
                 Traducere în română
@@ -137,26 +141,59 @@ function CitatROModal({ item, users, onClose, onSaved }: {
               <p className="text-[11px] text-[#999] mt-1">Lasă gol dacă traducerea nu a fost făcută încă — statusul va rămâne "Incomplet".</p>
             </div>
 
-            <div>
-              <label className="text-[11px] font-semibold text-[#666] uppercase tracking-wide block mb-[6px]">
-                Autor <span className="text-[#ce0100]">*</span>
-              </label>
-              <input value={autorOriginal} onChange={e => setAutorOriginal(e.target.value)}
-                placeholder="Numele autorului..."
-                className="w-full h-[46px] rounded-[14px] border border-[#f0e9e5] px-[14px] text-[14px] text-[#111] outline-none focus:border-[#ce0100] focus:shadow-[0_0_0_3px_rgba(206,1,0,0.07)] transition-all placeholder:text-[#ccc]" />
-            </div>
-            <div>
-              <label className="text-[11px] font-semibold text-[#666] uppercase tracking-wide block mb-[6px]">
-                Traducător RO <span className="text-[#ce0100]">*</span>
-              </label>
-              <select value={traducatorRo} onChange={e => setTraducatorRo(e.target.value)}
-                className={`w-full h-[40px] rounded-[12px] border px-[12px] text-[13px] text-[#111] outline-none focus:border-[#ce0100] transition-all bg-white ${
-                  !traducatorRo ? 'border-[#ffd3d3]' : 'border-[#f0e9e5]'
-                }`}>
-                <option value="">— Selectează —</option>
-                {users.map(u => <option key={u.id} value={u.id}>{u.full_name}</option>)}
-              </select>
-            </div>
+            {/* Câmpuri doar pentru coordonatori */}
+            {isCoordinator && (
+              <>
+                <div>
+                  <label className="text-[11px] font-semibold text-[#666] uppercase tracking-wide block mb-[6px]">
+                    Text original <span className="text-[#ce0100]">*</span>
+                  </label>
+                  <textarea value={textOriginal} onChange={e => setTextOriginal(e.target.value)} rows={4}
+                    placeholder="Introdu citatul în limba originală..."
+                    className="w-full rounded-[14px] border border-[#f0e9e5] px-[14px] py-[12px] text-[14px] text-[#111] resize-none outline-none focus:border-[#ce0100] focus:shadow-[0_0_0_3px_rgba(206,1,0,0.07)] transition-all placeholder:text-[#ccc] leading-relaxed" />
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-semibold text-[#666] uppercase tracking-wide block mb-[6px]">
+                    Autor <span className="text-[#ce0100]">*</span>
+                  </label>
+                  <input value={autorOriginal} onChange={e => setAutorOriginal(e.target.value)}
+                    placeholder="Numele autorului..."
+                    className="w-full h-[46px] rounded-[14px] border border-[#f0e9e5] px-[14px] text-[14px] text-[#111] outline-none focus:border-[#ce0100] focus:shadow-[0_0_0_3px_rgba(206,1,0,0.07)] transition-all placeholder:text-[#ccc]" />
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-semibold text-[#666] uppercase tracking-wide block mb-[6px]">
+                    Traducător RO <span className="text-[#ce0100]">*</span>
+                  </label>
+                  <select value={traducatorRo} onChange={e => setTraducatorRo(e.target.value)}
+                    className={`w-full h-[40px] rounded-[12px] border px-[12px] text-[13px] text-[#111] outline-none focus:border-[#ce0100] transition-all bg-white ${
+                      !traducatorRo ? 'border-[#ffd3d3]' : 'border-[#f0e9e5]'
+                    }`}>
+                    <option value="">— Selectează —</option>
+                    {users.map(u => <option key={u.id} value={u.id}>{u.full_name}</option>)}
+                  </select>
+                </div>
+
+                {/* Date fields */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[11px] font-semibold text-[#666] uppercase tracking-wide block mb-[6px]">
+                      Dată asignare
+                    </label>
+                    <input type="date" value={dataAsignarii ?? ''} onChange={e => setDataAsignarii(e.target.value)}
+                      className="w-full h-[40px] rounded-[12px] border border-[#f0e9e5] px-[12px] text-[13px] text-[#111] outline-none focus:border-[#ce0100] transition-all" />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-semibold text-[#666] uppercase tracking-wide block mb-[6px]">
+                      Dată limită
+                    </label>
+                    <input type="date" value={dataLimita ?? ''} onChange={e => setDataLimita(e.target.value)}
+                      className="w-full h-[40px] rounded-[12px] border border-[#f0e9e5] px-[12px] text-[13px] text-[#111] outline-none focus:border-[#ce0100] transition-all" />
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
           {error && <p className="text-[12px] text-[#ce0100] mb-[12px] font-medium">{error}</p>}
@@ -226,6 +263,11 @@ function DeleteModal({ item, onClose, onDeleted }: {
 }
 
 export default function CitateROPage() {
+  const { profile } = useUser()
+  const role = profile?.role ?? ''
+  const isCoordinator = ['Admin', 'Coordonator principal', 'Coordonator'].includes(role)
+  const isTraducatorRO = role === 'Traducător' && profile?.language === 'RO'
+
   const [items, setItems] = useState<CitatRO[]>([])
   const [users, setUsers] = useState<{ id: string; full_name: string }[]>([])
   const [loading, setLoading] = useState(true)
@@ -242,10 +284,17 @@ export default function CitateROPage() {
 
   const fetchData = async () => {
     setLoading(true)
-    const { data: c, error: ce } = await supabase
+    let query = supabase
       .from('citate_ro')
-      .select('*, traducator_ro_user:traducator_ro(full_name)')
+      .select('*, traducator_ro_user:traducator_ro(full_name), citat_ro, data_asignarii, data_limita')
       .order('created_at', { ascending: false })
+
+    // Traducătorul RO vede doar citatele lui
+    if (isTraducatorRO && profile?.id) {
+      query = query.eq('traducator_ro', profile.id)
+    }
+
+    const { data: c, error: ce } = await query
 
     const { data: u } = await supabase
       .from('users')
@@ -299,10 +348,12 @@ export default function CitateROPage() {
               <div className="w-10 h-[3px] rounded-full bg-[#ce0100] mb-3" />
               <p className="text-sm text-[#666]">Texte originale în limba română.</p>
             </div>
+            {isCoordinator && (
             <button onClick={() => { setEditItem(null); setShowModal(true) }}
               className="sm:mt-2 h-11 px-6 rounded-xl bg-[#ce0100] text-white text-sm font-semibold shadow-[0_6px_16px_rgba(206,1,0,0.22)] hover:bg-[#a80000] transition-all flex items-center justify-center gap-2">
               <PlusIcon className="w-4 h-4" /> Citat nou
             </button>
+            )}
           </div>
 
           <div className="grid grid-cols-3 gap-3 mb-5">
@@ -413,12 +464,15 @@ export default function CitateROPage() {
                       <div className="flex items-center gap-2 flex-shrink-0">
                         <button onClick={() => { setEditItem(selectedItem); setShowModal(true) }}
                           className="h-9 px-3 md:px-4 rounded-xl border border-[#e8e2de] bg-white text-sm font-semibold text-[#444] hover:bg-[#faf7f5] transition-all flex items-center gap-2">
-                          <PencilSquareIcon className="w-4 h-4" /> <span className="hidden sm:inline">Editează</span>
+                          <PencilSquareIcon className="w-4 h-4" />
+                          <span className="hidden sm:inline">{isCoordinator ? 'Editează' : 'Adaugă traducerea'}</span>
                         </button>
-                        <button onClick={() => { setDeleteItem(selectedItem); setShowDelete(true) }}
-                          className="h-9 w-9 rounded-xl bg-[#fff1f1] text-[#ce0100] flex items-center justify-center hover:bg-[#ffe0e0] transition-all flex-shrink-0">
-                          <TrashIcon className="w-4 h-4" />
-                        </button>
+                        {isCoordinator && (
+                          <button onClick={() => { setDeleteItem(selectedItem); setShowDelete(true) }}
+                            className="h-9 w-9 rounded-xl bg-[#fff1f1] text-[#ce0100] flex items-center justify-center hover:bg-[#ffe0e0] transition-all flex-shrink-0">
+                            <TrashIcon className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     </div>
 
@@ -462,8 +516,10 @@ export default function CitateROPage() {
                         { label: 'ID public',        value: selectedItem.public_id },
                         { label: 'Stare',            value: <StatusPill status={selectedItem.status} /> },
                         { label: 'Autor',            value: selectedItem.autor_original },
-                        { label: 'Traducător RO', value: (selectedItem as any).traducator_ro_user?.full_name ?? '—' },
-                        { label: 'Data creării', value: new Date(selectedItem.created_at).toLocaleDateString('ro-RO', { day:'2-digit', month:'long', year:'numeric' }) },
+                        { label: 'Traducător RO',    value: (selectedItem as any).traducator_ro_user?.full_name ?? '—' },
+                        { label: 'Data creării',     value: new Date(selectedItem.created_at).toLocaleDateString('ro-RO', { day:'2-digit', month:'long', year:'numeric' }) },
+                        { label: 'Data asignării',   value: selectedItem.data_asignarii ? new Date(selectedItem.data_asignarii).toLocaleDateString('ro-RO', { day:'2-digit', month:'long', year:'numeric' }) : '—' },
+                        { label: 'Dată limită',      value: selectedItem.data_limita ? new Date(selectedItem.data_limita).toLocaleDateString('ro-RO', { day:'2-digit', month:'long', year:'numeric' }) : '—' },
                       ].map(({ label, value }) => (
                         <div key={label}>
                           <p className="text-[11px] font-semibold text-[#888] uppercase tracking-wide mb-1">{label}</p>
@@ -489,6 +545,7 @@ export default function CitateROPage() {
         <CitatROModal
           item={editItem}
           users={users}
+          isCoordinator={isCoordinator}
           onClose={() => { setShowModal(false); setEditItem(null) }}
           onSaved={fetchData}
         />
