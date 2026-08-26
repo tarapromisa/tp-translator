@@ -228,25 +228,7 @@ export default function CalendarPage() {
     return map
   }, [tareas])
 
-  // For each calendar day, find citate RO that span that day
-  const citatROByDate = useMemo(() => {
-    const map = new Map<string, CitatROEvent[]>()
-    for (const c of citateRO) {
-      if (!c.data_asignarii) continue
-      const start = c.data_asignarii
-      const end = c.data_limita ?? c.data_asignarii
-      // Add to each day in range
-      let cur = new Date(start + 'T00:00:00')
-      const endDate = new Date(end + 'T00:00:00')
-      while (cur <= endDate) {
-        const ds = toDateStr(cur)
-        if (!map.has(ds)) map.set(ds, [])
-        map.get(ds)!.push(c)
-        cur.setDate(cur.getDate() + 1)
-      }
-    }
-    return map
-  }, [citateRO])
+  // citatROByDate no longer needed — using absolute positioned Gantt bars instead
 
   const handleDeleteConfirmed = async () => {
     if (!confirmDeleteId) return
@@ -373,63 +355,110 @@ export default function CalendarPage() {
                 <div key={w} className="px-2 py-2 text-center text-[11px] font-semibold text-[#999] uppercase tracking-wide">{w}</div>
               ))}
             </div>
-            <div className="grid grid-cols-7">
-              {monthGrid.map(({ date, inMonth }, i) => {
-                const dateStr = toDateStr(date)
-                const dayTareas = tareasByDate.get(dateStr) ?? []
-                const dayCitateRO = citatROByDate.get(dateStr) ?? []
-                const isToday = dateStr === todayStr()
-                return (
-                  <div key={i}
-                    onClick={() => canManage && openCreateModal(dateStr)}
-                    className={`min-h-[80px] md:min-h-[120px] border-b border-r border-[#f5efec] p-1 md:p-2 flex flex-col gap-0.5 ${
-                      !inMonth ? 'bg-[#fbfaf9]' : 'bg-white'
-                    } ${canManage ? 'cursor-pointer hover:bg-[#fff7f7]' : ''}`}>
-                    <span className={`text-[11px] md:text-[12px] font-semibold mb-0.5 ${
-                      isToday ? 'inline-flex items-center justify-center w-5 h-5 md:w-6 md:h-6 rounded-full bg-[#ce0100] text-white' :
-                      inMonth ? 'text-[#444]' : 'text-[#ccc]'
-                    }`}>{date.getDate()}</span>
+            {/* Grid wrapper with relative positioning for Gantt bars */}
+            <div className="relative">
+              <div className="grid grid-cols-7">
+                {monthGrid.map(({ date, inMonth }, i) => {
+                  const dateStr = toDateStr(date)
+                  const dayTareas = tareasByDate.get(dateStr) ?? []
+                  const isToday = dateStr === todayStr()
+                  return (
+                    <div key={i}
+                      onClick={() => canManage && openCreateModal(dateStr)}
+                      className={`min-h-[80px] md:min-h-[120px] border-b border-r border-[#f5efec] p-1 md:p-2 flex flex-col gap-0.5 ${
+                        !inMonth ? 'bg-[#fbfaf9]' : 'bg-white'
+                      } ${canManage ? 'cursor-pointer hover:bg-[#fff7f7]' : ''}`}>
+                      <span className={`text-[11px] md:text-[12px] font-semibold mb-0.5 ${
+                        isToday ? 'inline-flex items-center justify-center w-5 h-5 md:w-6 md:h-6 rounded-full bg-[#ce0100] text-white' :
+                        inMonth ? 'text-[#444]' : 'text-[#ccc]'
+                      }`}>{date.getDate()}</span>
 
-                    {/* Citate RO bars — purple */}
-                    {dayCitateRO.map(c => {
-                      const isComplete = c.status === 'Completat'
-                      return (
-                        <div key={c.id}
-                          onClick={e => { e.stopPropagation(); setDetailCitat(c) }}
-                          className={`flex items-center gap-0.5 px-1 py-0.5 rounded-sm text-[9px] md:text-[10px] font-semibold leading-tight cursor-pointer hover:opacity-80 truncate ${
-                            isComplete ? 'bg-[#ede9fe] text-[#5b21b6]' : 'bg-[#fdf4ff] text-[#7c3aed]'
-                          }`}
-                          title={`${c.public_id} — ${c.traducator_ro_user?.[0]?.full_name ?? ''}`}>
+                      {/* Spacer for Gantt bars row */}
+                      {citateRO.length > 0 && <div className="h-4 md:h-5" />}
+
+                      {/* Tareas */}
+                      {dayTareas.map(t => {
+                        const isBible = isValidReference(t.referinta_ro)
+                        return (
+                          <div key={t.id}
+                            onClick={(e) => { e.stopPropagation(); openEditModal(t) }}
+                            className={`flex items-center gap-1 px-1 py-0.5 rounded-md text-[9px] md:text-[10px] font-semibold leading-tight cursor-pointer ${
+                              isBible
+                                ? t.gasit ? 'bg-[#edfaf3] text-[#166534]' : 'bg-[#fff1f1] text-[#991b1b]'
+                                : 'bg-[#f4f0ed] text-[#555]'
+                            } hover:opacity-80`}>
+                            {isBible && (t.gasit
+                              ? <CheckCircleIcon className="w-2.5 h-2.5 flex-shrink-0" />
+                              : <XCircleIcon className="w-2.5 h-2.5 flex-shrink-0" />
+                            )}
+                            <span className="truncate">{t.referinta_ro}</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Gantt bars for Citate RO — rendered as absolute overlays */}
+              {citateRO.map((c, rowIndex) => {
+                if (!c.data_asignarii) return null
+                const startDate = c.data_asignarii
+                const endDate = c.data_limita ?? c.data_asignarii
+                const isComplete = c.status === 'Completat'
+
+                // Find which cells in the grid correspond to start and end
+                const bars: { startIdx: number; endIdx: number; row: number }[] = []
+                let currentStart: number | null = null
+
+                monthGrid.forEach(({ date }, i) => {
+                  const ds = toDateStr(date)
+                  const inRange = ds >= startDate && ds <= endDate
+                  const isLastOfWeek = i % 7 === 6
+                  const isLastCell = i === monthGrid.length - 1
+
+                  if (inRange && currentStart === null) currentStart = i
+                  if (currentStart !== null && (isLastOfWeek || isLastCell || !inRange)) {
+                    if (inRange || ds <= endDate) {
+                      bars.push({ startIdx: currentStart, endIdx: inRange ? i : i - 1, row: Math.floor(currentStart / 7) })
+                    }
+                    currentStart = inRange && !isLastOfWeek ? null : null
+                    if (inRange && !isLastOfWeek && !isLastCell) currentStart = i + 1
+                  }
+                })
+
+                return bars.map((bar, bi) => {
+                  const colStart = bar.startIdx % 7
+                  const colEnd = bar.endIdx % 7
+                  const rowNum = Math.floor(bar.startIdx / 7)
+                  const cellW = 100 / 7
+                  const left = `${colStart * cellW}%`
+                  const width = `${(colEnd - colStart + 1) * cellW}%`
+                  const topPerCell = 80 // min-h in px (mobile)
+                  const top = rowNum * topPerCell + 22 // 22px offset for day number
+
+                  return (
+                    <div key={`${c.id}-${bi}`}
+                      onClick={() => setDetailCitat(c)}
+                      style={{ left, width, top, position: 'absolute' }}
+                      className={`h-4 md:h-5 cursor-pointer flex items-center px-1.5 gap-1 text-[9px] md:text-[10px] font-bold z-10 transition-opacity hover:opacity-80 ${
+                        bi === 0 ? 'rounded-l-full' : ''
+                      } ${
+                        bar.endIdx % 7 === 6 || bar.endIdx === monthGrid.length - 1 ? 'rounded-r-full' : ''
+                      } ${isComplete ? 'bg-[#7c3aed] text-white' : 'bg-[#c4b5fd] text-[#4c1d95]'}`}
+                      title={`${c.public_id} — ${c.traducator_ro_user?.[0]?.full_name ?? ''}`}>
+                      {bi === 0 && (
+                        <>
                           {isComplete
-                            ? <CheckCircleIcon className="w-2.5 h-2.5 flex-shrink-0 text-[#5b21b6]" />
-                            : <XCircleIcon className="w-2.5 h-2.5 flex-shrink-0 text-[#7c3aed]" />
-                          }
-                          <span className="truncate">{c.public_id}</span>
-                        </div>
-                      )
-                    })}
-
-                    {/* Tareas */}
-                    {dayTareas.map(t => {
-                      const isBible = isValidReference(t.referinta_ro)
-                      return (
-                        <div key={t.id}
-                          onClick={(e) => { e.stopPropagation(); openEditModal(t) }}
-                          className={`flex items-center gap-1 px-1 py-0.5 rounded-md text-[9px] md:text-[10px] font-semibold leading-tight cursor-pointer ${
-                            isBible
-                              ? t.gasit ? 'bg-[#edfaf3] text-[#166534]' : 'bg-[#fff1f1] text-[#991b1b]'
-                              : 'bg-[#f4f0ed] text-[#555]'
-                          } hover:opacity-80`}>
-                          {isBible && (t.gasit
                             ? <CheckCircleIcon className="w-2.5 h-2.5 flex-shrink-0" />
                             : <XCircleIcon className="w-2.5 h-2.5 flex-shrink-0" />
-                          )}
-                          <span className="truncate">{t.referinta_ro}</span>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )
+                          }
+                          <span className="truncate">{c.public_id}</span>
+                        </>
+                      )}
+                    </div>
+                  )
+                })
               })}
             </div>
           </div>
