@@ -497,6 +497,9 @@ function EmailSablonModal({ text, emails, onClose }: {
 }) {
   const [copiedMail, setCopiedMail] = useState(false)
   const [copiedEmails, setCopiedEmails] = useState(false)
+  const [copiedEchipa, setCopiedEchipa] = useState(false)
+
+  const ECHIPA = 'echipa@tptranslator.com'
 
   const emailBody = `Bună,
 
@@ -594,6 +597,22 @@ Traducerea poate fi transmisă prin WhatsApp sau e-mail la adresa echipa@tptrans
             </button>
           </div>
 
+          {/* Copy echipa button */}
+          <button onClick={() => {
+            navigator.clipboard.writeText('echipa@tptranslator.com')
+            setCopiedEchipa(true)
+            setTimeout(() => setCopiedEchipa(false), 2000)
+          }}
+            className={`w-full h-10 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all border ${
+              copiedEchipa
+                ? 'bg-[#166534] text-white border-transparent'
+                : 'bg-white text-[#ce0100] border-[#ffd3d3] hover:bg-[#fff1f1]'
+            }`}>
+            {copiedEchipa
+              ? <><ClipboardDocumentCheckIcon className="w-4 h-4" /> Copiat!</>
+              : <><ClipboardDocumentIcon className="w-4 h-4" /> Copiați echipa@tptranslator.com</>}
+          </button>
+
           {/* Emails preview */}
           {emails && (
             <div className="bg-[#f0f4ff] border border-[#c7d8ff] rounded-xl px-4 py-3">
@@ -606,8 +625,8 @@ Traducerea poate fi transmisă prin WhatsApp sau e-mail la adresa echipa@tptrans
           <div className="bg-[#fffdf0] border border-[#e8e2c0] rounded-xl p-4">
             <p className="text-[11px] font-bold text-[#888] uppercase tracking-wide mb-2">Instrucțiuni</p>
             <ul className="text-xs text-[#555] leading-relaxed space-y-1.5">
-              <li>• În <strong>BCC sau CCO</strong> (nici CC, nici TO) introdu toate adresele traducătorilor, ca adresele să fie private.</li>
-              <li>• În <strong>TO sau PARA</strong> introdu întotdeauna <strong className="text-[#ce0100]">echipa@tptranslator.com</strong>, ca să primim o copie.</li>
+              <li>• În <strong>PARA / TO</strong> introdu adresele traducătorilor (butonul "Copiați adresele").</li>
+              <li>• În <strong>CC sau CCO</strong> introdu <strong className="text-[#ce0100]">echipa@tptranslator.com</strong> ca să primim o copie.</li>
               <li>• În subiect scrie <strong>CITAT</strong> urmat de numărul citatului.</li>
             </ul>
           </div>
