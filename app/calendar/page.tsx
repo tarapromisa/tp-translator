@@ -433,6 +433,8 @@ export default function CalendarPage() {
             </button>
           )}
         </div>
+
+        {loading ? (
           <div className="flex items-center justify-center py-20">
             <p className="text-base text-[#888]">Se încarcă...</p>
           </div>
