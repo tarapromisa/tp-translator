@@ -263,7 +263,7 @@ export default function MailTLPPage() {
   const [rightTopHeight, setRightTopHeight] = useState(50) // percentage
   const [mobileTab, setMobileTab] = useState<'lista' | 'formular' | 'referinta'>('lista')
 
-  const canManage = currentUser?.role === 'Coordonator principal' || currentUser?.role === 'Admin'
+  const canManage = currentUser?.role === 'Coordonator principal' || currentUser?.role === 'Admin' || currentUser?.role === 'Coordonator'
 
   const fetchData = async () => {
     setLoading(true)
