@@ -124,7 +124,7 @@ function CitatRODetailModal({ citat, onClose }: { citat: CitatROEvent; onClose: 
             {citat.traducator_ro_user?.[0]?.full_name && (
               <div>
                 <p className="text-[11px] font-semibold text-[#999] uppercase tracking-wide mb-1">Traducător RO</p>
-                <p className="text-sm text-[#111]">{citat.traducator_ro_user.full_name}</p>
+                <p className="text-sm text-[#111]">{citat.traducator_ro_user?.[0]?.full_name}</p>
               </div>
             )}
           </div>
