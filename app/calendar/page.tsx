@@ -24,7 +24,7 @@ type CitatROEvent = {
   data_asignarii: string | null
   data_limita: string | null
   traducator_ro: string | null
-  traducator_ro_user?: { full_name: string } | null
+  traducator_ro_user?: { full_name: string }[] | null
 }
 
 const WEEKDAYS = ['Lun', 'Mar', 'Mie', 'Joi', 'Vin', 'Sâm', 'Dum']
@@ -121,7 +121,7 @@ function CitatRODetailModal({ citat, onClose }: { citat: CitatROEvent; onClose: 
                 <p className="text-sm text-[#111]">{citat.data_limita ? new Date(citat.data_limita + 'T00:00:00').toLocaleDateString('ro-RO', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</p>
               </div>
             </div>
-            {citat.traducator_ro_user?.full_name && (
+            {citat.traducator_ro_user?.[0]?.full_name && (
               <div>
                 <p className="text-[11px] font-semibold text-[#999] uppercase tracking-wide mb-1">Traducător RO</p>
                 <p className="text-sm text-[#111]">{citat.traducator_ro_user.full_name}</p>
@@ -383,7 +383,7 @@ export default function CalendarPage() {
                       <div key={c.id}
                         onClick={e => { e.stopPropagation(); setDetailCitat(c) }}
                         className="flex items-center px-1 py-0.5 rounded-sm text-[9px] md:text-[10px] font-semibold leading-tight bg-[#ede9fe] text-[#5b21b6] cursor-pointer hover:opacity-80 truncate"
-                        title={`${c.public_id} — ${c.traducator_ro_user?.full_name ?? ''}`}>
+                        title={`${c.public_id} — ${c.traducator_ro_user?.[0]?.full_name ?? ''}`}>
                         <span className="truncate">{c.public_id}</span>
                       </div>
                     ))}
