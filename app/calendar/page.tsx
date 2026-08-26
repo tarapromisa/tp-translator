@@ -24,6 +24,7 @@ type CitatROEvent = {
   data_asignarii: string | null
   data_limita: string | null
   traducator_ro: string | null
+  status: string
   traducator_ro_user?: { full_name: string }[] | null
 }
 
@@ -127,6 +128,15 @@ function CitatRODetailModal({ citat, onClose }: { citat: CitatROEvent; onClose: 
                 <p className="text-sm text-[#111]">{citat.traducator_ro_user?.[0]?.full_name}</p>
               </div>
             )}
+            <div className={`flex items-center gap-2 px-3 py-2 rounded-xl ${citat.status === 'Completat' ? 'bg-[#edfaf3]' : 'bg-[#fdf4ff]'}`}>
+              {citat.status === 'Completat'
+                ? <CheckCircleIcon className="w-4 h-4 text-[#166834]" />
+                : <XCircleIcon className="w-4 h-4 text-[#7c3aed]" />
+              }
+              <p className={`text-[12px] font-semibold ${citat.status === 'Completat' ? 'text-[#166834]' : 'text-[#7c3aed]'}`}>
+                {citat.status}
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -190,15 +200,17 @@ export default function CalendarPage() {
     if (canSeeCitatRO) {
       let q = supabase
         .from('citate_ro')
-        .select('id, public_id, text_original, autor_original, data_asignarii, data_limita, traducator_ro, traducator_ro_user:traducator_ro(full_name)')
+        .select('id, public_id, text_original, autor_original, data_asignarii, data_limita, traducator_ro, status, traducator_ro_user:traducator_ro(full_name)')
         .not('data_asignarii', 'is', null)
+        .or(`data_limita.gte.${range.from},data_asignarii.lte.${range.to}`)
 
       // Traducator RO sees only their own
       if (isTraducatorRO && profile?.id) {
         q = q.eq('traducator_ro', profile.id)
       }
 
-      const { data: cr } = await q
+      const { data: cr, error: crErr } = await q
+      if (crErr) console.error('CitatRO fetch error:', crErr)
       setCitateRO(cr || [])
     }
 
@@ -379,14 +391,23 @@ export default function CalendarPage() {
                     }`}>{date.getDate()}</span>
 
                     {/* Citate RO bars — purple */}
-                    {dayCitateRO.map(c => (
-                      <div key={c.id}
-                        onClick={e => { e.stopPropagation(); setDetailCitat(c) }}
-                        className="flex items-center px-1 py-0.5 rounded-sm text-[9px] md:text-[10px] font-semibold leading-tight bg-[#ede9fe] text-[#5b21b6] cursor-pointer hover:opacity-80 truncate"
-                        title={`${c.public_id} — ${c.traducator_ro_user?.[0]?.full_name ?? ''}`}>
-                        <span className="truncate">{c.public_id}</span>
-                      </div>
-                    ))}
+                    {dayCitateRO.map(c => {
+                      const isComplete = c.status === 'Completat'
+                      return (
+                        <div key={c.id}
+                          onClick={e => { e.stopPropagation(); setDetailCitat(c) }}
+                          className={`flex items-center gap-0.5 px-1 py-0.5 rounded-sm text-[9px] md:text-[10px] font-semibold leading-tight cursor-pointer hover:opacity-80 truncate ${
+                            isComplete ? 'bg-[#ede9fe] text-[#5b21b6]' : 'bg-[#fdf4ff] text-[#7c3aed]'
+                          }`}
+                          title={`${c.public_id} — ${c.traducator_ro_user?.[0]?.full_name ?? ''}`}>
+                          {isComplete
+                            ? <CheckCircleIcon className="w-2.5 h-2.5 flex-shrink-0 text-[#5b21b6]" />
+                            : <XCircleIcon className="w-2.5 h-2.5 flex-shrink-0 text-[#7c3aed]" />
+                          }
+                          <span className="truncate">{c.public_id}</span>
+                        </div>
+                      )
+                    })}
 
                     {/* Tareas */}
                     {dayTareas.map(t => {
