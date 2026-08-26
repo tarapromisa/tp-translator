@@ -166,6 +166,10 @@ export default function CalendarPage() {
   const [editingTarea, setEditingTarea] = useState<TareaCalendarWithStatus | null>(null)
   const [modalDate, setModalDate] = useState<string | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [filterCoord, setFilterCoord] = useState<string>('all')
+  const [filterType, setFilterType] = useState<string>('all')
+  const [filterStatus, setFilterStatus] = useState<string>('all')
+  const [filterMine, setFilterMine] = useState(false)
   const [detailTarea, setDetailTarea] = useState<TareaCalendarWithStatus | null>(null)
   const [detailCitat, setDetailCitat] = useState<CitatROEvent | null>(null)
   const { toasts, showToast } = useToast()
@@ -219,14 +223,48 @@ export default function CalendarPage() {
 
   useEffect(() => { fetchData() }, [range.from, range.to])
 
+  // Coordinators list for filter
+  const coordinators = useMemo(() => {
+    const seen = new Set<string>()
+    const list: { id: string; name: string }[] = []
+    for (const t of tareas) {
+      if (t.coordonator_id && t.coordonator_nume && !seen.has(t.coordonator_id)) {
+        seen.add(t.coordonator_id)
+        list.push({ id: t.coordonator_id, name: t.coordonator_nume })
+      }
+    }
+    return list
+  }, [tareas])
+
+  const filteredTareas = useMemo(() => {
+    if (filterType === 'citateRO') return []
+    return tareas.filter(t => {
+      if (filterCoord !== 'all' && t.coordonator_id !== filterCoord) return false
+      if (filterStatus === 'complete' && !t.gasit) return false
+      if (filterStatus === 'incomplete' && t.gasit) return false
+      if (filterMine && profile?.id && t.coordonator_id !== profile.id) return false
+      return true
+    })
+  }, [tareas, filterType, filterCoord, filterStatus, filterMine, profile])
+
+  const filteredCitateRO = useMemo(() => {
+    if (filterType === 'tareas') return []
+    return citateRO.filter(c => {
+      if (filterStatus === 'complete' && c.status !== 'Completat') return false
+      if (filterStatus === 'incomplete' && c.status === 'Completat') return false
+      if (filterMine && profile?.id && c.traducator_ro !== profile.id) return false
+      return true
+    })
+  }, [citateRO, filterType, filterStatus, filterMine, profile])
+
   const tareasByDate = useMemo(() => {
     const map = new Map<string, TareaCalendarWithStatus[]>()
-    for (const t of tareas) {
+    for (const t of filteredTareas) {
       if (!map.has(t.data)) map.set(t.data, [])
       map.get(t.data)!.push(t)
     }
     return map
-  }, [tareas])
+  }, [filteredTareas])
 
   // citatROByDate no longer needed — using absolute positioned Gantt bars instead
 
@@ -344,7 +382,57 @@ export default function CalendarPage() {
           </div>
         </div>
 
-        {loading ? (
+        {/* ── Filter bar ── */}
+        <div className="bg-white border border-[#e8e2de] rounded-2xl px-4 py-3 mb-4 shadow-sm flex flex-wrap gap-2 items-center">
+          <span className="text-[11px] font-semibold text-[#888] uppercase tracking-wide mr-1">Filtre:</span>
+
+          {/* Type */}
+          <div className="flex items-center gap-1 bg-[#f9f7f5] rounded-xl p-0.5">
+            {[['all','Toate'],['tareas','Sarcini'],['citateRO','Citate RO']].map(([v,l]) => (
+              <button key={v} onClick={() => setFilterType(v)}
+                className={`h-7 px-3 rounded-lg text-[11px] font-semibold transition-all ${
+                  filterType === v ? 'bg-white shadow-sm text-[#ce0100]' : 'text-[#aaa] hover:text-[#555]'
+                }`}>{l}</button>
+            ))}
+          </div>
+
+          {/* Status */}
+          <div className="flex items-center gap-1 bg-[#f9f7f5] rounded-xl p-0.5">
+            {[['all','Toate'],['complete','Complete'],['incomplete','Incomplete']].map(([v,l]) => (
+              <button key={v} onClick={() => setFilterStatus(v)}
+                className={`h-7 px-3 rounded-lg text-[11px] font-semibold transition-all ${
+                  filterStatus === v ? 'bg-white shadow-sm text-[#ce0100]' : 'text-[#aaa] hover:text-[#555]'
+                }`}>{l}</button>
+            ))}
+          </div>
+
+          {/* Coordinator filter */}
+          {coordinators.length > 0 && filterType !== 'citateRO' && (
+            <select value={filterCoord} onChange={e => setFilterCoord(e.target.value)}
+              className="h-8 px-3 rounded-xl border border-[#e8e2de] text-[11px] text-[#555] bg-white outline-none cursor-pointer">
+              <option value="all">Toți coordonatorii</option>
+              {coordinators.map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          )}
+
+          {/* Mine only */}
+          <button onClick={() => setFilterMine(f => !f)}
+            className={`h-8 px-3 rounded-xl border text-[11px] font-semibold transition-all ${
+              filterMine ? 'bg-[#ce0100] text-white border-transparent' : 'border-[#e8e2de] text-[#555] hover:bg-[#f9f7f5]'
+            }`}>
+            Ale mele
+          </button>
+
+          {/* Reset */}
+          {(filterType !== 'all' || filterStatus !== 'all' || filterCoord !== 'all' || filterMine) && (
+            <button onClick={() => { setFilterType('all'); setFilterStatus('all'); setFilterCoord('all'); setFilterMine(false) }}
+              className="h-8 px-3 rounded-xl border border-[#ffd3d3] text-[11px] font-semibold text-[#ce0100] bg-[#fff1f1] hover:bg-[#ffe0e0] transition-all">
+              Resetează
+            </button>
+          )}
+        </div>
           <div className="flex items-center justify-center py-20">
             <p className="text-base text-[#888]">Se încarcă...</p>
           </div>
@@ -373,8 +461,29 @@ export default function CalendarPage() {
                         inMonth ? 'text-[#444]' : 'text-[#ccc]'
                       }`}>{date.getDate()}</span>
 
-                      {/* Spacer for Gantt bars row */}
-                      {citateRO.length > 0 && <div className="h-4 md:h-5" />}
+              {/* Citate RO — shown only on start date as a clear pill */}
+              {filteredCitateRO
+                .filter(c => c.data_asignarii === dateStr)
+                .map(c => {
+                  const isComplete = c.status === 'Completat'
+                  return (
+                    <div key={c.id}
+                      onClick={e => { e.stopPropagation(); setDetailCitat(c) }}
+                      className={`flex items-center gap-1 px-1.5 py-0.5 rounded-lg text-[9px] md:text-[10px] font-bold leading-tight cursor-pointer hover:opacity-80 border ${
+                        isComplete
+                          ? 'bg-[#7c3aed] text-white border-[#6d28d9]'
+                          : 'bg-[#ede9fe] text-[#5b21b6] border-[#c4b5fd]'
+                      }`}
+                      title={`${c.public_id} · ${c.data_asignarii} → ${c.data_limita ?? '?'} · ${c.traducator_ro_user?.[0]?.full_name ?? ''}`}>
+                      {isComplete
+                        ? <CheckCircleIcon className="w-2.5 h-2.5 flex-shrink-0" />
+                        : <XCircleIcon className="w-2.5 h-2.5 flex-shrink-0" />
+                      }
+                      <span className="truncate">{c.public_id}</span>
+                    </div>
+                  )
+                })
+              }
 
                       {/* Tareas */}
                       {dayTareas.map(t => {
@@ -399,83 +508,22 @@ export default function CalendarPage() {
                   )
                 })}
               </div>
-
-              {/* Gantt bars for Citate RO — rendered as absolute overlays */}
-              {citateRO.map((c, rowIndex) => {
-                if (!c.data_asignarii) return null
-                const startDate = c.data_asignarii
-                const endDate = c.data_limita ?? c.data_asignarii
-                const isComplete = c.status === 'Completat'
-
-                // Find which cells in the grid correspond to start and end
-                const bars: { startIdx: number; endIdx: number; row: number }[] = []
-                let currentStart: number | null = null
-
-                monthGrid.forEach(({ date }, i) => {
-                  const ds = toDateStr(date)
-                  const inRange = ds >= startDate && ds <= endDate
-                  const isLastOfWeek = i % 7 === 6
-                  const isLastCell = i === monthGrid.length - 1
-
-                  if (inRange && currentStart === null) currentStart = i
-                  if (currentStart !== null && (isLastOfWeek || isLastCell || !inRange)) {
-                    if (inRange || ds <= endDate) {
-                      bars.push({ startIdx: currentStart, endIdx: inRange ? i : i - 1, row: Math.floor(currentStart / 7) })
-                    }
-                    currentStart = inRange && !isLastOfWeek ? null : null
-                    if (inRange && !isLastOfWeek && !isLastCell) currentStart = i + 1
-                  }
-                })
-
-                return bars.map((bar, bi) => {
-                  const colStart = bar.startIdx % 7
-                  const colEnd = bar.endIdx % 7
-                  const rowNum = Math.floor(bar.startIdx / 7)
-                  const cellW = 100 / 7
-                  const left = `${colStart * cellW}%`
-                  const width = `${(colEnd - colStart + 1) * cellW}%`
-                  const topPerCell = 80 // min-h in px (mobile)
-                  const top = rowNum * topPerCell + 22 // 22px offset for day number
-
-                  return (
-                    <div key={`${c.id}-${bi}`}
-                      onClick={() => setDetailCitat(c)}
-                      style={{ left, width, top, position: 'absolute' }}
-                      className={`h-4 md:h-5 cursor-pointer flex items-center px-1.5 gap-1 text-[9px] md:text-[10px] font-bold z-10 transition-opacity hover:opacity-80 ${
-                        bi === 0 ? 'rounded-l-full' : ''
-                      } ${
-                        bar.endIdx % 7 === 6 || bar.endIdx === monthGrid.length - 1 ? 'rounded-r-full' : ''
-                      } ${isComplete ? 'bg-[#7c3aed] text-white' : 'bg-[#c4b5fd] text-[#4c1d95]'}`}
-                      title={`${c.public_id} — ${c.traducator_ro_user?.[0]?.full_name ?? ''}`}>
-                      {bi === 0 && (
-                        <>
-                          {isComplete
-                            ? <CheckCircleIcon className="w-2.5 h-2.5 flex-shrink-0" />
-                            : <XCircleIcon className="w-2.5 h-2.5 flex-shrink-0" />
-                          }
-                          <span className="truncate">{c.public_id}</span>
-                        </>
-                      )}
-                    </div>
-                  )
-                })
-              })}
             </div>
           </div>
         ) : (
           <div className="bg-white border border-[#e8e2de] rounded-2xl overflow-hidden shadow-sm">
-            {tareas.length === 0 ? (
+            {filteredTareas.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 gap-3">
                 <p className="text-3xl">📅</p>
                 <p className="text-base text-[#888]">Nicio sarcină programată.</p>
               </div>
             ) : (
-              tareas.map((t, i) => {
+              filteredTareas.map((t, i) => {
                 const d = new Date(t.data + 'T00:00:00')
                 const isBible = isValidReference(t.referinta_ro)
                 return (
                   <div key={t.id}
-                    className={`flex items-center gap-3 md:gap-4 px-4 md:px-5 py-3 ${i < tareas.length - 1 ? 'border-b border-[#f8f3f0]' : ''}`}>
+                    className={`flex items-center gap-3 md:gap-4 px-4 md:px-5 py-3 ${i < filteredTareas.length - 1 ? 'border-b border-[#f8f3f0]' : ''}`}>
                     <div className="w-12 md:w-16 flex-shrink-0 text-center">
                       <p className="text-[10px] text-[#999] uppercase">{WEEKDAYS[(d.getDay() + 6) % 7]}</p>
                       <p className={`text-base md:text-lg font-bold ${t.data === todayStr() ? 'text-[#ce0100]' : 'text-[#111]'}`}>{d.getDate()}</p>
