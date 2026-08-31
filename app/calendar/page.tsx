@@ -170,8 +170,40 @@ export default function CalendarPage() {
   const [filterType, setFilterType] = useState<string>('all')
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [filterMine, setFilterMine] = useState(false)
+  const [draggingId, setDraggingId] = useState<string | null>(null)
+  const [dragOverDate, setDragOverDate] = useState<string | null>(null)
   const [detailTarea, setDetailTarea] = useState<TareaCalendarWithStatus | null>(null)
   const [detailCitat, setDetailCitat] = useState<CitatROEvent | null>(null)
+
+  const handleDragStart = (e: React.DragEvent, tareaId: string) => {
+    setDraggingId(tareaId)
+    e.dataTransfer.effectAllowed = 'move'
+  }
+
+  const handleDragOver = (e: React.DragEvent, dateStr: string) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    setDragOverDate(dateStr)
+  }
+
+  const handleDrop = async (e: React.DragEvent, dateStr: string) => {
+    e.preventDefault()
+    setDragOverDate(null)
+    if (!draggingId || !canManage) return
+    const tarea = tareas.find(t => t.id === draggingId)
+    if (!tarea || tarea.data === dateStr) { setDraggingId(null); return }
+    // Optimistic update
+    setTareas(prev => prev.map(t => t.id === draggingId ? { ...t, data: dateStr } : t))
+    setDraggingId(null)
+    const { updateTarea } = await import('@/lib/calendarTasks')
+    const result = await updateTarea(supabase, draggingId, { data: dateStr })
+    if (!result.success) {
+      showToast('Eroare la reprogramare.', 'error')
+      fetchData()
+    } else {
+      showToast('Sarcină reprogramată.', 'success')
+    }
+  }
   const { toasts, showToast } = useToast()
 
   const range = useMemo(() => {
@@ -455,7 +487,11 @@ export default function CalendarPage() {
                   return (
                     <div key={i}
                       onClick={() => canManage && openCreateModal(dateStr)}
-                      className={`min-h-[80px] md:min-h-[120px] border-b border-r border-[#f5efec] p-1 md:p-2 flex flex-col gap-0.5 ${
+                      onDragOver={e => canManage && handleDragOver(e, dateStr)}
+                      onDragLeave={() => setDragOverDate(null)}
+                      onDrop={e => canManage && handleDrop(e, dateStr)}
+                      className={`min-h-[80px] md:min-h-[120px] border-b border-r border-[#f5efec] p-1 md:p-2 flex flex-col gap-0.5 transition-colors ${
+                        dragOverDate === dateStr ? 'bg-[#fff0ef] ring-2 ring-inset ring-[#ce0100]/30' :
                         !inMonth ? 'bg-[#fbfaf9]' : 'bg-white'
                       } ${canManage ? 'cursor-pointer hover:bg-[#fff7f7]' : ''}`}>
                       <span className={`text-[11px] md:text-[12px] font-semibold mb-0.5 ${
@@ -492,12 +528,14 @@ export default function CalendarPage() {
                         const isBible = isValidReference(t.referinta_ro)
                         return (
                           <div key={t.id}
+                            draggable={canManage}
+                            onDragStart={e => { e.stopPropagation(); handleDragStart(e, t.id) }}
                             onClick={(e) => { e.stopPropagation(); openEditModal(t) }}
                             className={`flex items-center gap-1 px-1 py-0.5 rounded-md text-[9px] md:text-[10px] font-semibold leading-tight cursor-pointer ${
                               isBible
                                 ? t.gasit ? 'bg-[#edfaf3] text-[#166534]' : 'bg-[#fff1f1] text-[#991b1b]'
                                 : 'bg-[#f4f0ed] text-[#555]'
-                            } hover:opacity-80`}>
+                            } hover:opacity-80 ${canManage ? 'cursor-grab active:cursor-grabbing' : ''} ${draggingId === t.id ? 'opacity-40' : ''}`}>
                             {isBible && (t.gasit
                               ? <CheckCircleIcon className="w-2.5 h-2.5 flex-shrink-0" />
                               : <XCircleIcon className="w-2.5 h-2.5 flex-shrink-0" />
