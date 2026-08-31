@@ -625,8 +625,8 @@ Traducerea poate fi transmisă prin WhatsApp sau e-mail la adresa echipa@tptrans
           <div className="bg-[#fffdf0] border border-[#e8e2c0] rounded-xl p-4">
             <p className="text-[11px] font-bold text-[#888] uppercase tracking-wide mb-2">Instrucțiuni</p>
             <ul className="text-xs text-[#555] leading-relaxed space-y-1.5">
-              <li>• În <strong>PARA / TO</strong> introdu adresele traducătorilor (butonul "Copiați adresele").</li>
-              <li>• În <strong>CC sau CCO</strong> introdu <strong className="text-[#ce0100]">echipa@tptranslator.com</strong> ca să primim o copie.</li>
+              <li>• În <strong>CCO / BCC</strong> introdu adresele traducătorilor (butonul "Copiați adresele") — astfel adresele rămân private.</li>
+              <li>• În <strong>PARA / TO</strong> introdu <strong className="text-[#ce0100]">echipa@tptranslator.com</strong> ca să primim o copie.</li>
               <li>• În subiect scrie <strong>CITAT</strong> urmat de numărul citatului.</li>
             </ul>
           </div>
