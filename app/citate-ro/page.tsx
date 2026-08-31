@@ -69,8 +69,32 @@ function CitatROModal({ item, users, onClose, onSaved, isCoordinator }: {
   const [traducatorRo, setTraducatorRo] = useState(item?.traducator_ro ?? '')
   const [dataAsignarii, setDataAsignarii] = useState(item?.data_asignarii ?? '')
   const [dataLimita, setDataLimita] = useState(item?.data_limita ?? '')
+  const [lastDate, setLastDate] = useState<string | null>(null)
   const [saveState, setSaveState] = useState<SaveState>('idle')
   const [error, setError] = useState<string | null>(null)
+
+  // For new items, fetch last used date and auto-fill
+  useEffect(() => {
+    if (isEdit || !isCoordinator) return
+    supabase
+      .from('citate_ro')
+      .select('data_asignarii')
+      .not('data_asignarii', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single()
+      .then(({ data }) => {
+        if (data?.data_asignarii) {
+          setLastDate(data.data_asignarii)
+          setDataAsignarii(data.data_asignarii)
+          // Auto-fill limita = asignarii + 7 days
+          const d = new Date(data.data_asignarii + 'T00:00:00')
+          d.setDate(d.getDate() + 7)
+          const limita = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+          setDataLimita(limita)
+        }
+      })
+  }, [])
 
   const handleSave = async () => {
     if (isCoordinator && (!textOriginal.trim() || !autorOriginal.trim())) {
@@ -181,8 +205,20 @@ function CitatROModal({ item, users, onClose, onSaved, isCoordinator }: {
                     <label className="text-[11px] font-semibold text-[#666] uppercase tracking-wide block mb-[6px]">
                       Dată asignare
                     </label>
-                    <input type="date" value={dataAsignarii ?? ''} onChange={e => setDataAsignarii(e.target.value)}
+                    <input type="date" value={dataAsignarii ?? ''} onChange={e => {
+                      setDataAsignarii(e.target.value)
+                      // Auto-update limita to +7 days when asignare changes
+                      if (e.target.value) {
+                        const d = new Date(e.target.value + 'T00:00:00')
+                        d.setDate(d.getDate() + 7)
+                        const limita = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+                        setDataLimita(limita)
+                      }
+                    }}
                       className="w-full h-[40px] rounded-[12px] border border-[#f0e9e5] px-[12px] text-[13px] text-[#111] outline-none focus:border-[#ce0100] transition-all" />
+                    {!isEdit && lastDate && (
+                      <p className="text-[10px] text-[#aaa] mt-1">Ultima folosită: {new Date(lastDate + 'T00:00:00').toLocaleDateString('ro-RO', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                    )}
                   </div>
                   <div>
                     <label className="text-[11px] font-semibold text-[#666] uppercase tracking-wide block mb-[6px]">
@@ -190,6 +226,9 @@ function CitatROModal({ item, users, onClose, onSaved, isCoordinator }: {
                     </label>
                     <input type="date" value={dataLimita ?? ''} onChange={e => setDataLimita(e.target.value)}
                       className="w-full h-[40px] rounded-[12px] border border-[#f0e9e5] px-[12px] text-[13px] text-[#111] outline-none focus:border-[#ce0100] transition-all" />
+                    {!isEdit && (
+                      <p className="text-[10px] text-[#aaa] mt-1">Implicit: 7 zile după asignare</p>
+                    )}
                   </div>
                 </div>
               </>

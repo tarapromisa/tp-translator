@@ -171,12 +171,14 @@ export default function CalendarPage() {
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [filterMine, setFilterMine] = useState(false)
   const [draggingId, setDraggingId] = useState<string | null>(null)
+  const [draggingType, setDraggingType] = useState<'tarea' | 'citatRO' | null>(null)
   const [dragOverDate, setDragOverDate] = useState<string | null>(null)
   const [detailTarea, setDetailTarea] = useState<TareaCalendarWithStatus | null>(null)
   const [detailCitat, setDetailCitat] = useState<CitatROEvent | null>(null)
 
-  const handleDragStart = (e: React.DragEvent, tareaId: string) => {
-    setDraggingId(tareaId)
+  const handleDragStart = (e: React.DragEvent, id: string, type: 'tarea' | 'citatRO') => {
+    setDraggingId(id)
+    setDraggingType(type)
     e.dataTransfer.effectAllowed = 'move'
   }
 
@@ -186,22 +188,42 @@ export default function CalendarPage() {
     setDragOverDate(dateStr)
   }
 
+  const addDays = (dateStr: string, days: number) => {
+    const d = new Date(dateStr + 'T00:00:00')
+    d.setDate(d.getDate() + days)
+    return toDateStr(d)
+  }
+
   const handleDrop = async (e: React.DragEvent, dateStr: string) => {
     e.preventDefault()
     setDragOverDate(null)
     if (!draggingId || !canManage) return
-    const tarea = tareas.find(t => t.id === draggingId)
-    if (!tarea || tarea.data === dateStr) { setDraggingId(null); return }
-    // Optimistic update
-    setTareas(prev => prev.map(t => t.id === draggingId ? { ...t, data: dateStr } : t))
-    setDraggingId(null)
-    const { updateTarea } = await import('@/lib/calendarTasks')
-    const result = await updateTarea(supabase, draggingId, { data: dateStr })
-    if (!result.success) {
-      showToast('Eroare la reprogramare.', 'error')
-      fetchData()
-    } else {
-      showToast('Sarcină reprogramată.', 'success')
+
+    if (draggingType === 'tarea') {
+      const tarea = tareas.find(t => t.id === draggingId)
+      if (!tarea || tarea.data === dateStr) { setDraggingId(null); setDraggingType(null); return }
+      setTareas(prev => prev.map(t => t.id === draggingId ? { ...t, data: dateStr } : t))
+      setDraggingId(null); setDraggingType(null)
+      const { updateTarea } = await import('@/lib/calendarTasks')
+      const result = await updateTarea(supabase, draggingId, { data: dateStr })
+      if (!result.success) { showToast('Eroare la reprogramare.', 'error'); fetchData() }
+      else showToast('Sarcină reprogramată.', 'success')
+
+    } else if (draggingType === 'citatRO') {
+      const citat = citateRO.find(c => c.id === draggingId)
+      if (!citat || citat.data_asignarii === dateStr) { setDraggingId(null); setDraggingType(null); return }
+      const newLimita = addDays(dateStr, 7)
+      // Optimistic update
+      setCitateRO(prev => prev.map(c => c.id === draggingId
+        ? { ...c, data_asignarii: dateStr, data_limita: newLimita }
+        : c))
+      setDraggingId(null); setDraggingType(null)
+      const { error } = await supabase.from('citate_ro').update({
+        data_asignarii: dateStr,
+        data_limita: newLimita,
+      }).eq('id', draggingId)
+      if (error) { showToast('Eroare la reprogramare citat RO.', 'error'); fetchData() }
+      else showToast(`Citat RO reprogramat → ${dateStr} (limită ${newLimita}).`, 'success')
     }
   }
   const { toasts, showToast } = useToast()
@@ -506,13 +528,15 @@ export default function CalendarPage() {
                   const isComplete = c.status === 'Completat'
                   return (
                     <div key={c.id}
+                      draggable={canManage}
+                      onDragStart={e => { e.stopPropagation(); handleDragStart(e, c.id, 'citatRO') }}
                       onClick={e => { e.stopPropagation(); setDetailCitat(c) }}
-                      className={`flex items-center gap-1 px-1.5 py-0.5 rounded-lg text-[9px] md:text-[10px] font-bold leading-tight cursor-pointer hover:opacity-80 border ${
+                      className={`flex items-center gap-1 px-1.5 py-0.5 rounded-lg text-[9px] md:text-[10px] font-bold leading-tight border transition-opacity ${
                         isComplete
                           ? 'bg-[#7c3aed] text-white border-[#6d28d9]'
                           : 'bg-[#ede9fe] text-[#5b21b6] border-[#c4b5fd]'
-                      }`}
-                      title={`${c.public_id} · ${c.data_asignarii} → ${c.data_limita ?? '?'} · ${c.traducator_ro_user?.[0]?.full_name ?? ''}`}>
+                      } ${canManage ? 'cursor-grab active:cursor-grabbing hover:opacity-80' : 'cursor-pointer hover:opacity-80'} ${draggingId === c.id ? 'opacity-40' : ''}`}
+                      title={`${c.public_id} · Trage pentru a reprograma (limită automată +7 zile)`}>
                       {isComplete
                         ? <CheckCircleIcon className="w-2.5 h-2.5 flex-shrink-0" />
                         : <XCircleIcon className="w-2.5 h-2.5 flex-shrink-0" />
@@ -529,7 +553,7 @@ export default function CalendarPage() {
                         return (
                           <div key={t.id}
                             draggable={canManage}
-                            onDragStart={e => { e.stopPropagation(); handleDragStart(e, t.id) }}
+                            onDragStart={e => { e.stopPropagation(); handleDragStart(e, t.id, 'tarea') }}
                             onClick={(e) => { e.stopPropagation(); openEditModal(t) }}
                             className={`flex items-center gap-1 px-1 py-0.5 rounded-md text-[9px] md:text-[10px] font-semibold leading-tight cursor-pointer ${
                               isBible
