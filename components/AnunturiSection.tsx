@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createIlustratorClient } from '@/lib/supabase/ilustrator'
+import { supabase } from '@/lib/supabase'
 import { Megaphone, Plus, X, PaperPlaneTilt, Check, EnvelopeSimple, Trash, PencilSimple } from '@phosphor-icons/react'
 
 interface Profile {
@@ -45,7 +45,6 @@ export default function AnunturiSection({ currentProfile, isAdmin }: Props) {
   const [allUsers, setAllUsers] = useState<Profile[]>([])
   const [saving, setSaving] = useState(false)
   const [emailConfirm, setEmailConfirm] = useState(false)
-  const supabase = createIlustratorClient()
 
   useEffect(() => {
     fetchAnnouncements()
@@ -310,7 +309,6 @@ export default function AnunturiSection({ currentProfile, isAdmin }: Props) {
   const [allUsers, setAllUsers] = useState<Profile[]>([])
   const [saving, setSaving] = useState(false)
   const [emailConfirm, setEmailConfirm] = useState(false)
-  const supabase = createIlustratorClient()
 
   useEffect(() => {
     fetchAnnouncements()
