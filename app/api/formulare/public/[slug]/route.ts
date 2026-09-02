@@ -16,7 +16,7 @@ export async function GET(
   // Verify form is public and not expired
   const { data: form, error } = await serviceClient
     .from('forms')
-    .select('id, titlu, descriere, visibility, expires_at, public_slug')
+    .select('id, titlu, descriere, visibility, expires_at, public_slug, created_by_user:created_by(full_name)')
     .eq('public_slug', slug)
     .eq('visibility', 'public')
     .single()

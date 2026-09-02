@@ -98,7 +98,6 @@ export default function FormularePage() {
   useEffect(() => { fetchForms() }, [fetchForms])
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Sigur vrei să ștergi acest formular?')) return
     await supabase.from('forms').delete().eq('id', id)
     setForms(prev => prev.filter(f => f.id !== id))
   }
