@@ -11,7 +11,7 @@ import {
   HomeIcon, BookOpenIcon, UsersIcon,
   ShieldCheckIcon, ChartBarIcon, Cog8ToothIcon,
   EnvelopeIcon, DocumentTextIcon, Bars3Icon, XMarkIcon,
-  CalendarDaysIcon, MusicalNoteIcon,
+  CalendarDaysIcon, MusicalNoteIcon, ClipboardDocumentListIcon,
 } from '@heroicons/react/24/outline'
 
 const ALL_NAV = [
@@ -26,6 +26,7 @@ const ALL_NAV = [
   { label: 'Mail TLP / TLG',       href: '/mail-tlp',       Icon: EnvelopeIcon,     roles: ['Admin','Coordonator principal','Coordonator'] },
   { label: 'Productivitate', href: '/productivitate', Icon: ChartBarIcon,     roles: ['Admin','Coordonator principal','Coordonator'] },
   { label: 'Setări',         href: '/setari',         Icon: Cog8ToothIcon,    roles: ['Admin','Coordonator principal','Coordonator','Traducător','Traducător_RO'] },
+  { label: 'Formulare',      href: '/formulare',      Icon: ClipboardDocumentListIcon, roles: ['Admin','Coordonator principal','Coordonator','Traducător','Traducător_RO'] },
 ]
 
 const ZOHO_MAIL_URL = 'https://mail.tptranslator.com'
@@ -109,10 +110,10 @@ export default function Sidebar() {
           onMouseEnter={e => (e.currentTarget.style.background = '#fdf0ee')}
           onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
           >
-            {/* Zoho Mail icon — Z letter in our red style */}
+            {/* Zoho Mail icon */}
             <svg width="19" height="19" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
-              <rect x="2" y="2" width="20" height="20" rx="5" fill="#ce0100" fillOpacity="0.12"/>
-              <path d="M7 8h10L7 16h10" stroke="#7a6e69" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              <rect x="1" y="4" width="22" height="16" rx="3" fill="#ce0100" fillOpacity="0.12" stroke="#7a6e69" strokeWidth="1.5"/>
+              <polyline points="2,5 12,13 22,5" stroke="#7a6e69" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
             <span style={{
               fontSize: '14px', fontWeight: 300,
