@@ -9,9 +9,9 @@ const serviceClient = createClient(
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
-  const { slug } = params
+  const { slug } = await params
 
   // Verify form is public and not expired
   const { data: form, error } = await serviceClient
@@ -40,9 +40,9 @@ export async function GET(
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
-  const { slug } = params
+  const { slug } = await params
   const body = await req.json()
 
   // Verify form is public
