@@ -110,24 +110,23 @@ export default function PublicFormPage() {
   const creator = (form as any).created_by_user?.full_name
 
   return (
-    <div className="min-h-screen bg-[#f9f7f5] py-10 px-4">
+    <div className="min-h-screen py-10 px-4" style={{ background: "linear-gradient(180deg, #f9f7f5 0%, #f0e8e4 100%)" }}>
       <style>{`@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}.q-card{animation:fadeUp 0.25s ease-out both}`}</style>
       <div className="max-w-[560px] mx-auto">
 
         {/* Header */}
-        <div className="q-card bg-white rounded-2xl border border-[#e8e2de] overflow-hidden shadow-sm mb-5">
-          <div className="h-1.5 bg-[#ce0100]" />
+        <div className="q-card overflow-hidden rounded-2xl shadow-sm mb-5" style={{ background: 'linear-gradient(135deg, #ce0100 0%, #8b0000 100%)' }}>
           <div className="p-6 md:p-8">
-            <div className="flex items-center gap-3 mb-5">
-              <img src="https://res.cloudinary.com/dlgqpbpwu/image/upload/v1780344170/new_tpt_1_sxiu3b.png" alt="TP Translator" className="h-7 w-auto" />
-              <div className="h-4 w-px bg-[#e8e2de]" />
-              <span className="text-[10px] font-semibold text-[#aaa] uppercase tracking-widest">Formular</span>
+            <div className="flex items-center gap-3 mb-6">
+              <img src="https://i.postimg.cc/JzXtym8c/Logos-(3).png" alt="TP Translator" style={{ height: '40px', width: 'auto' }} />
+              <div style={{ height: '24px', width: '1px', background: 'rgba(255,255,255,0.25)' }} />
+              <span style={{ fontSize: '10px', fontWeight: 700, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.15em' }}>Formular intern</span>
             </div>
-            <h1 className="text-2xl md:text-3xl font-semibold text-[#111] leading-tight mb-2">{form.titlu}</h1>
-            {form.descriere && <p className="text-sm text-[#666] leading-relaxed mt-2">{form.descriere}</p>}
+            <h1 style={{ fontSize: '28px', fontWeight: 700, color: 'white', lineHeight: 1.2, marginBottom: '8px' }}>{form.titlu}</h1>
+            {form.descriere && <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.75)', lineHeight: 1.7, marginTop: '8px' }}>{form.descriere}</p>}
             {form.expires_at && (
-              <div className="inline-flex items-center gap-1.5 mt-3 bg-[#fff5eb] border border-[#ffd9a8] rounded-full px-3 py-1">
-                <span className="text-[11px] font-medium text-[#c05c00]">Expiră {new Date(form.expires_at).toLocaleDateString('ro-RO', { day: '2-digit', month: 'long', year: 'numeric' })}</span>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginTop: '14px', background: 'rgba(0,0,0,0.2)', borderRadius: '100px', padding: '4px 12px' }}>
+                <span style={{ fontSize: '11px', fontWeight: 600, color: 'rgba(255,255,255,0.8)' }}>Expiră {new Date(form.expires_at).toLocaleDateString('ro-RO', { day: '2-digit', month: 'long', year: 'numeric' })}</span>
               </div>
             )}
           </div>
