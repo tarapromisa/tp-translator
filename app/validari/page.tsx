@@ -46,13 +46,18 @@ function ValidateModal({ item, type, onClose, onDone }: {
   const [fields, setFields] = useState<Record<string, string>>({})
   const [activeTab, setActiveTab] = useState('RO')
 
+  const [lockedByIlustrator, setLockedByIlustrator] = useState(false)
+
   useEffect(() => {
     setAction(null); setComment(''); setError(null); setActiveTab('RO')
+    setLockedByIlustrator(false)
     if (item) {
       const langs = type === 'citate' ? LANG_FIELDS_C : LANG_FIELDS_V
       const init: Record<string, string> = {}
       langs.forEach(f => { init[f] = (item as any)[f] ?? '' })
       setFields(init)
+      // Check if locked by TP Ilustrator
+      setLockedByIlustrator(!!(item as any).locked_by_ilustrator)
     }
   }, [item])
 
@@ -62,7 +67,7 @@ function ValidateModal({ item, type, onClose, onDone }: {
   const langs = type === 'citate' ? LANG_FIELDS_C : LANG_FIELDS_V
   const table = type === 'citate' ? 'texts' : 'versete'
 
-  const canConfirm = !!action && comment.trim().length > 0
+  const canConfirm = !!action && comment.trim().length > 0 && !(action === 'Refuzat' && lockedByIlustrator)
   const activeLangField = langs[LANG_CODES.indexOf(activeTab)]
 
   const handleConfirm = async () => {
@@ -168,12 +173,30 @@ function ValidateModal({ item, type, onClose, onDone }: {
               <CheckCircleIcon className="w-[18px] h-[18px]" /> Validează
             </button>
             <button onClick={() => setAction('Refuzat')}
+              disabled={lockedByIlustrator}
               className={`h-[48px] rounded-[14px] border-[2px] flex items-center justify-center gap-2 text-[13px] font-semibold transition-all ${
+                lockedByIlustrator ? 'border-[#f0e9e5] text-[#ccc] cursor-not-allowed' :
                 action === 'Refuzat' ? 'border-[#ce0100] bg-[#fff1f1] text-[#ce0100]' : 'border-[#f0e9e5] text-[#444] hover:border-[#ce0100] hover:bg-[#fff1f1]'
               }`}>
               <XCircleIcon className="w-[18px] h-[18px]" /> Refuză
             </button>
           </div>
+
+          {/* Locked by TP Ilustrator warning */}
+          {lockedByIlustrator && (
+            <div className="mb-[16px] bg-[#fff5eb] border border-[#ffd9a8] rounded-[14px] p-[14px]">
+              <div className="flex items-start gap-3">
+                <span className="text-lg flex-shrink-0">🔒</span>
+                <div>
+                  <p className="text-[13px] font-semibold text-[#c05c00] mb-1">Folosit în TP Ilustrator</p>
+                  <p className="text-[12px] text-[#7a4a00] leading-relaxed">
+                    Această {type === 'citate' ? 'citată' : 'verset'} este folosit(ă) actualmente într-un proiect TP Ilustrator și nu poate fi refuzat(ă). 
+                    Contactează un coordonator al proiectului pentru a o dezlega mai întâi.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Comment — obligatory */}
           <div className="mb-[20px]">
@@ -324,12 +347,12 @@ export default function ValidariPage() {
     setLoading(true)
     // Fetch separately to avoid enum issues with .in()
     const [c1, c2, c3, v1, v2, v3] = await Promise.all([
-      supabase.from('texts').select('*').eq('validation', 'În așteptare').order('created_at', { ascending: false }),
-      supabase.from('texts').select('*').eq('validation', 'Validat').order('created_at', { ascending: false }),
-      supabase.from('texts').select('*').eq('validation', 'Refuzat').order('created_at', { ascending: false }),
-      supabase.from('versete').select('*').eq('validation', 'În așteptare').order('created_at', { ascending: false }),
-      supabase.from('versete').select('*').eq('validation', 'Validat').order('created_at', { ascending: false }),
-      supabase.from('versete').select('*').eq('validation', 'Refuzat').order('created_at', { ascending: false }),
+      supabase.from('texts').select('*, locked_by_ilustrator').eq('validation', 'În așteptare').order('created_at', { ascending: false }),
+      supabase.from('texts').select('*, locked_by_ilustrator').eq('validation', 'Validat').order('created_at', { ascending: false }),
+      supabase.from('texts').select('*, locked_by_ilustrator').eq('validation', 'Refuzat').order('created_at', { ascending: false }),
+      supabase.from('versete').select('*, locked_by_ilustrator').eq('validation', 'În așteptare').order('created_at', { ascending: false }),
+      supabase.from('versete').select('*, locked_by_ilustrator').eq('validation', 'Validat').order('created_at', { ascending: false }),
+      supabase.from('versete').select('*, locked_by_ilustrator').eq('validation', 'Refuzat').order('created_at', { ascending: false }),
     ])
     setAllCitate([...(c1.data||[]), ...(c2.data||[]), ...(c3.data||[])])
     setAllVersete([...(v1.data||[]), ...(v2.data||[]), ...(v3.data||[])])
