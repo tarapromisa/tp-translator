@@ -22,6 +22,7 @@ type CitatRO = {
   citat_ro?: string | null
   data_asignarii?: string | null
   data_limita?: string | null
+  tip?: string | null
   created_at: string
   traducator_ro_user?: { full_name: string } | null
 }
@@ -69,6 +70,7 @@ function CitatROModal({ item, users, onClose, onSaved, isCoordinator }: {
   const [traducatorRo, setTraducatorRo] = useState(item?.traducator_ro ?? '')
   const [dataAsignarii, setDataAsignarii] = useState(item?.data_asignarii ?? '')
   const [dataLimita, setDataLimita] = useState(item?.data_limita ?? '')
+  const [tip, setTip] = useState<'CT' | 'SP' | 'TXT' | 'RE'>((item as any)?.tip ?? 'CT')
   const [lastDate, setLastDate] = useState<string | null>(null)
   const [saveState, setSaveState] = useState<SaveState>('idle')
   const [error, setError] = useState<string | null>(null)
@@ -114,6 +116,7 @@ function CitatROModal({ item, users, onClose, onSaved, isCoordinator }: {
         traducator_ro: traducatorRo || null,
         data_asignarii: dataAsignarii || null,
         data_limita: dataLimita || null,
+        tip,
       }
     } else {
       // Traducător RO — poate edita doar citat_ro
@@ -168,6 +171,31 @@ function CitatROModal({ item, users, onClose, onSaved, isCoordinator }: {
             {/* Câmpuri doar pentru coordonatori */}
             {isCoordinator && (
               <>
+                {/* Tip citat */}
+                <div>
+                  <label className="text-[11px] font-semibold text-[#666] uppercase tracking-wide block mb-[6px]">
+                    Tip citat <span className="text-[#ce0100]">*</span>
+                  </label>
+                  <div className="grid grid-cols-4 gap-2">
+                    {(['CT', 'SP', 'TXT', 'RE'] as const).map(t => (
+                      <button key={t} type="button" onClick={() => setTip(t)}
+                        className={`h-[40px] rounded-[12px] border-2 text-[13px] font-bold transition-all ${
+                          tip === t
+                            ? 'border-[#ce0100] bg-[#fff1f1] text-[#ce0100]'
+                            : 'border-[#f0e9e5] text-[#666] hover:border-[#ffd3d3]'
+                        }`}>
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-[10px] text-[#aaa] mt-1.5">
+                    {tip === 'CT' && 'Citat general — poate fi folosit în orice proiect CT'}
+                    {tip === 'SP' && 'Citat special — doar pentru proiecte SP'}
+                    {tip === 'TXT' && 'Text lung — transcrieri, predici etc.'}
+                    {tip === 'RE' && 'Reminder — texte de reamintire'}
+                  </p>
+                </div>
+
                 <div>
                   <label className="text-[11px] font-semibold text-[#666] uppercase tracking-wide block mb-[6px]">
                     Text original <span className="text-[#ce0100]">*</span>
@@ -464,6 +492,9 @@ export default function CitateROPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-[12px] font-bold text-[#ce0100]">{item.public_id}</span>
+                      {item.tip && (
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-[#f0e8e4] text-[#7a6e69]">{item.tip}</span>
+                      )}
                       <span className="text-[10px] text-[#bbb]">{timeAgo(item.created_at)}</span>
                     </div>
                     {(item as any).citat_ro
@@ -553,6 +584,7 @@ export default function CitateROPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
                       {[
                         { label: 'ID public',        value: selectedItem.public_id },
+                        { label: 'Tip',              value: selectedItem.tip ?? 'CT' },
                         { label: 'Stare',            value: <StatusPill status={selectedItem.status} /> },
                         { label: 'Autor',            value: selectedItem.autor_original },
                         { label: 'Traducător RO',    value: (selectedItem as any).traducator_ro_user?.full_name ?? '—' },
