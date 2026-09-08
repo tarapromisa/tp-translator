@@ -63,10 +63,19 @@ export default function CreateCitatModal({ open, onClose }: Props) {
   const fetchQuotes = async () => {
     setLoadingQuotes(true)
     try {
-      const { data: allQuotes } = await supabase.from('citate_ro').select('*').eq('status', 'Completat')
+      const { data: allQuotes } = await supabase.from('citate_ro').select('*, tip').eq('status', 'Completat')
       const { data: used } = await supabase.from('texts').select('public_ro_id')
       const usedIds = new Set((used || []).map((u: any) => u.public_ro_id).filter(Boolean))
-      setAvailableQuotes((allQuotes || []).filter((q: any) => !usedIds.has(q.public_id)))
+      const filtered = (allQuotes || []).filter((q: any) => !usedIds.has(q.public_id))
+      // Sort: matching tip first, then others
+      filtered.sort((a: any, b: any) => {
+        const aMatch = (a.tip ?? 'CT') === quoteType
+        const bMatch = (b.tip ?? 'CT') === quoteType
+        if (aMatch && !bMatch) return -1
+        if (!aMatch && bMatch) return 1
+        return 0
+      })
+      setAvailableQuotes(filtered)
     } catch (err) { console.error(err) }
     setLoadingQuotes(false)
   }
@@ -260,9 +269,13 @@ export default function CreateCitatModal({ open, onClose }: Props) {
                       style={{ maxHeight: '280px', overflowY: 'auto' }}>
                       {availableQuotes.length === 0 ? (
                         <p className="text-center py-[40px] text-[14px] text-[#888]">Niciun citat disponibil.</p>
-                      ) : availableQuotes.map((q, i) => (
-                        <button key={q.id} onClick={() => handleSelectQuote(q)}
+                      ) : availableQuotes.map((q, i) => {
+                        const qTip = q.tip ?? 'CT'
+                        const tipMatch = qTip === quoteType
+                        return (
+                        <button key={q.id} onClick={() => tipMatch && handleSelectQuote(q)}
                           className={`w-full flex items-start gap-[14px] px-[20px] py-[14px] text-left transition-colors ${
+                            !tipMatch ? 'opacity-50 cursor-not-allowed' :
                             selectedQuoteId === q.public_id ? 'bg-[#fff7f7]' : 'hover:bg-[#faf7f5]'
                           } ${i > 0 ? 'border-t border-[#f8f3f0]' : ''}`}>
                           <div className={`w-[16px] h-[16px] rounded-full border-[2px] flex-shrink-0 mt-[3px] flex items-center justify-center transition-all ${
@@ -271,14 +284,25 @@ export default function CreateCitatModal({ open, onClose }: Props) {
                             {selectedQuoteId === q.public_id && <span className="w-[5px] h-[5px] rounded-full bg-white" />}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <span className="text-[12px] text-[#ce0100] block mb-[2px]" style={{ fontWeight: 700 }}>{q.public_id}</span>
+                            <div className="flex items-center gap-2 mb-[2px]">
+                              <span className="text-[12px] text-[#ce0100]" style={{ fontWeight: 700 }}>{q.public_id}</span>
+                              {!tipMatch && (
+                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-[#fff1f1] text-[#ce0100] border border-[#ffd3d3]">
+                                  {qTip} — nu este pentru {quoteType}
+                                </span>
+                              )}
+                              {tipMatch && (
+                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-[#edfaf3] text-[#166534]">{qTip}</span>
+                              )}
+                            </div>
                             <p className="text-[13px] text-[#333] line-clamp-1" style={{ fontWeight: 300 }}>
                               "{q.text_original ?? q.citat_ro}"
                             </p>
                             {q.autor_original && <p className="text-[12px] text-[#888] mt-[2px]">— {q.autor_original}</p>}
                           </div>
                         </button>
-                      ))}
+                        )
+                      })}
                     </div>
 
                     {selectedQuote && (
