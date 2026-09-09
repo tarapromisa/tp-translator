@@ -8,9 +8,12 @@ const adminClient = createClient(
 
 export async function POST(req: NextRequest) {
   try {
-    const { auth_user_id, password } = await req.json()
+    const body = await req.json()
+    console.log('update-password body:', body)
+    const { auth_user_id, password } = body
 
     if (!auth_user_id || !password) {
+      console.log('Missing:', { auth_user_id: !!auth_user_id, password: !!password })
       return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
     }
 
