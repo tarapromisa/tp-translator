@@ -17,13 +17,31 @@ export async function POST(req: NextRequest) {
 
     let userId = auth_user_id
 
-    // If auth_user_id not provided, look up by email
     if (!userId && email) {
-      const { data: { users }, error: listErr } = await adminClient.auth.admin.listUsers()
-      if (listErr) return NextResponse.json({ error: listErr.message }, { status: 500 })
-      const found = users.find(u => u.email === email)
-      if (!found) return NextResponse.json({ error: 'User not found' }, { status: 404 })
-      userId = found.id
+      // Check if user exists in Auth by email
+      const { data: listData } = await adminClient.auth.admin.listUsers({ perPage: 1000 })
+      const existing = listData?.users?.find(u => u.email?.toLowerCase() === email.toLowerCase())
+
+      if (existing) {
+        userId = existing.id
+      } else {
+        // Create user in Auth
+        const { data: newUser, error: createErr } = await adminClient.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+        })
+        if (createErr) return NextResponse.json({ error: createErr.message }, { status: 500 })
+        userId = newUser.user?.id
+
+        // Save auth_user_id back to users table
+        if (userId) {
+          await adminClient.from('users').update({ auth_user_id: userId }).eq('email', email)
+        }
+
+        // User created with password already set — no need to update again
+        return NextResponse.json({ ok: true })
+      }
     }
 
     if (password.length < 6) {
