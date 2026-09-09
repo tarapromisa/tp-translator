@@ -131,6 +131,24 @@ export default function UtilizatoriPage() {
   const handleSendCredentials = async () => {
     if (!selected || !credentialsPassword) return
     setSendingCredentials(true)
+
+    // 1. Update password in Supabase Auth
+    const pwRes = await fetch('/api/update-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        auth_user_id: selected.auth_user_id,
+        password: credentialsPassword,
+      }),
+    })
+    if (!pwRes.ok) {
+      const { error } = await pwRes.json()
+      alert(`Eroare la setarea parolei: ${error}`)
+      setSendingCredentials(false)
+      return
+    }
+
+    // 2. Send credentials email
     const res = await fetch('/api/send-email', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
