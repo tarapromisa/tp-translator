@@ -146,12 +146,12 @@ export default function UtilizatoriPage() {
     setSendingCredentials(true)
 
     // 1. Update password in Supabase Auth
-    console.log('selected user:', JSON.stringify({ id: selected.id, auth_user_id: selected.auth_user_id, email: selected.email }))
     const pwRes = await fetch('/api/update-password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         auth_user_id: selected.auth_user_id,
+        email: selected.email,
         password: credentialsPassword,
       }),
     })
