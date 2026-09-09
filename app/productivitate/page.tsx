@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import Sidebar from '@/components/Sidebar'
+import AccessDenied from '@/components/AccessDenied'
 import Pagination from '@/components/Pagination'
+import { useUser } from '@/context/UserContext'
 import { supabase } from '@/lib/supabase'
 import {
   UserIcon, ChartBarIcon, ClockIcon, CheckCircleIcon,
@@ -180,6 +182,19 @@ function TranslatorDetail({ stats, onClose }: { stats: TranslatorStats; onClose:
 
 // ── Main ─────────────────────────────────────────────────────────
 export default function ProductivitatePage() {
+  const { profile } = useUser()
+  const userRole = profile?.role ?? ''
+  const canAccess = ['Admin', 'Coordonator principal', 'Coordonator'].includes(userRole)
+
+  if (!canAccess && userRole !== '') {
+    return (
+      <main className="flex h-screen overflow-hidden bg-[#f9f7f5]">
+        <Sidebar />
+        <AccessDenied />
+      </main>
+    )
+  }
+
   const [translatorStats, setTranslatorStats] = useState<TranslatorStats[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedStats, setSelectedStats] = useState<TranslatorStats|null>(null)

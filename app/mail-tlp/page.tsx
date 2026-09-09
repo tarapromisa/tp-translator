@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react'
 import Sidebar from '@/components/Sidebar'
+import AccessDenied from '@/components/AccessDenied'
+import { useUser } from '@/context/UserContext'
 import { supabase } from '@/lib/supabase'
 import EmailSentAlert from '@/components/EmailSentAlert'
 import {
@@ -233,6 +235,19 @@ function VerticalDivider({ onResize }: { onResize: (dy: number) => void }) {
 
 // ── Main ─────────────────────────────────────────────────────────
 export default function MailTLPPage() {
+  const { profile } = useUser()
+  const userRole = profile?.role ?? ''
+  const canAccess = ['Admin', 'Coordonator principal', 'Coordonator'].includes(userRole)
+
+  if (!canAccess && userRole !== '') {
+    return (
+      <main className="flex h-screen overflow-hidden bg-[#f9f7f5]">
+        <Sidebar />
+        <AccessDenied />
+      </main>
+    )
+  }
+
   const [records, setRecords] = useState<MailRecord[]>([])
   const [allUsers, setAllUsers] = useState<User[]>([])
   const [currentUser, setCurrentUser] = useState<User|null>(null)

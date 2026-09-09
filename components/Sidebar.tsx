@@ -99,7 +99,8 @@ export default function Sidebar() {
           )
         })}
 
-        {/* Zoho Mail external link */}
+        {/* Zoho Mail external link — only for coordinators */}
+        {['Admin','Coordonator principal','Coordonator'].includes(effectiveRole) && (
         <a href={ZOHO_MAIL_URL} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
           <div style={{
             display: 'flex', alignItems: 'center', gap: '12px',
@@ -128,6 +129,7 @@ export default function Sidebar() {
             </svg>
           </div>
         </a>
+        )}
       </nav>
 
       <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, #e8e2de, transparent)', margin: '0 16px', flexShrink: 0 }} />

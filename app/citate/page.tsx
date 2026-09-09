@@ -3,9 +3,11 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
+import AccessDenied from '@/components/AccessDenied'
 import CreateCitatModal from '@/components/CreateCitatModal'
 import AnimatedCounter from '@/components/AnimatedCounter'
 import Pagination from '@/components/Pagination'
+import { useUser } from '@/context/UserContext'
 import { supabase } from '@/lib/supabase'
 import {
   BellIcon,
@@ -89,6 +91,19 @@ function StatusPill({ status }: { status: string }) {
 // ── Main ─────────────────────────────────────────────────────────
 export default function CitatePage() {
   const router = useRouter()
+  const { profile } = useUser()
+  const userRole = profile?.role ?? ''
+  const canAccess = ['Admin', 'Coordonator principal', 'Coordonator'].includes(userRole)
+
+  if (!canAccess && userRole !== '') {
+    return (
+      <main className="flex h-screen overflow-hidden bg-[#f9f7f5]">
+        <Sidebar />
+        <AccessDenied />
+      </main>
+    )
+  }
+
   const [texts, setTexts] = useState<TextRow[]>([])
   const [loading, setLoading] = useState(true)
   const [openCreateModal, setOpenCreateModal] = useState(false)

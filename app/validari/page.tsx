@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
+import AccessDenied from '@/components/AccessDenied'
 import Pagination from '@/components/Pagination'
+import { useUser } from '@/context/UserContext'
 import { supabase } from '@/lib/supabase'
 import {
   CheckCircleIcon,
@@ -333,6 +335,7 @@ function ItemRow({ item, type, statusTab, canValidate, onValidate, onView, onRev
 // ── Main page ─────────────────────────────────────────────────────
 export default function ValidariPage() {
   const router = useRouter()
+  const { profile } = useUser()
   const [contentTab, setContentTab] = useState<ContentTab>('citate')
   const [statusTab, setStatusTab]   = useState<StatusTab>('asteptare')
   const [page, setPage] = useState(1)
@@ -342,6 +345,16 @@ export default function ValidariPage() {
   const [loading, setLoading]       = useState(true)
   const [selected, setSelected]     = useState<CitatRow | VersetRow | null>(null)
   const [userRole, setUserRole]     = useState<string | null>(null)
+
+  const profileRole = profile?.role ?? ''
+  if (!['Admin', 'Coordonator principal', 'Coordonator'].includes(profileRole) && profileRole !== '') {
+    return (
+      <main className="flex h-screen overflow-hidden bg-[#f9f7f5]">
+        <Sidebar />
+        <AccessDenied />
+      </main>
+    )
+  }
 
   const fetchData = async () => {
     setLoading(true)

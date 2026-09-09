@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from 'react'
 import Sidebar from '@/components/Sidebar'
+import AccessDenied from '@/components/AccessDenied'
 import EmailSentAlert from '@/components/EmailSentAlert'
 import Pagination from '@/components/Pagination'
 import CreateUserModal from '@/components/CreateUserModal'
 import EditUserModal from '@/components/EditUserModal'
+import { useUser } from '@/context/UserContext'
 import { supabase } from '@/lib/supabase'
 import {
   MagnifyingGlassIcon,
@@ -89,6 +91,7 @@ async function sendZeptoEmail(
 
 // ── Main ──────────────────────────────────────────────────────────
 export default function UtilizatoriPage() {
+  const { profile } = useUser()
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [currentUser, setCurrentUser] = useState<User | null>(null)
@@ -109,6 +112,16 @@ export default function UtilizatoriPage() {
   const [page, setPage] = useState(1)
   const PER_PAGE = 20
   const [mobileTab, setMobileTab] = useState<'lista' | 'detalii'>('lista')
+
+  const profileRole = profile?.role ?? ''
+  if (!['Admin', 'Coordonator principal', 'Coordonator'].includes(profileRole) && profileRole !== '') {
+    return (
+      <main className="flex h-screen overflow-hidden bg-[#f9f7f5]">
+        <Sidebar />
+        <AccessDenied />
+      </main>
+    )
+  }
 
   useEffect(() => {
     const load = async () => {
