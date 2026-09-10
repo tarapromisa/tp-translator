@@ -8,6 +8,7 @@ import { useUser } from '@/context/UserContext'
 import {
   MagnifyingGlassIcon, PencilSquareIcon, TrashIcon,
   XMarkIcon, PlusIcon, ExclamationTriangleIcon,
+  Squares2X2Icon, TableCellsIcon, ListBulletIcon,
 } from '@heroicons/react/24/outline'
 import { CheckCircleIcon as CheckSolid } from '@heroicons/react/24/solid'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -344,6 +345,11 @@ function DeleteModal({ item, onClose, onDeleted }: {
   )
 }
 
+
+type ViewMode = 'cards' | 'table' | 'compact'
+type SortField = 'created_at' | 'public_id' | 'status'
+type SortDir = 'asc' | 'desc'
+
 export default function CitateROPage() {
   const { profile } = useUser()
   const role = profile?.role ?? ''
@@ -355,6 +361,11 @@ export default function CitateROPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [tipFilter, setTipFilter] = useState<string>('all')
+  const [traducatorFilter, setTraducatorFilter] = useState<string>('all')
+  const [viewMode, setViewMode] = useState<ViewMode>('cards')
+  const [sortField, setSortField] = useState<SortField>('created_at')
+  const [sortDir, setSortDir] = useState<SortDir>('desc')
   const [selectedItem, setSelectedItem] = useState<CitatRO | null>(null)
   const [editItem, setEditItem] = useState<CitatRO | null>(null)
   const [showModal, setShowModal] = useState(false)
@@ -368,262 +379,376 @@ export default function CitateROPage() {
     setLoading(true)
     let query = supabase
       .from('citate_ro')
-      .select('*, traducator_ro_user:traducator_ro(full_name), citat_ro, data_asignarii, data_limita')
-      .order('created_at', { ascending: false })
+      .select('*, traducator_ro_user:traducator_ro(full_name), citat_ro, data_asignarii, data_limita, tip')
 
-    // Traducătorul RO vede doar citatele lui
     if (isTraducatorRO && profile?.id) {
       query = query.eq('traducator_ro', profile.id)
     }
 
-    const { data: c, error: ce } = await query
+    const { data } = await query
+    setItems(data || [])
 
-    const { data: u } = await supabase
-      .from('users')
-      .select('id, full_name')
-      .eq('language', 'RO')
-      .eq('active', true)
-
-    if (ce) console.error('citate_ro error:', ce)
-
-    setItems(c || [])
+    const { data: u } = await supabase.from('users').select('id, full_name').eq('language', 'RO').eq('active', true)
     setUsers(u || [])
-    setSelectedItem(prev => {
-      if (!c || c.length === 0) return null
-      const found = c.find((i: CitatRO) => i.id === prev?.id)
-      return found ?? c[0]
-    })
     setLoading(false)
   }
 
   useEffect(() => { fetchData() }, [])
 
   const filtered = items.filter(i => {
+    const q = search.toLowerCase()
+    if (q && !i.public_id?.toLowerCase().includes(q) &&
+        !i.text_original?.toLowerCase().includes(q) &&
+        !i.autor_original?.toLowerCase().includes(q) &&
+        !(i as any).traducator_ro_user?.full_name?.toLowerCase().includes(q)) return false
     if (statusFilter !== 'all' && i.status !== statusFilter) return false
-    if (search) {
-      const q = search.toLowerCase()
-      if (!i.text_original?.toLowerCase().includes(q) &&
-          !i.public_id?.toLowerCase().includes(q) &&
-          !i.autor_original?.toLowerCase().includes(q)) return false
-    }
+    if (tipFilter !== 'all' && (i as any).tip !== tipFilter) return false
+    if (traducatorFilter !== 'all' && i.traducator_ro !== traducatorFilter) return false
     return true
+  }).sort((a, b) => {
+    let valA: any, valB: any
+    if (sortField === 'public_id') { valA = a.public_id; valB = b.public_id }
+    else if (sortField === 'status') { valA = a.status; valB = b.status }
+    else { valA = a.created_at; valB = b.created_at }
+    return sortDir === 'asc' ? valA?.localeCompare(valB) : valB?.localeCompare(valA)
   })
 
   const totalPages = Math.ceil(filtered.length / PER_PAGE)
   const paginated = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE)
 
   const stats = {
-    total:     items.length,
-    completat: items.filter(i => i.status === 'Completat').length,
-    incomplet: items.filter(i => i.status === 'Incomplet').length,
+    total: items.length,
+    complete: items.filter(i => i.status === 'Completat').length,
+    incomplete: items.filter(i => i.status === 'Incomplet').length,
   }
 
+  const toggleSort = (field: SortField) => {
+    if (sortField === field) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortField(field); setSortDir('desc') }
+  }
+
+  const SortIcon = ({ field }: { field: SortField }) => (
+    sortField !== field ? <span className="text-[#ddd]">↕</span> :
+    sortDir === 'asc' ? <span className="text-[#ce0100]">↑</span> : <span className="text-[#ce0100]">↓</span>
+  )
+
   return (
-    <main className="flex h-screen overflow-hidden bg-[#f9f7f5] overflow-x-hidden">
+    <main className="flex h-screen overflow-hidden bg-[#f9f7f5]">
       <Sidebar />
-      <div className="flex-1 w-0 overflow-x-hidden flex flex-col">
 
-        <div className="px-4 pt-6 pb-4 md:px-10 md:pt-8 md:pb-6 flex-shrink-0">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
-            <div>
-              <h1 className="text-[32px] md:text-[48px] leading-none tracking-tight font-light text-[#111] mb-3">Citate RO</h1>
-              <div className="w-10 h-[3px] rounded-full bg-[#ce0100] mb-3" />
-              <p className="text-sm text-[#666]">Texte originale în limba română.</p>
-            </div>
-            {isCoordinator && (
+      {/* Mobile top bar */}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-[#f0e8e4] px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <img src="/logo.png" alt="TP" className="h-8 w-auto" />
+        </div>
+        <div className="flex gap-2">
+          {mobileTab === 'lista' && isCoordinator && (
             <button onClick={() => { setEditItem(null); setShowModal(true) }}
-              className="sm:mt-2 h-11 px-6 rounded-xl bg-[#ce0100] text-white text-sm font-semibold shadow-[0_6px_16px_rgba(206,1,0,0.22)] hover:bg-[#a80000] transition-all flex items-center justify-center gap-2">
-              <PlusIcon className="w-4 h-4" /> Citat nou
+              className="h-9 px-3 rounded-xl bg-[#ce0100] text-white text-[12px] font-bold flex items-center gap-1.5">
+              <PlusIcon className="w-3.5 h-3.5" /> Nou
             </button>
-            )}
-          </div>
+          )}
+          {selectedItem && (
+            <button onClick={() => setMobileTab(mobileTab === 'lista' ? 'detalii' : 'lista')}
+              className="h-9 px-3 rounded-xl border border-[#e8e2de] text-[12px] font-semibold text-[#555]">
+              {mobileTab === 'lista' ? 'Detalii' : 'Listă'}
+            </button>
+          )}
+        </div>
+      </div>
 
-          <div className="grid grid-cols-3 gap-3 mb-5">
-            {[
-              { label: 'Total', value: stats.total, color: '#ce0100' },
-              { label: 'Completate', value: stats.completat, color: '#166534' },
-              { label: 'Incomplete', value: stats.incomplet, color: '#c05c00' },
-            ].map(({ label, value, color }) => (
-              <div key={label} className="bg-white border border-[#e8e2de] rounded-xl px-3 md:px-4 h-16 flex items-center gap-2 md:gap-3 shadow-sm">
-                <div className="w-1.5 h-7 rounded-full flex-shrink-0" style={{ background: color }} />
-                <div className="min-w-0">
-                  <p className="text-xs text-[#666] truncate">{label}</p>
-                  <p className="text-2xl font-light text-[#111] leading-none">{value}</p>
-                </div>
+      <div className="flex-1 flex flex-col md:flex-row min-w-0 pt-[56px] md:pt-0">
+
+        {/* Left panel — list */}
+        <div className={`${mobileTab === 'detalii' ? 'hidden md:flex' : 'flex'} flex-col flex-1 min-w-0 md:max-w-[520px] md:border-r md:border-[#f0e8e4] overflow-hidden`}>
+
+          {/* Header */}
+          <div className="px-4 pt-5 pb-3 md:px-6 md:pt-7 flex-shrink-0">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <h1 className="text-[32px] md:text-[40px] leading-none tracking-tight font-light text-[#111] mb-2">Citate RO</h1>
+                <div className="w-8 h-[3px] rounded-full bg-[#ce0100]" />
               </div>
-            ))}
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            <div className="flex-1 min-w-0 flex items-center gap-3 bg-white border border-[#e8e2de] rounded-xl px-4 h-10 shadow-sm">
-              <MagnifyingGlassIcon className="w-4 h-4 text-[#999] flex-shrink-0" />
-              <input type="text" placeholder="Caută după ID, text sau autor..."
-                value={search} onChange={e => setSearch(e.target.value)}
-                className="flex-1 min-w-0 bg-transparent outline-none text-sm text-[#111] placeholder:text-[#bbb]" />
-              {search && <button onClick={() => setSearch('')} className="text-xs text-[#999] hover:text-[#ce0100] flex-shrink-0">✕</button>}
+              {isCoordinator && (
+                <button onClick={() => { setEditItem(null); setShowModal(true) }}
+                  className="hidden md:flex h-10 px-5 rounded-xl bg-[#ce0100] text-white text-sm font-semibold shadow-[0_4px_12px_rgba(206,1,0,0.22)] hover:bg-[#a80000] transition-all items-center gap-2">
+                  <PlusIcon className="w-4 h-4" /> Citat nou
+                </button>
+              )}
             </div>
-            <div className="flex items-center gap-1.5 bg-white border border-[#e8e2de] rounded-xl p-1 shadow-sm overflow-x-auto">
-              {[['all','Toate'],['Completat','Completate'],['Incomplet','Incomplete']].map(([v, l]) => (
-                <button key={v} onClick={() => setStatusFilter(v)}
-                  className={`h-8 px-3 rounded-lg text-xs font-semibold transition-all flex-shrink-0 ${
-                    statusFilter === v ? 'bg-[#ce0100] text-white shadow-sm' : 'text-[#666] hover:text-[#111]'
-                  }`}>{l}</button>
+
+            {/* Stats */}
+            <div className="grid grid-cols-3 gap-2 mb-4">
+              {[
+                { label: 'Total', value: stats.total, color: '#111' },
+                { label: 'Complete', value: stats.complete, color: '#166534' },
+                { label: 'Incomplete', value: stats.incomplete, color: '#c05c00' },
+              ].map(s => (
+                <div key={s.label} className="bg-white border border-[#f0e8e4] rounded-xl px-3 py-2.5 text-center">
+                  <p className="text-[20px] font-bold" style={{ color: s.color }}>{s.value}</p>
+                  <p className="text-[10px] text-[#aaa] font-medium uppercase tracking-wide">{s.label}</p>
+                </div>
               ))}
             </div>
+
+            {/* Search */}
+            <div className="relative mb-3">
+              <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#bbb]" />
+              <input value={search} onChange={e => { setSearch(e.target.value); setPage(1) }}
+                placeholder="Caută după ID, text sau autor..."
+                className="w-full h-10 pl-9 pr-4 rounded-xl border border-[#f0e9e5] text-sm text-[#111] outline-none focus:border-[#ce0100] transition-all bg-white" />
+            </div>
+
+            {/* Filters row */}
+            <div className="flex items-center gap-2 flex-wrap mb-3">
+              {/* Status */}
+              <div className="flex items-center bg-white border border-[#f0e9e5] rounded-xl overflow-hidden">
+                {[['all','Toate'],['Completat','Complete'],['Incomplet','Incomplete']].map(([v,l]) => (
+                  <button key={v} onClick={() => { setStatusFilter(v); setPage(1) }}
+                    className={`h-8 px-3 text-[11px] font-semibold transition-all ${
+                      statusFilter === v ? 'bg-[#ce0100] text-white' : 'text-[#666] hover:bg-[#faf7f5]'
+                    }`}>{l}</button>
+                ))}
+              </div>
+
+              {/* Tip */}
+              <div className="flex items-center bg-white border border-[#f0e9e5] rounded-xl overflow-hidden">
+                {[['all','Tip'],['CT','CT'],['SP','SP'],['TXT','TXT'],['RE','RE']].map(([v,l]) => (
+                  <button key={v} onClick={() => { setTipFilter(v); setPage(1) }}
+                    className={`h-8 px-2.5 text-[11px] font-semibold transition-all ${
+                      tipFilter === v ? 'bg-[#ce0100] text-white' : 'text-[#666] hover:bg-[#faf7f5]'
+                    }`}>{l}</button>
+                ))}
+              </div>
+
+              {/* Traducator filter */}
+              {isCoordinator && users.length > 0 && (
+                <select value={traducatorFilter} onChange={e => { setTraducatorFilter(e.target.value); setPage(1) }}
+                  className="h-8 px-2 rounded-xl border border-[#f0e9e5] text-[11px] text-[#555] bg-white outline-none cursor-pointer">
+                  <option value="all">Toți</option>
+                  {users.map(u => <option key={u.id} value={u.id}>{u.full_name}</option>)}
+                </select>
+              )}
+
+              {/* View mode */}
+              <div className="ml-auto flex items-center gap-1 bg-white border border-[#f0e9e5] rounded-xl p-0.5">
+                {([['cards', Squares2X2Icon], ['table', TableCellsIcon], ['compact', ListBulletIcon]] as [ViewMode, any][]).map(([v, Icon]) => (
+                  <button key={v} onClick={() => setViewMode(v)}
+                    className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
+                      viewMode === v ? 'bg-[#ce0100] text-white' : 'text-[#aaa] hover:text-[#555]'
+                    }`}>
+                    <Icon className="w-3.5 h-3.5" />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Sort row */}
+            <div className="flex items-center gap-2 text-[11px] text-[#888]">
+              <span>Sortează:</span>
+              {([['created_at','Dată'],['public_id','ID'],['status','Stare']] as [SortField,string][]).map(([f,l]) => (
+                <button key={f} onClick={() => toggleSort(f)}
+                  className={`flex items-center gap-1 px-2 py-1 rounded-lg transition-all ${
+                    sortField === f ? 'bg-[#fff1f1] text-[#ce0100] font-semibold' : 'hover:bg-[#f9f7f5]'
+                  }`}>
+                  {l} <SortIcon field={f} />
+                </button>
+              ))}
+              <span className="ml-auto text-[#bbb]">{filtered.length} rezultate</span>
+            </div>
           </div>
-        </div>
-
-        {/* Mobile tabs */}
-        <div className="flex md:hidden items-center gap-1.5 px-4 pb-3 flex-shrink-0">
-          {(['lista', 'detalii'] as const).map(tab => (
-            <button key={tab} onClick={() => setMobileTab(tab)}
-              className={`h-8 px-4 rounded-xl text-[11px] font-semibold flex-1 transition-all capitalize ${
-                mobileTab === tab ? 'bg-[#ce0100] text-white' : 'bg-white border border-[#e8e2de] text-[#666]'
-              }`}>
-              {tab === 'lista' ? 'Listă' : 'Detalii'}
-            </button>
-          ))}
-        </div>
-
-        <div className="overflow-x-hidden flex flex-col md:flex-row px-4 md:px-10 pb-6 md:pb-8 gap-4" style={{ height: 'calc(100vh - 320px)' }}>
 
           {/* List */}
-          <div className={`${mobileTab !== 'lista' ? 'hidden' : ''} md:flex md:w-[420px] md:flex-shrink-0 bg-white border border-[#e8e2de] rounded-2xl overflow-x-hidden shadow-sm flex flex-col`}>
-            <div className="px-5 py-3 border-b border-[#f0e9e5] flex-shrink-0">
-              <p className="text-xs text-[#888]">{filtered.length} {filtered.length === 1 ? 'citat' : 'citate'}</p>
-            </div>
-            <div className="flex-1 overflow-y-auto divide-y divide-[#f8f3f0]">
-              {loading ? (
-                <p className="text-center py-10 text-sm text-[#888]">Se încarcă...</p>
-              ) : filtered.length === 0 ? (
-                <p className="text-center py-10 text-sm text-[#888]">Niciun citat găsit.</p>
-              ) : paginated.map(item => (
-                <div key={item.id} onClick={() => { setSelectedItem(item); setMobileTab('detalii') }}
-                  className={`flex items-start gap-3 px-5 py-4 cursor-pointer transition-colors ${
-                    selectedItem?.id === item.id
-                      ? 'bg-[#fff7f7] border-l-[3px] border-l-[#ce0100]'
-                      : 'hover:bg-[#faf7f5] border-l-[3px] border-l-transparent'
-                  }`}>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-[12px] font-bold text-[#ce0100]">{item.public_id}</span>
-                      {item.tip && (
-                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-[#f0e8e4] text-[#7a6e69]">{item.tip}</span>
-                      )}
-                      <span className="text-[10px] text-[#bbb]">{timeAgo(item.created_at)}</span>
-                    </div>
-                    {(item as any).citat_ro
-                      ? <p className="text-[13px] text-[#222] line-clamp-2 leading-snug mb-1">"{(item as any).citat_ro}"</p>
-                      : <p className="text-[13px] text-[#999] line-clamp-2 leading-snug mb-1 italic">"{item.text_original}"</p>
-                    }
-                    <p className="text-[11px] text-[#888]">— {item.autor_original}</p>
-                  </div>
-                  <StatusPill status={item.status} />
-                </div>
-              ))}
-            </div>
-            <Pagination
-                currentPage={page}
-                totalPages={totalPages}
-                totalItems={filtered.length}
-                itemsPerPage={PER_PAGE}
-                onPageChange={setPage}
-                label="citate"
-              />
-          </div>
-
-          {/* Detail */}
-          <div className={`${mobileTab !== 'detalii' ? 'hidden' : ''} md:flex flex-1 min-w-0`}>
-            {selectedItem ? (
-              <AnimatePresence mode="wait">
-                <motion.div key={selectedItem.id}
-                  initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.18 }}
-                  className="h-full w-full flex flex-col gap-4">
-                  <div className="bg-white border border-[#e8e2de] rounded-2xl p-4 md:p-6 shadow-sm">
-                    <div className="flex items-start justify-between gap-4 mb-5">
-                      <div>
-                        <p className="text-[11px] font-bold tracking-[0.16em] text-[#ce0100] uppercase mb-1">Citat RO</p>
-                        <h2 className="text-[28px] md:text-[32px] font-light text-[#ce0100] tracking-tight leading-none">{selectedItem.public_id}</h2>
-                      </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <button onClick={() => { setEditItem(selectedItem); setShowModal(true) }}
-                          className="h-9 px-3 md:px-4 rounded-xl border border-[#e8e2de] bg-white text-sm font-semibold text-[#444] hover:bg-[#faf7f5] transition-all flex items-center gap-2">
-                          <PencilSquareIcon className="w-4 h-4" />
-                          <span className="hidden sm:inline">{isCoordinator ? 'Editează' : 'Adaugă traducerea'}</span>
-                        </button>
-                        {isCoordinator && (
-                          <button onClick={() => { setDeleteItem(selectedItem); setShowDelete(true) }}
-                            className="h-9 w-9 rounded-xl bg-[#fff1f1] text-[#ce0100] flex items-center justify-center hover:bg-[#ffe0e0] transition-all flex-shrink-0">
-                            <TrashIcon className="w-4 h-4" />
-                          </button>
+          <div className="flex-1 overflow-y-auto px-4 md:px-6 pb-4">
+            {loading ? (
+              <div className="flex items-center justify-center py-16">
+                <p className="text-[#888] text-sm">Se încarcă...</p>
+              </div>
+            ) : paginated.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 gap-3">
+                <p className="text-3xl">📋</p>
+                <p className="text-sm text-[#888]">Niciun citat găsit.</p>
+              </div>
+            ) : viewMode === 'cards' ? (
+              <div className="flex flex-col gap-2">
+                {paginated.map(item => (
+                  <button key={item.id} onClick={() => { setSelectedItem(item); setMobileTab('detalii') }}
+                    className={`w-full text-left p-4 rounded-xl border transition-all ${
+                      selectedItem?.id === item.id ? 'border-[#ce0100] bg-[#fff7f7] shadow-sm' : 'border-[#f0e8e4] bg-white hover:border-[#ffd3d3]'
+                    }`}>
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[12px] font-bold text-[#ce0100]">{item.public_id}</span>
+                        {(item as any).tip && (
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#f0e8e4] text-[#7a6e69]">{(item as any).tip}</span>
                         )}
                       </div>
+                      <StatusPill status={item.status} />
                     </div>
-
-                    {/* Text original */}
-                    <div className="mb-4">
-                      <p className="text-[11px] font-semibold text-[#888] uppercase tracking-wide mb-2">Text original</p>
-                      <div className="bg-[#faf7f5] border border-[#f0e9e5] rounded-[14px] px-4 md:px-5 py-4">
-                        <p className="text-[15px] text-[#555] leading-relaxed italic">"{selectedItem.text_original || '—'}"</p>
-                        <p className="text-[13px] text-[#aaa] mt-2">— {selectedItem.autor_original}</p>
-                      </div>
-                    </div>
-
-                    {/* Traducere RO */}
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="text-[11px] font-semibold text-[#888] uppercase tracking-wide">Traducere română</p>
-                        {!(selectedItem as any).citat_ro && (
-                          <button onClick={() => { setEditItem(selectedItem); setShowModal(true) }}
-                            className="text-[11px] font-semibold text-[#ce0100] hover:underline">
-                            + Adaugă traducerea
-                          </button>
-                        )}
-                      </div>
-                      {(selectedItem as any).citat_ro ? (
-                        <div className="border-l-[3px] border-[#ce0100] pl-4 md:pl-5 py-1">
-                          <p className="text-[18px] md:text-[20px] font-light text-[#111] leading-relaxed italic">"{(selectedItem as any).citat_ro}"</p>
-                          <p className="text-[14px] text-[#888] mt-2">— {selectedItem.autor_original}</p>
-                        </div>
-                      ) : (
-                        <div className="bg-[#fffafa] border border-dashed border-[#ffd3d3] rounded-[14px] px-4 md:px-5 py-4">
-                          <p className="text-[13px] text-[#ccc] italic">Traducerea în română nu a fost adăugată încă.</p>
-                        </div>
+                    <p className="text-[13px] text-[#333] line-clamp-2 leading-snug mb-1">"{item.text_original}"</p>
+                    <div className="flex items-center gap-3 text-[11px] text-[#aaa]">
+                      {item.autor_original && <span>— {item.autor_original}</span>}
+                      {(item as any).traducator_ro_user?.full_name && (
+                        <span className="ml-auto">{(item as any).traducator_ro_user.full_name}</span>
                       )}
                     </div>
-                  </div>
-
-                  <div className="bg-white border border-[#e8e2de] rounded-2xl p-4 md:p-6 shadow-sm">
-                    <h3 className="text-sm font-semibold text-[#111] mb-4">Detalii</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
-                      {[
-                        { label: 'ID public',        value: selectedItem.public_id },
-                        { label: 'Tip',              value: selectedItem.tip ?? 'CT' },
-                        { label: 'Stare',            value: <StatusPill status={selectedItem.status} /> },
-                        { label: 'Autor',            value: selectedItem.autor_original },
-                        { label: 'Traducător RO',    value: (selectedItem as any).traducator_ro_user?.full_name ?? '—' },
-                        { label: 'Data creării',     value: new Date(selectedItem.created_at).toLocaleDateString('ro-RO', { day:'2-digit', month:'long', year:'numeric' }) },
-                        { label: 'Data asignării',   value: selectedItem.data_asignarii ? new Date(selectedItem.data_asignarii).toLocaleDateString('ro-RO', { day:'2-digit', month:'long', year:'numeric' }) : '—' },
-                        { label: 'Dată limită',      value: selectedItem.data_limita ? new Date(selectedItem.data_limita).toLocaleDateString('ro-RO', { day:'2-digit', month:'long', year:'numeric' }) : '—' },
-                      ].map(({ label, value }) => (
-                        <div key={label}>
-                          <p className="text-[11px] font-semibold text-[#888] uppercase tracking-wide mb-1">{label}</p>
-                          {typeof value === 'string'
-                            ? <p className="text-[14px] text-[#111] font-medium">{value}</p>
-                            : value}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </motion.div>
-              </AnimatePresence>
+                    {(item as any).data_asignarii && (
+                      <div className="flex items-center gap-3 mt-1.5 text-[10px] text-[#bbb]">
+                        <span>📅 {new Date((item as any).data_asignarii + 'T00:00:00').toLocaleDateString('ro-RO', { day:'2-digit', month:'short' })}</span>
+                        {(item as any).data_limita && <span>→ {new Date((item as any).data_limita + 'T00:00:00').toLocaleDateString('ro-RO', { day:'2-digit', month:'short' })}</span>}
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            ) : viewMode === 'table' ? (
+              <div className="bg-white rounded-xl border border-[#f0e8e4] overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-[#f5efec]">
+                      <th className="px-3 py-2.5 text-left text-[10px] font-semibold text-[#888] uppercase tracking-wide cursor-pointer" onClick={() => toggleSort('public_id')}>
+                        ID <SortIcon field="public_id" />
+                      </th>
+                      <th className="px-3 py-2.5 text-left text-[10px] font-semibold text-[#888] uppercase tracking-wide">Text</th>
+                      <th className="px-3 py-2.5 text-left text-[10px] font-semibold text-[#888] uppercase tracking-wide">Tip</th>
+                      <th className="px-3 py-2.5 text-left text-[10px] font-semibold text-[#888] uppercase tracking-wide cursor-pointer" onClick={() => toggleSort('status')}>
+                        Stare <SortIcon field="status" />
+                      </th>
+                      <th className="px-3 py-2.5 text-left text-[10px] font-semibold text-[#888] uppercase tracking-wide">Traducător</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginated.map((item, i) => (
+                      <tr key={item.id} onClick={() => { setSelectedItem(item); setMobileTab('detalii') }}
+                        className={`cursor-pointer transition-colors ${i < paginated.length-1 ? 'border-b border-[#f8f3f0]' : ''} ${
+                          selectedItem?.id === item.id ? 'bg-[#fff7f7]' : 'hover:bg-[#faf7f5]'
+                        }`}>
+                        <td className="px-3 py-2.5 font-bold text-[#ce0100] text-[12px]">{item.public_id}</td>
+                        <td className="px-3 py-2.5 text-[12px] text-[#444] max-w-[180px] truncate">"{item.text_original}"</td>
+                        <td className="px-3 py-2.5">
+                          {(item as any).tip && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#f0e8e4] text-[#7a6e69]">{(item as any).tip}</span>}
+                        </td>
+                        <td className="px-3 py-2.5"><StatusPill status={item.status} /></td>
+                        <td className="px-3 py-2.5 text-[11px] text-[#888]">{(item as any).traducator_ro_user?.full_name ?? '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             ) : (
-              <div className="h-full w-full bg-white border border-[#e8e2de] rounded-2xl flex items-center justify-center shadow-sm min-h-[200px]">
-                <p className="text-sm text-[#aaa]">Selectează un citat din listă</p>
+              // Compact view
+              <div className="flex flex-col divide-y divide-[#f5efec] bg-white rounded-xl border border-[#f0e8e4] overflow-hidden">
+                {paginated.map(item => (
+                  <button key={item.id} onClick={() => { setSelectedItem(item); setMobileTab('detalii') }}
+                    className={`flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${
+                      selectedItem?.id === item.id ? 'bg-[#fff7f7]' : 'hover:bg-[#faf7f5]'
+                    }`}>
+                    <span className="text-[11px] font-bold text-[#ce0100] w-16 flex-shrink-0">{item.public_id}</span>
+                    <span className="text-[12px] text-[#444] flex-1 truncate">"{item.text_original}"</span>
+                    {(item as any).tip && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#f0e8e4] text-[#7a6e69] flex-shrink-0">{(item as any).tip}</span>}
+                    <StatusPill status={item.status} />
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-4">
+                <button onClick={() => setPage(p => Math.max(1, p-1))} disabled={page === 1}
+                  className="h-8 w-8 rounded-lg border border-[#e8e2de] flex items-center justify-center disabled:opacity-40 hover:bg-[#faf7f5] transition-all">
+                  ‹
+                </button>
+                <span className="text-[12px] text-[#666]">{page} / {totalPages}</span>
+                <button onClick={() => setPage(p => Math.min(totalPages, p+1))} disabled={page === totalPages}
+                  className="h-8 w-8 rounded-lg border border-[#e8e2de] flex items-center justify-center disabled:opacity-40 hover:bg-[#faf7f5] transition-all">
+                  ›
+                </button>
               </div>
             )}
           </div>
+        </div>
+
+        {/* Right panel — detail */}
+        <div className={`${mobileTab === 'lista' ? 'hidden md:flex' : 'flex'} flex-1 flex-col overflow-hidden`}>
+          {!selectedItem ? (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center">
+                <p className="text-4xl mb-3">📖</p>
+                <p className="text-sm text-[#888]">Selectează un citat pentru a vedea detaliile.</p>
+              </div>
+            </div>
+          ) : (
+            <div className="flex-1 overflow-y-auto px-4 py-5 md:px-8 md:py-8">
+              {/* Detail header */}
+              <div className="flex items-start justify-between mb-6">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h2 className="text-[32px] font-light text-[#ce0100] tracking-tight leading-none">{selectedItem.public_id}</h2>
+                    {(selectedItem as any).tip && (
+                      <span className="text-[11px] font-bold px-2 py-1 rounded-lg bg-[#f0e8e4] text-[#7a6e69]">{(selectedItem as any).tip}</span>
+                    )}
+                  </div>
+                  <StatusPill status={selectedItem.status} />
+                </div>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => { setEditItem(selectedItem); setShowModal(true) }}
+                    className="h-9 px-3 rounded-xl border border-[#e8e2de] bg-white text-sm font-semibold text-[#444] hover:bg-[#faf7f5] transition-all flex items-center gap-2">
+                    <PencilSquareIcon className="w-4 h-4" />
+                    <span className="hidden sm:inline">{isCoordinator ? 'Editează' : 'Adaugă traducerea'}</span>
+                  </button>
+                  {isCoordinator && (
+                    <button onClick={() => { setDeleteItem(selectedItem); setShowDelete(true) }}
+                      className="h-9 w-9 rounded-xl bg-[#fff1f1] text-[#ce0100] flex items-center justify-center hover:bg-[#ffe0e0] transition-all">
+                      <TrashIcon className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Original text */}
+              <div className="bg-[#faf7f5] border border-[#e8e2de] rounded-2xl p-5 mb-5">
+                <p className="text-[11px] font-semibold text-[#888] uppercase tracking-wide mb-2">Text original</p>
+                <p className="text-[15px] text-[#111] leading-relaxed italic">"{selectedItem.text_original}"</p>
+                {selectedItem.autor_original && (
+                  <p className="text-[13px] text-[#888] mt-2 font-medium">— {selectedItem.autor_original}</p>
+                )}
+              </div>
+
+              {/* Translation */}
+              <div className="bg-white border border-[#e8e2de] rounded-2xl p-5 mb-5">
+                <p className="text-[11px] font-semibold text-[#888] uppercase tracking-wide mb-2">Traducere în română</p>
+                {(selectedItem as any).citat_ro ? (
+                  <p className="text-[15px] text-[#111] leading-relaxed">"{(selectedItem as any).citat_ro}"</p>
+                ) : (
+                  <p className="text-[13px] text-[#bbb] italic">Traducerea în română nu a fost adăugată încă.</p>
+                )}
+              </div>
+
+              {/* Details grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
+                {[
+                  { label: 'ID public', value: selectedItem.public_id },
+                  { label: 'Tip', value: (selectedItem as any).tip ?? 'CT' },
+                  { label: 'Stare', value: <StatusPill status={selectedItem.status} /> },
+                  { label: 'Traducător RO', value: (selectedItem as any).traducator_ro_user?.full_name ?? '—' },
+                  { label: 'Data creării', value: new Date(selectedItem.created_at).toLocaleDateString('ro-RO', { day:'2-digit', month:'long', year:'numeric' }) },
+                  { label: 'Data asignării', value: (selectedItem as any).data_asignarii ? new Date((selectedItem as any).data_asignarii + 'T00:00:00').toLocaleDateString('ro-RO', { day:'2-digit', month:'short', year:'numeric' }) : '—' },
+                  { label: 'Dată limită', value: (selectedItem as any).data_limita ? new Date((selectedItem as any).data_limita + 'T00:00:00').toLocaleDateString('ro-RO', { day:'2-digit', month:'short', year:'numeric' }) : '—' },
+                  { label: 'Stare validare', value: selectedItem.validation === 'Validat' && (selectedItem as any).validated_by_user?.full_name ? (
+                    <span className="text-[13px] font-semibold text-[#166534]">✓ {(selectedItem as any).validated_by_user.full_name}</span>
+                  ) : '—' },
+                ].map(({ label, value }) => (
+                  <div key={label}>
+                    <p className="text-[11px] font-semibold text-[#888] uppercase tracking-wide mb-1">{label}</p>
+                    {typeof value === 'string'
+                      ? <p className="text-[14px] text-[#111] font-medium">{value}</p>
+                      : value}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -636,7 +761,8 @@ export default function CitateROPage() {
           onSaved={fetchData}
         />
       )}
-      {showDelete && (
+
+      {showDelete && deleteItem && (
         <DeleteModal
           item={deleteItem}
           onClose={() => { setShowDelete(false); setDeleteItem(null) }}
