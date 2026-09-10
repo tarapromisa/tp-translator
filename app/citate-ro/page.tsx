@@ -735,7 +735,7 @@ export default function CitateROPage() {
                   { label: 'Data creării', value: new Date(selectedItem.created_at).toLocaleDateString('ro-RO', { day:'2-digit', month:'long', year:'numeric' }) },
                   { label: 'Data asignării', value: (selectedItem as any).data_asignarii ? new Date((selectedItem as any).data_asignarii + 'T00:00:00').toLocaleDateString('ro-RO', { day:'2-digit', month:'short', year:'numeric' }) : '—' },
                   { label: 'Dată limită', value: (selectedItem as any).data_limita ? new Date((selectedItem as any).data_limita + 'T00:00:00').toLocaleDateString('ro-RO', { day:'2-digit', month:'short', year:'numeric' }) : '—' },
-                  { label: 'Stare validare', value: selectedItem.validation === 'Validat' && (selectedItem as any).validated_by_user?.full_name ? (
+                  { label: 'Stare validare', value: (selectedItem as any).validation === 'Validat' && (selectedItem as any).validated_by_user?.full_name ? (
                     <span className="text-[13px] font-semibold text-[#166534]">✓ {(selectedItem as any).validated_by_user.full_name}</span>
                   ) : '—' },
                 ].map(({ label, value }) => (
