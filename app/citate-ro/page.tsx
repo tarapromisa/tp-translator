@@ -157,6 +157,21 @@ function CitatROModal({ item, users, onClose, onSaved, isCoordinator }: {
 
           <div className="flex flex-col gap-[16px] mb-[24px]">
 
+            {/* Text original — vizibil pentru traducatori ca referinta */}
+            {!isCoordinator && item?.text_original && (
+              <div className="bg-[#faf7f5] border border-[#e8e2de] rounded-[14px] p-[14px]">
+                <label className="text-[11px] font-semibold text-[#888] uppercase tracking-wide block mb-[8px]">
+                  Text original
+                </label>
+                <p className="text-[14px] text-[#111] leading-relaxed italic">
+                  "{item.text_original}"
+                </p>
+                {item.autor_original && (
+                  <p className="text-[12px] text-[#888] mt-[6px]">— {item.autor_original}</p>
+                )}
+              </div>
+            )}
+
             {/* Traducere RO — visible pentru toți */}
             <div>
               <label className="text-[11px] font-semibold text-[#666] uppercase tracking-wide block mb-[6px]">
