@@ -16,6 +16,7 @@ import {
   ClockIcon,
   ShieldCheckIcon,
   CheckCircleIcon,
+  XCircleIcon,
   BookOpenIcon,
   Squares2X2Icon,
   TableCellsIcon,
@@ -346,6 +347,17 @@ export default function VersetePage() {
                                   Validat de {(v as any).validated_by_user.full_name}
                                 </span>
                               </div>
+                            )}
+                            {v.validation === 'Refuzat' && (
+                              <div className="flex items-center gap-1.5 mt-1">
+                                <XCircleIcon className="w-3.5 h-3.5 text-[#ce0100] flex-shrink-0" />
+                                <span className="text-[11px] font-semibold text-[#ce0100]">Refuzat</span>
+                              </div>
+                            )}
+                            {(v as any).validation_comment && (
+                              <p className="text-[11px] text-[#888] italic mt-1 line-clamp-1">
+                                "{(v as any).validation_comment}"
+                              </p>
                             )}
                           </div>
                         </div>

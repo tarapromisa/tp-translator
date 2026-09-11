@@ -15,6 +15,7 @@ import {
   ClockIcon,
   ShieldCheckIcon,
   CheckCircleIcon,
+  XCircleIcon,
   Squares2X2Icon,
   TableCellsIcon,
   ListBulletIcon,
@@ -357,12 +358,27 @@ export default function CitatePage() {
 
                         {/* Validat de */}
                         {text.validation === 'Validat' && text.validated_by_user?.full_name && (
-                          <div className="flex items-center gap-1.5 mb-3">
+                          <div className="flex items-center gap-1.5 mb-1">
                             <CheckCircleIcon className="w-3.5 h-3.5 text-[#166534] flex-shrink-0" />
                             <span className="text-[11px] font-semibold text-[#166534]">
                               Validat de {text.validated_by_user.full_name}
                             </span>
                           </div>
+                        )}
+
+                        {/* Refuzat badge */}
+                        {text.validation === 'Refuzat' && (
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <XCircleIcon className="w-3.5 h-3.5 text-[#ce0100] flex-shrink-0" />
+                            <span className="text-[11px] font-semibold text-[#ce0100]">Refuzat</span>
+                          </div>
+                        )}
+
+                        {/* Comentariu validare */}
+                        {(text as any).validation_comment && (
+                          <p className="text-[11px] text-[#888] italic mb-3 line-clamp-1">
+                            "{(text as any).validation_comment}"
+                          </p>
                         )}
 
                         {/* Actions */}

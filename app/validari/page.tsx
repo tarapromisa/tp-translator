@@ -279,6 +279,11 @@ function ItemRow({ item, type, statusTab, canValidate, onValidate, onView, onRev
           </span>
         </div>
         <p className="text-[12px] text-[#555] truncate italic">"{text}"</p>
+        {(item as any).validation_comment && (
+          <p className="text-[11px] text-[#888] mt-0.5 truncate">
+            💬 <span className="italic">"{(item as any).validation_comment}"</span>
+          </p>
+        )}
       </div>
       </div>
 
