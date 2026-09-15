@@ -99,14 +99,32 @@ export default function CreateCitatModal({ open, onClose }: Props) {
     }
   }
 
+  const [lastUsedByLang, setLastUsedByLang] = useState<Record<string, { id: string; full_name: string } | null>>({})
+
   const fetchUsers = async () => {
     setLoadingUsers(true)
     const map: Record<string, any[]> = {}
+    const lastMap: Record<string, { id: string; full_name: string } | null> = {}
+
     for (const lang of LANG_KEYS.filter(l => l.key !== 'ro')) {
       const { data } = await supabase.from('users').select('*').eq('language', lang.code).eq('active', true)
       map[lang.key] = data || []
+
+      // Fetch last used translator for this language from texts table
+      const fieldKey = `traducator_${lang.key}`
+      const { data: lastUsed } = await supabase
+        .from('texts')
+        .select(`${fieldKey}, translator:${fieldKey}(id, full_name)`)
+        .not(fieldKey, 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single()
+
+      const t = (lastUsed as any)?.translator
+      lastMap[lang.key] = t ? { id: t.id, full_name: t.full_name } : null
     }
     setUsersByLang(map)
+    setLastUsedByLang(lastMap)
     setLoadingUsers(false)
   }
 
@@ -421,15 +439,26 @@ export default function CreateCitatModal({ open, onClose }: Props) {
                               )}
                             </div>
                           ) : (
-                            <select value={translators[lang.key] || ''}
-                              onChange={(e) => setTranslators(p => ({ ...p, [lang.key]: e.target.value }))}
-                              className="w-full h-[40px] rounded-[12px] border border-[#f0e9e5] bg-[#faf7f5] px-[12px] text-[13px] text-[#111] outline-none focus:border-[#ce0100] transition-all"
-                              style={{ fontWeight: 300 }}>
-                              <option value="">-- Selecteaza --</option>
-                              {(usersByLang[lang.key] || []).map((u: any) => (
-                                <option key={u.id} value={u.id}>{u.full_name}</option>
-                              ))}
-                            </select>
+                            <div>
+                              <select value={translators[lang.key] || ''}
+                                onChange={(e) => setTranslators(p => ({ ...p, [lang.key]: e.target.value }))}
+                                className="w-full h-[40px] rounded-[12px] border border-[#f0e9e5] bg-[#faf7f5] px-[12px] text-[13px] text-[#111] outline-none focus:border-[#ce0100] transition-all"
+                                style={{ fontWeight: 300 }}>
+                                <option value="">-- Selecteaza --</option>
+                                {(usersByLang[lang.key] || []).map((u: any) => (
+                                  <option key={u.id} value={u.id}>{u.full_name}</option>
+                                ))}
+                              </select>
+                              {lastUsedByLang[lang.key] && !translators[lang.key] && (
+                                <button
+                                  type="button"
+                                  onClick={() => setTranslators(p => ({ ...p, [lang.key]: lastUsedByLang[lang.key]!.id }))}
+                                  className="mt-[6px] flex items-center gap-[5px] text-[10px] text-[#ce0100] hover:underline">
+                                  <span className="text-[#aaa]">↩ Ultimul:</span>
+                                  <span className="font-semibold truncate">{lastUsedByLang[lang.key]!.full_name}</span>
+                                </button>
+                              )}
+                            </div>
                           )}
                         </div>
                       )
