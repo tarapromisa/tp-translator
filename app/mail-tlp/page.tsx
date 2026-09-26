@@ -10,7 +10,7 @@ import EmailSentAlert from '@/components/EmailSentAlert'
 import {
   PlusIcon, XMarkIcon, PaperAirplaneIcon, TrashIcon,
   MagnifyingGlassIcon, CheckCircleIcon, ExclamationTriangleIcon,
-  ArrowTopRightOnSquareIcon, ArrowsPointingInIcon, ChevronLeftIcon, ChevronDownIcon,
+  ArrowTopRightOnSquareIcon, ArrowsPointingInIcon, ChevronDownIcon,
   Squares2X2Icon, QueueListIcon, TableCellsIcon,
 } from '@heroicons/react/24/outline'
 import { CheckCircleIcon as CheckSolid } from '@heroicons/react/24/solid'
@@ -213,6 +213,79 @@ function VerticalDivider({ onResize }: { onResize: (dy: number) => void }) {
   )
 }
 
+// ── Ventana flotante (dentro de la página) ─────────────────────────
+type SectionId = 'form' | 'list' | 'citate' | 'citateRO'
+type Geo = { x: number; y: number; w: number; h: number }
+const SECTION_TITLES: Record<SectionId, string> = {
+  form: 'Înregistrare nouă', list: 'Înregistrări', citate: 'Citate · idiomas lipsă', citateRO: 'Citate RO',
+}
+const TITLEBAR_H = 36
+
+function FloatingWindow({ title, geo, z, onFocus, onChange, onDock, onClose, children }: {
+  title: string; geo: Geo; z: number
+  onFocus: () => void; onChange: (g: Geo) => void; onDock: () => void; onClose: () => void
+  children: React.ReactNode
+}) {
+  const drag = (e: React.PointerEvent, kind: 'move' | 'resize') => {
+    if (kind === 'move' && (e.target as HTMLElement).closest('button')) return
+    e.preventDefault()
+    onFocus()
+    const sx = e.clientX, sy = e.clientY, g0 = { ...geo }
+    document.body.style.userSelect = 'none'
+    const move = (ev: PointerEvent) => {
+      const dx = ev.clientX - sx, dy = ev.clientY - sy
+      const vw = window.innerWidth, vh = window.innerHeight
+      if (kind === 'move') {
+        onChange({ ...g0,
+          x: Math.max(-g0.w + 120, Math.min(vw - 120, g0.x + dx)),
+          y: Math.max(0, Math.min(vh - TITLEBAR_H, g0.y + dy)) })
+      } else {
+        onChange({ ...g0, w: Math.max(280, g0.w + dx), h: Math.max(160, g0.h + dy) })
+      }
+    }
+    const up = () => {
+      document.body.style.userSelect = ''
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', up)
+    }
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', up)
+  }
+
+  return createPortal(
+    <div onPointerDownCapture={onFocus}
+      style={{ position: 'fixed', left: geo.x, top: geo.y, width: geo.w, height: geo.h, zIndex: 80 + z }}
+      className="bg-white rounded-2xl border border-[#e8e2de] shadow-[0_24px_70px_rgba(0,0,0,0.22)] flex flex-col overflow-hidden">
+      <div onPointerDown={e => drag(e, 'move')} style={{ height: TITLEBAR_H }}
+        className="flex-shrink-0 flex items-center justify-between gap-2 px-3 bg-[#faf7f5] border-b border-[#f0e9e5] cursor-move select-none">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="w-2 h-2 rounded-full bg-[#ce0100] flex-shrink-0" />
+          <p className="text-[10px] font-semibold text-[#9c8e87] uppercase tracking-[0.12em] truncate">{title}</p>
+        </div>
+        <div className="flex items-center gap-0.5 flex-shrink-0">
+          <button onClick={onDock} title="Readu în pagină"
+            className="h-7 w-7 rounded-lg flex items-center justify-center text-[#888] hover:bg-white hover:text-[#ce0100] transition-all">
+            <ArrowsPointingInIcon className="w-4 h-4" />
+          </button>
+          <button onClick={onClose} title="Închide"
+            className="h-7 w-7 rounded-lg flex items-center justify-center text-[#888] hover:bg-white hover:text-[#ce0100] transition-all">
+            <XMarkIcon className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+      <div className="flex-1 min-h-0 flex flex-col overflow-auto">{children}</div>
+      {/* Esquina para redimensionar */}
+      <div onPointerDown={e => drag(e, 'resize')} title="Trage pentru a redimensiona"
+        className="absolute right-0 bottom-0 w-5 h-5 cursor-nwse-resize flex items-end justify-end p-1">
+        <svg width="10" height="10" viewBox="0 0 10 10" stroke="#c9bdb7" strokeWidth="1.2">
+          <line x1="9" y1="1" x2="1" y2="9" /><line x1="9" y1="5" x2="5" y2="9" />
+        </svg>
+      </div>
+    </div>,
+    document.body
+  )
+}
+
 // ── Main ─────────────────────────────────────────────────────────
 export default function MailTLPPage() {
   const { profile } = useUser()
@@ -259,7 +332,7 @@ export default function MailTLPPage() {
   const [leftWidth, setLeftWidth] = useState(420)
   const [rightTopHeight, setRightTopHeight] = useState(50) // percentage
   const [formHeight, setFormHeight] = useState<number | null>(null) // px, null = automático
-  const formRef = useRef<HTMLDivElement>(null)
+  const formRef = useRef<HTMLDivElement | null>(null)
   const rightPanelRef = useRef<HTMLDivElement>(null)
   const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768
   const [mobileTab, setMobileTab] = useState<'lista' | 'formular' | 'referinta'>('lista')
@@ -395,52 +468,53 @@ export default function MailTLPPage() {
   const pendingRecords = records.filter(r => !r.trimis)
   const sentRecords    = records.filter(r => r.trimis)
 
-  // ── Panou referință: anclado / cerrado / ventana emergente ──
-  const [refMode, setRefMode] = useState<'docked' | 'hidden' | 'popup'>('docked')
-  const [popupContainer, setPopupContainer] = useState<HTMLElement | null>(null)
-  const popupWinRef = useRef<Window | null>(null)
+  // ── Secciones: anclada / ventana flotante / oculta ──
+  const [secMode, setSecMode] = useState<Record<SectionId, 'docked' | 'float' | 'hidden'>>({
+    form: 'docked', list: 'docked', citate: 'docked', citateRO: 'docked',
+  })
+  const [geos, setGeos] = useState<Partial<Record<SectionId, Geo>>>({})
+  const [zOrder, setZOrder] = useState<SectionId[]>([])
+  const sectionRefs = useRef<Partial<Record<SectionId, HTMLDivElement | null>>>({})
 
-  const openPopup = () => {
-    const w = window.open('', 'tp-referinta', 'width=560,height=860')
-    if (!w) return
-    const doc = w.document
-    doc.title = 'Referință · Mail TLP'
-    doc.head.innerHTML = ''
-    // copiamos los estilos (Tailwind + fuentes) a la ventana nueva
-    document.querySelectorAll('link[rel="stylesheet"], style').forEach(node => {
-      const clone = node.cloneNode(true) as HTMLElement
-      if (node instanceof HTMLLinkElement) (clone as HTMLLinkElement).href = node.href
-      doc.head.appendChild(clone)
-    })
-    doc.body.className = document.body.className
-    doc.body.style.margin = '0'
-    doc.body.innerHTML = ''
-    const container = doc.createElement('div')
-    container.style.height = '100vh'
-    doc.body.appendChild(container)
-    // si el usuario cierra la ventana, el panel vuelve a la página
-    w.addEventListener('pagehide', () => {
-      popupWinRef.current = null
-      setPopupContainer(null)
-      setRefMode('docked')
-    })
-    popupWinRef.current = w
-    setPopupContainer(container)
-    setRefMode('popup')
+  // En móvil todo queda anclado (se usan las pestañas)
+  const mode = (id: SectionId) => (isDesktop ? secMode[id] : 'docked')
+  const docked = (id: SectionId) => mode(id) === 'docked'
+  const bringToFront = (id: SectionId) => setZOrder(o => [...o.filter(x => x !== id), id])
+  const setMode = (id: SectionId, m: 'docked' | 'float' | 'hidden') => setSecMode(s => ({ ...s, [id]: m }))
+
+  // Abre la sección flotando exactamente donde y del tamaño que estaba
+  const popOut = (id: SectionId) => {
+    const el = sectionRefs.current[id]
+    const r = el?.getBoundingClientRect()
+    const vw = window.innerWidth, vh = window.innerHeight
+    const w = Math.max(300, Math.round(r?.width ?? 480))
+    const h = Math.min(vh - 20, Math.max(200, Math.round((r?.height ?? 420) + TITLEBAR_H)))
+    const x = Math.min(Math.max(10, Math.round((r?.left ?? 100) + 24)), vw - w - 10)
+    const y = Math.min(Math.max(10, Math.round((r?.top ?? 100) - TITLEBAR_H + 24)), vh - h - 10)
+    setGeos(g => ({ ...g, [id]: { x, y, w, h } }))
+    setMode(id, 'float')
+    bringToFront(id)
   }
 
-  const dockPanel = () => {
-    popupWinRef.current?.close()
-    popupWinRef.current = null
-    setPopupContainer(null)
-    setRefMode('docked')
-  }
+  const controls = (id: SectionId) => docked(id) ? (
+    <div className="hidden md:flex items-center gap-0.5 flex-shrink-0">
+      <button onClick={() => popOut(id)} title="Deschide în fereastră"
+        className="h-7 w-7 rounded-lg flex items-center justify-center text-[#999] hover:bg-[#faf7f5] hover:text-[#ce0100] transition-all">
+        <ArrowTopRightOnSquareIcon className="w-4 h-4" />
+      </button>
+      <button onClick={() => setMode(id, 'hidden')} title="Închide secțiunea"
+        className="h-7 w-7 rounded-lg flex items-center justify-center text-[#999] hover:bg-[#faf7f5] hover:text-[#ce0100] transition-all">
+        <XMarkIcon className="w-4 h-4" />
+      </button>
+    </div>
+  ) : null
 
-  useEffect(() => {
-    const closePopup = () => popupWinRef.current?.close()
-    window.addEventListener('beforeunload', closePopup)
-    return () => { window.removeEventListener('beforeunload', closePopup); closePopup() }
-  }, [])
+  const SECTION_IDS: SectionId[] = canManage ? ['form', 'list', 'citate', 'citateRO'] : ['list', 'citate', 'citateRO']
+  const hiddenIds = SECTION_IDS.filter(id => mode(id) === 'hidden')
+  const floatIds  = SECTION_IDS.filter(id => mode(id) === 'float')
+  const formDocked = canManage && docked('form')
+  const leftVisible  = formDocked || docked('list')
+  const rightVisible = docked('citate') || docked('citateRO')
 
   // ── Lista de registros: vista, búsqueda, filtro, secciones plegables ──
   const [viewMode, setViewMode] = useState<ViewMode>('card')
@@ -509,47 +583,104 @@ export default function MailTLPPage() {
   const filteredCitate   = citateIncomp.filter(c => !searchCitate || c.public_id.toLowerCase().includes(searchCitate.toLowerCase()) || c.citat_ro?.toLowerCase().includes(searchCitate.toLowerCase()))
   const filteredCitateRO = citateROIncomp.filter(c => !searchCitateRO || c.public_id.toLowerCase().includes(searchCitateRO.toLowerCase()) || c.text_original?.toLowerCase().includes(searchCitateRO.toLowerCase()))
 
-  // ── Contenido del panel de referencia (se usa anclado o en ventana emergente) ──
-  const referencePanel = (
+  // ── Contenido de cada sección (se pinta anclado o en ventana flotante) ──
+  const formContent = (
+    <div className="p-5">
+                <div className={`flex items-center justify-between gap-2 mb-3 ${docked('form') ? '' : 'hidden'}`}>
+                  <p className="text-[11px] font-semibold text-[#888] uppercase tracking-wide">Înregistrare nouă</p>
+                  {controls('form')}
+                </div>
+                <div className="bg-white border border-[#e8e2de] rounded-2xl p-4 flex flex-col gap-3">
+                  <select value={traducator} onChange={e => setTraducator(e.target.value)}
+                    className={`w-full h-10 rounded-xl border px-3 text-sm text-[#111] outline-none focus:border-[#ce0100] transition-all bg-white ${!traducator ? 'border-[#ffd3d3]' : 'border-[#f0e9e5]'}`}>
+                    <option value="">-- Selecteaza traducatorul --</option>
+                    {availableUsers.map(u => <option key={u.id} value={u.id}>{u.full_name} ({u.language})</option>)}
+                  </select>
+                  <div className="grid grid-cols-2 gap-2">
+                    <input type="date" value={dinZiua} onChange={e => setDinZiua(e.target.value)}
+                      className="w-full h-10 rounded-xl border border-[#f0e9e5] px-3 text-sm text-[#111] outline-none focus:border-[#ce0100] transition-all" />
+                    <input type="date" value={panaZiua} onChange={e => setPanaZiua(e.target.value)}
+                      className="w-full h-10 rounded-xl border border-[#f0e9e5] px-3 text-sm text-[#111] outline-none focus:border-[#ce0100] transition-all" />
+                  </div>
+                  <div>
+                    <textarea value={citateLipsesc} onChange={e => setCitateLipsesc(e.target.value)} rows={2}
+                      placeholder="ID-uri lipsa (CT001, CT002...)"
+                      className="w-full rounded-xl border border-[#f0e9e5] px-3 py-2 text-sm text-[#111] resize-none outline-none focus:border-[#ce0100] transition-all placeholder:text-[#ccc]" />
+                    <p className="text-[10px] text-[#bbb] mt-1">Apasă pe un ID din panoul din dreapta pentru a-l adăuga automat</p>
+                  </div>
+                  {formError && <p className="text-xs text-[#ce0100] font-medium">{formError}</p>}
+                  <button onClick={handleSave} disabled={saving}
+                    className="h-10 rounded-xl bg-[#ce0100] text-white text-sm font-semibold flex items-center justify-center gap-2 shadow-[0_4px_12px_rgba(206,1,0,0.22)] hover:bg-[#a80000] disabled:opacity-50 transition-all">
+                    <PlusIcon className="w-4 h-4" />
+                    {saving ? 'Se salvează...' : 'Adaugă înregistrare'}
+                  </button>
+                </div>
+    </div>
+  )
+
+  const listContent = (
     <>
-      <div className="flex-shrink-0 h-10 px-3 md:px-4 flex items-center justify-between gap-2 bg-[#f9f7f5] border-b border-[#f0e9e5]">
-        <div className="flex items-center gap-2 min-w-0">
-          <p className="text-[10px] font-semibold text-[#9c8e87] uppercase tracking-[0.12em]">Panou referință</p>
-          {lastAdded && <span className="text-[11px] font-semibold text-[#166534] truncate">✓ {lastAdded} adăugat</span>}
-        </div>
-        <div className="flex items-center gap-1">
-          {refMode === 'popup' ? (
-            <button onClick={dockPanel} title="Readu panoul în pagină"
-              className="h-7 px-2.5 rounded-lg border border-[#e8e2de] bg-white text-[11px] font-semibold text-[#555] flex items-center gap-1.5 hover:bg-[#fff4f4] hover:text-[#ce0100] transition-all">
-              <ArrowsPointingInIcon className="w-3.5 h-3.5" /> Readu în pagină
-            </button>
-          ) : (
-            <>
-              <button onClick={openPopup} title="Deschide în fereastră separată"
-                className="hidden md:flex h-7 w-7 rounded-lg items-center justify-center text-[#888] hover:bg-white hover:text-[#ce0100] border border-transparent hover:border-[#e8e2de] transition-all">
-                <ArrowTopRightOnSquareIcon className="w-4 h-4" />
-              </button>
-              <button onClick={() => setRefMode('hidden')} title="Închide panoul"
-                className="hidden md:flex h-7 w-7 rounded-lg items-center justify-center text-[#888] hover:bg-white hover:text-[#ce0100] border border-transparent hover:border-[#e8e2de] transition-all">
-                <XMarkIcon className="w-4 h-4" />
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-      <div ref={rightPanelRef} className="flex-1 min-h-0 flex flex-col overflow-x-hidden">
-            {/* TOP — Citate incomplete */}
-            <div style={{ height: `${rightTopHeight}%` }} className="flex flex-col overflow-x-hidden">
+              {/* Toolbar: búsqueda, idioma, vista */}
+              <div className="flex-shrink-0 px-4 md:px-5 pt-3 pb-2 flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-2 bg-white border border-[#e8e2de] rounded-lg px-3 h-8 flex-1 min-w-[120px]">
+                  <MagnifyingGlassIcon className="w-3.5 h-3.5 text-[#999] flex-shrink-0" />
+                  <input type="text" placeholder="Caută traducător sau ID..." value={searchRec} onChange={e => setSearchRec(e.target.value)}
+                    className="flex-1 min-w-0 bg-transparent outline-none text-xs placeholder:text-[#ccc]" />
+                  {searchRec && (
+                    <button onClick={() => setSearchRec('')} className="text-[#bbb] hover:text-[#666]"><XMarkIcon className="w-3.5 h-3.5" /></button>
+                  )}
+                </div>
+                <select value={langFilter} onChange={e => setLangFilter(e.target.value)}
+                  className="h-8 rounded-lg border border-[#e8e2de] bg-white px-2 text-xs text-[#555] outline-none focus:border-[#ce0100]">
+                  <option value="">Toate</option>
+                  {LANGS.filter(l => l !== 'RO').map(l => <option key={l} value={l}>{l}</option>)}
+                </select>
+                <div className="flex items-center bg-white border border-[#e8e2de] rounded-lg p-0.5">
+                  {([
+                    { v: 'card', Icon: Squares2X2Icon, t: 'Carduri' },
+                    { v: 'compact', Icon: QueueListIcon, t: 'Compact' },
+                    { v: 'tabel', Icon: TableCellsIcon, t: 'Tabel' },
+                  ] as const).map(({ v, Icon, t }) => (
+                    <button key={v} onClick={() => changeView(v)} title={t}
+                      className={`h-7 w-7 rounded-md flex items-center justify-center transition-all ${viewMode === v ? 'bg-[#ce0100] text-white' : 'text-[#888] hover:bg-[#f9f7f5]'}`}>
+                      <Icon className="w-4 h-4" />
+                    </button>
+                  ))}
+                </div>
+                {controls('list')}
+              </div>
+
+              <div className="flex-1 overflow-y-auto px-4 md:px-5 pb-4 flex flex-col gap-3">
+                {renderSection('pending', 'În așteptare', shownPending, '#c05c00')}
+                {renderSection('sent', 'Trimise', shownSent, '#166534')}
+                {!loading && records.length === 0 && (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <p className="text-sm font-light text-[#888]">Nicio înregistrare</p>
+                    <p className="text-xs text-[#bbb] mt-1">Adaugă primul reminder folosind formularul de mai sus.</p>
+                  </div>
+                )}
+                {!loading && records.length > 0 && shownPending.length === 0 && shownSent.length === 0 && (
+                  <p className="text-center py-8 text-xs text-[#bbb]">Niciun rezultat pentru filtrul actual.</p>
+                )}
+              </div>
+    </>
+  )
+
+  const citateContent = (
+    <>
               <div className="flex-shrink-0 px-4 md:px-5 py-3 border-b border-[#f0e9e5] flex items-center justify-between bg-white gap-2">
                 <div className="min-w-0">
-                  <p className="text-[10px] font-semibold text-[#9c8e87] uppercase tracking-[0.12em]">Citate · idiomas lipsă</p>
-                  <p className="text-sm font-light text-[#111]">{filteredCitate.length} <span className="text-[#9c8e87] hidden sm:inline">· apasă ID pentru a-l adăuga</span></p>
+                  <p className={`text-[10px] font-semibold text-[#9c8e87] uppercase tracking-[0.12em] ${docked('citate') ? '' : 'hidden'}`}>Citate · idiomas lipsă</p>
+                  <p className="text-sm font-light text-[#111]">{filteredCitate.length} {lastAdded
+                    ? <span className="text-[#166534] font-semibold">· ✓ {lastAdded} adăugat</span>
+                    : <span className="text-[#9c8e87] hidden sm:inline">· apasă ID pentru a-l adăuga</span>}</p>
                 </div>
-                <div className="flex items-center gap-2 bg-[#f9f7f5] border border-[#e8e2de] rounded-lg px-3 h-8 w-36 md:w-48 flex-shrink-0">
+                <div className="flex items-center gap-2 bg-[#f9f7f5] border border-[#e8e2de] rounded-lg px-3 h-8 w-32 md:w-44 min-w-0">
                   <MagnifyingGlassIcon className="w-3.5 h-3.5 text-[#999] flex-shrink-0" />
                   <input type="text" placeholder="Caută..." value={searchCitate} onChange={e => setSearchCitate(e.target.value)}
                     className="flex-1 bg-transparent outline-none text-xs placeholder:text-[#ccc]" />
                 </div>
+                {controls('citate')}
               </div>
               <div className="flex-1 overflow-y-auto bg-white">
                 {filteredCitate.map((c, i) => (
@@ -587,23 +718,24 @@ export default function MailTLPPage() {
                 ))}
                 {filteredCitate.length === 0 && <p className="text-center py-8 text-xs text-[#bbb]">Nicio cită incompletă.</p>}
               </div>
-            </div>
+    </>
+  )
 
-            {/* VERTICAL DIVIDER */}
-            <VerticalDivider onResize={handleResizeV} />
-
-            {/* BOTTOM — Citate RO incomplete */}
-            <div style={{ height: `${100 - rightTopHeight}%` }} className="flex flex-col overflow-x-hidden">
+  const citateROContent = (
+    <>
               <div className="flex-shrink-0 px-4 md:px-5 py-3 border-b border-[#f0e9e5] flex items-center justify-between bg-white gap-2">
                 <div className="min-w-0">
-                  <p className="text-[10px] font-semibold text-[#9c8e87] uppercase tracking-[0.12em]">Citate RO · fără traducere</p>
-                  <p className="text-sm font-light text-[#111]">{filteredCitateRO.length} <span className="text-[#9c8e87] hidden sm:inline">· apasă ID pentru a-l adăuga</span></p>
+                  <p className={`text-[10px] font-semibold text-[#9c8e87] uppercase tracking-[0.12em] ${docked('citateRO') ? '' : 'hidden'}`}>Citate RO · fără traducere</p>
+                  <p className="text-sm font-light text-[#111]">{filteredCitateRO.length} {lastAdded
+                    ? <span className="text-[#166534] font-semibold">· ✓ {lastAdded} adăugat</span>
+                    : <span className="text-[#9c8e87] hidden sm:inline">· apasă ID pentru a-l adăuga</span>}</p>
                 </div>
-                <div className="flex items-center gap-2 bg-[#f9f7f5] border border-[#e8e2de] rounded-lg px-3 h-8 w-36 md:w-48 flex-shrink-0">
+                <div className="flex items-center gap-2 bg-[#f9f7f5] border border-[#e8e2de] rounded-lg px-3 h-8 w-32 md:w-44 min-w-0">
                   <MagnifyingGlassIcon className="w-3.5 h-3.5 text-[#999] flex-shrink-0" />
                   <input type="text" placeholder="Caută..." value={searchCitateRO} onChange={e => setSearchCitateRO(e.target.value)}
                     className="flex-1 bg-transparent outline-none text-xs placeholder:text-[#ccc]" />
                 </div>
+                {controls('citateRO')}
               </div>
               <div className="flex-1 overflow-y-auto bg-white">
                 {filteredCitateRO.map((c, i) => (
@@ -637,10 +769,12 @@ export default function MailTLPPage() {
                 ))}
                 {filteredCitateRO.length === 0 && <p className="text-center py-8 text-xs text-[#bbb]">Nicio cită RO incompletă.</p>}
               </div>
-            </div>
-      </div>
     </>
   )
+
+  const CONTENT: Record<SectionId, React.ReactNode> = {
+    form: formContent, list: listContent, citate: citateContent, citateRO: citateROContent,
+  }
 
   return (
     <main className="flex h-[calc(100dvh-4rem-env(safe-area-inset-top))] md:h-dvh overflow-hidden bg-[#f9f7f5]">
@@ -699,132 +833,96 @@ export default function MailTLPPage() {
         {/* Main split layout — desktop horizontal, mobile tabbed */}
         <div className="flex-1 flex overflow-hidden relative">
 
-          {/* LEFT — Records + Form */}
-          <div
-            style={{ width: isDesktop && refMode === 'docked' ? leftWidth : undefined }}
-            className={`${mobileTab !== 'lista' && mobileTab !== 'formular' ? 'hidden' : ''} md:flex md:flex-col ${refMode === 'docked' ? 'md:flex-shrink-0 md:w-auto' : 'md:flex-1'} overflow-x-hidden bg-[#f9f7f5] w-full`}>
+          {/* LEFT — Form + Records */}
+          {leftVisible && (
+            <div
+              style={{ width: isDesktop && rightVisible ? leftWidth : undefined }}
+              className={`${mobileTab === 'referinta' ? 'hidden' : ''} md:flex md:flex-col ${rightVisible ? 'md:flex-shrink-0' : 'md:flex-1'} overflow-x-hidden bg-[#f9f7f5] w-full md:w-auto`}>
 
-            {/* New record form */}
-            {canManage && (
-              <div ref={formRef}
-                style={{ height: isDesktop && formHeight !== null ? formHeight : undefined }}
-                className={`${mobileTab === 'lista' ? 'hidden md:block' : ''} flex-shrink-0 p-5 md:overflow-y-auto`}>
-                <p className="text-[11px] font-semibold text-[#888] uppercase tracking-wide mb-3">Înregistrare nouă</p>
-                <div className="bg-white border border-[#e8e2de] rounded-2xl p-4 flex flex-col gap-3">
-                  <select value={traducator} onChange={e => setTraducator(e.target.value)}
-                    className={`w-full h-10 rounded-xl border px-3 text-sm text-[#111] outline-none focus:border-[#ce0100] transition-all bg-white ${!traducator ? 'border-[#ffd3d3]' : 'border-[#f0e9e5]'}`}>
-                    <option value="">-- Selecteaza traducatorul --</option>
-                    {availableUsers.map(u => <option key={u.id} value={u.id}>{u.full_name} ({u.language})</option>)}
-                  </select>
-                  <div className="grid grid-cols-2 gap-2">
-                    <input type="date" value={dinZiua} onChange={e => setDinZiua(e.target.value)}
-                      className="w-full h-10 rounded-xl border border-[#f0e9e5] px-3 text-sm text-[#111] outline-none focus:border-[#ce0100] transition-all" />
-                    <input type="date" value={panaZiua} onChange={e => setPanaZiua(e.target.value)}
-                      className="w-full h-10 rounded-xl border border-[#f0e9e5] px-3 text-sm text-[#111] outline-none focus:border-[#ce0100] transition-all" />
-                  </div>
-                  <div>
-                    <textarea value={citateLipsesc} onChange={e => setCitateLipsesc(e.target.value)} rows={2}
-                      placeholder="ID-uri lipsa (CT001, CT002...)"
-                      className="w-full rounded-xl border border-[#f0e9e5] px-3 py-2 text-sm text-[#111] resize-none outline-none focus:border-[#ce0100] transition-all placeholder:text-[#ccc]" />
-                    <p className="text-[10px] text-[#bbb] mt-1">Apasă pe un ID din panoul din dreapta pentru a-l adăuga automat</p>
-                  </div>
-                  {formError && <p className="text-xs text-[#ce0100] font-medium">{formError}</p>}
-                  <button onClick={handleSave} disabled={saving}
-                    className="h-10 rounded-xl bg-[#ce0100] text-white text-sm font-semibold flex items-center justify-center gap-2 shadow-[0_4px_12px_rgba(206,1,0,0.22)] hover:bg-[#a80000] disabled:opacity-50 transition-all">
-                    <PlusIcon className="w-4 h-4" />
-                    {saving ? 'Se salvează...' : 'Adaugă înregistrare'}
-                  </button>
+              {formDocked && (
+                <div ref={el => { sectionRefs.current.form = el; formRef.current = el }}
+                  style={{ height: isDesktop && formHeight !== null && docked('list') ? formHeight : undefined }}
+                  className={`${mobileTab === 'lista' ? 'hidden md:block' : ''} ${docked('list') ? 'flex-shrink-0' : 'flex-1'} md:overflow-y-auto`}>
+                  {formContent}
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* VERTICAL DIVIDER formular / listă — desktop only */}
-            {canManage && (
-              <div className="hidden md:block">
-                <VerticalDivider onResize={handleResizeForm} />
-              </div>
-            )}
-
-            {/* Records list */}
-            <div className={`${mobileTab === 'formular' ? 'hidden md:flex' : 'flex'} flex-1 min-h-0 flex-col`}>
-              {/* Toolbar: búsqueda, idioma, vista */}
-              <div className="flex-shrink-0 px-4 md:px-5 pt-3 pb-2 flex items-center gap-2 flex-wrap">
-                <div className="flex items-center gap-2 bg-white border border-[#e8e2de] rounded-lg px-3 h-8 flex-1 min-w-[120px]">
-                  <MagnifyingGlassIcon className="w-3.5 h-3.5 text-[#999] flex-shrink-0" />
-                  <input type="text" placeholder="Caută traducător sau ID..." value={searchRec} onChange={e => setSearchRec(e.target.value)}
-                    className="flex-1 min-w-0 bg-transparent outline-none text-xs placeholder:text-[#ccc]" />
-                  {searchRec && (
-                    <button onClick={() => setSearchRec('')} className="text-[#bbb] hover:text-[#666]"><XMarkIcon className="w-3.5 h-3.5" /></button>
-                  )}
+              {/* VERTICAL DIVIDER formular / listă — desktop only */}
+              {formDocked && docked('list') && (
+                <div className="hidden md:block">
+                  <VerticalDivider onResize={handleResizeForm} />
                 </div>
-                <select value={langFilter} onChange={e => setLangFilter(e.target.value)}
-                  className="h-8 rounded-lg border border-[#e8e2de] bg-white px-2 text-xs text-[#555] outline-none focus:border-[#ce0100]">
-                  <option value="">Toate</option>
-                  {LANGS.filter(l => l !== 'RO').map(l => <option key={l} value={l}>{l}</option>)}
-                </select>
-                <div className="flex items-center bg-white border border-[#e8e2de] rounded-lg p-0.5">
-                  {([
-                    { v: 'card', Icon: Squares2X2Icon, t: 'Carduri' },
-                    { v: 'compact', Icon: QueueListIcon, t: 'Compact' },
-                    { v: 'tabel', Icon: TableCellsIcon, t: 'Tabel' },
-                  ] as const).map(({ v, Icon, t }) => (
-                    <button key={v} onClick={() => changeView(v)} title={t}
-                      className={`h-7 w-7 rounded-md flex items-center justify-center transition-all ${viewMode === v ? 'bg-[#ce0100] text-white' : 'text-[#888] hover:bg-[#f9f7f5]'}`}>
-                      <Icon className="w-4 h-4" />
-                    </button>
-                  ))}
-                </div>
-              </div>
+              )}
 
-              <div className="flex-1 overflow-y-auto px-4 md:px-5 pb-4 flex flex-col gap-3">
-                {renderSection('pending', 'În așteptare', shownPending, '#c05c00')}
-                {renderSection('sent', 'Trimise', shownSent, '#166534')}
-                {!loading && records.length === 0 && (
-                  <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <p className="text-sm font-light text-[#888]">Nicio înregistrare</p>
-                    <p className="text-xs text-[#bbb] mt-1">Adaugă primul reminder folosind formularul de mai sus.</p>
-                  </div>
-                )}
-                {!loading && records.length > 0 && shownPending.length === 0 && shownSent.length === 0 && (
-                  <p className="text-center py-8 text-xs text-[#bbb]">Niciun rezultat pentru filtrul actual.</p>
-                )}
-              </div>
+              {docked('list') && (
+                <div ref={el => { sectionRefs.current.list = el }}
+                  className={`${mobileTab === 'formular' ? 'hidden md:flex' : 'flex'} flex-1 min-h-0 flex-col`}>
+                  {listContent}
+                </div>
+              )}
             </div>
-          </div>
+          )}
 
-          {/* HORIZONTAL DIVIDER — desktop only, solo si el panel está anclado */}
-          {refMode === 'docked' && (
+          {/* HORIZONTAL DIVIDER — desktop only */}
+          {leftVisible && rightVisible && (
             <div className="hidden md:block">
               <ResizableDivider onResize={handleResizeH} />
             </div>
           )}
 
-          {/* RIGHT — Reference panels (anclado). En modo ventana no se pinta aquí. */}
-          {refMode !== 'popup' && (
-            <div className={`${mobileTab !== 'referinta' ? 'hidden' : 'flex'} ${refMode === 'docked' ? 'md:flex' : 'md:hidden'} flex-1 min-w-0 flex-col overflow-x-hidden`}>
-              {referencePanel}
+          {/* RIGHT — Citate + Citate RO */}
+          {rightVisible && (
+            <div ref={rightPanelRef}
+              className={`${mobileTab !== 'referinta' ? 'hidden' : 'flex'} md:flex flex-1 min-w-0 flex-col overflow-x-hidden`}>
+              {docked('citate') && (
+                <div ref={el => { sectionRefs.current.citate = el }}
+                  style={docked('citateRO') ? { height: `${rightTopHeight}%` } : undefined}
+                  className={`${docked('citateRO') ? 'flex-shrink-0' : 'flex-1'} min-h-0 flex flex-col overflow-x-hidden`}>
+                  {citateContent}
+                </div>
+              )}
+              {docked('citate') && docked('citateRO') && <VerticalDivider onResize={handleResizeV} />}
+              {docked('citateRO') && (
+                <div ref={el => { sectionRefs.current.citateRO = el }}
+                  className="flex-1 min-h-0 flex flex-col overflow-x-hidden">
+                  {citateROContent}
+                </div>
+              )}
             </div>
           )}
 
-          {/* Pestaña lateral para volver a abrir el panel */}
-          {refMode !== 'docked' && (
-            <button onClick={refMode === 'popup' ? dockPanel : () => setRefMode('docked')}
-              title={refMode === 'popup' ? 'Readu panoul în pagină' : 'Deschide panoul de referință'}
-              className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-20 flex-col items-center gap-2 py-4 px-1.5 rounded-l-xl bg-white border border-r-0 border-[#e8e2de] shadow-[0_4px_16px_rgba(0,0,0,0.08)] text-[#ce0100] hover:bg-[#fff4f4] transition-all">
-              <ChevronLeftIcon className="w-4 h-4" />
-              <span className="text-[11px] font-semibold" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
-                {refMode === 'popup' ? 'Readu panoul' : 'Panou referință'}
-              </span>
-            </button>
+          {/* Secciones cerradas: botones para volver a abrirlas */}
+          {hiddenIds.length > 0 && (
+            <div className="hidden md:flex absolute right-4 bottom-4 z-30 items-center gap-1.5 bg-white border border-[#e8e2de] rounded-xl shadow-[0_8px_24px_rgba(0,0,0,0.10)] px-2.5 py-2">
+              <span className="text-[10px] font-semibold text-[#9c8e87] uppercase tracking-wide mr-1">Secțiuni închise</span>
+              {hiddenIds.map(id => (
+                <button key={id} onClick={() => setMode(id, 'docked')} title="Redeschide"
+                  className="h-7 px-2.5 rounded-lg bg-[#fff4f4] text-[#ce0100] text-[11px] font-semibold border border-[#ffd3d3] flex items-center gap-1 hover:bg-[#ffe9e9] transition-all">
+                  <PlusIcon className="w-3 h-3" /> {SECTION_TITLES[id]}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {!leftVisible && !rightVisible && (
+            <div className="hidden md:flex flex-1 items-center justify-center text-sm font-light text-[#bbb]">
+              Toate secțiunile sunt în ferestre sau închise.
+            </div>
           )}
         </div>
       </div>
 
-      {/* Panel en ventana emergente */}
-      {popupContainer && createPortal(
-        <div className="h-full flex flex-col bg-white">{referencePanel}</div>,
-        popupContainer
-      )}
+      {/* Ventanas flotantes */}
+      {floatIds.map(id => geos[id] && (
+        <FloatingWindow key={id} title={SECTION_TITLES[id]} geo={geos[id]!}
+          z={zOrder.indexOf(id) + 1}
+          onFocus={() => { if (zOrder[zOrder.length - 1] !== id) bringToFront(id) }}
+          onChange={g => setGeos(prev => ({ ...prev, [id]: g }))}
+          onDock={() => setMode(id, 'docked')}
+          onClose={() => setMode(id, 'hidden')}>
+          {CONTENT[id]}
+        </FloatingWindow>
+      ))}
 
       <DeleteModal item={deleteItem} onClose={() => setDeleteItem(null)} onDeleted={fetchData} />
 
