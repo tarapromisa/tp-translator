@@ -24,10 +24,12 @@ type User = { id: string; full_name: string; email: string; language: string; ro
 type CitatIncomplete = {
   id: string; public_id: string; citat_ro: string | null; autor_original: string
   missing_langs: string[]; translators: Record<string, string>
+  data_asignarii?: string | null
 }
 type CitatROIncomplete = {
   id: string; public_id: string; text_original: string; autor_original: string
   traducator_ro_user?: { full_name: string } | null
+  data_asignarii?: string | null
 }
 
 const LANGS = ['RO','ES','EN','DE','PT','FR','IT']
@@ -278,6 +280,10 @@ export default function MailTLPPage() {
   // Layout
   const [leftWidth, setLeftWidth] = useState(420)
   const [rightTopHeight, setRightTopHeight] = useState(50) // percentage
+  const [formHeight, setFormHeight] = useState<number | null>(null) // px, null = automático
+  const formRef = useRef<HTMLDivElement>(null)
+  const rightPanelRef = useRef<HTMLDivElement>(null)
+  const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768
   const [mobileTab, setMobileTab] = useState<'lista' | 'formular' | 'referinta'>('lista')
 
   const canManage = currentUser?.role === 'Coordonator principal' || currentUser?.role === 'Admin' || currentUser?.role === 'Coordonator'
@@ -331,7 +337,7 @@ export default function MailTLPPage() {
         const tf = TRANSLATOR_FIELDS[l]
         if (row[tf]?.full_name) translators[l] = row[tf].full_name
       })
-      return { id: row.id, public_id: row.public_id, citat_ro: row.citat_ro, autor_original: row.autor_original, missing_langs: missing, translators }
+      return { id: row.id, public_id: row.public_id, citat_ro: row.citat_ro, autor_original: row.autor_original, missing_langs: missing, translators, data_asignarii: row.data_asignarii ?? null }
     })
     setCitateIncomp(incompCitate)
     setCitateROIncomp(ro || [])
@@ -390,11 +396,21 @@ export default function MailTLPPage() {
     setLeftWidth(w => Math.max(300, Math.min(700, w + dx)))
   }, [])
 
+  const handleResizeForm = useCallback((dy: number) => {
+    setFormHeight(h => {
+      const current = h ?? formRef.current?.offsetHeight ?? 300
+      return Math.max(80, Math.min(700, current + dy))
+    })
+  }, [])
+
   const handleResizeV = useCallback((dy: number) => {
-    setRightTopHeight(h => Math.max(20, Math.min(80, h + dy / 6)))
+    // convierte los píxeles arrastrados en % real del panel, para que siga al ratón
+    const total = rightPanelRef.current?.offsetHeight || 600
+    setRightTopHeight(h => Math.max(15, Math.min(85, h + (dy / total) * 100)))
   }, [])
 
   const fmt = (d: string) => new Date(d).toLocaleDateString('ro-RO', { day:'2-digit', month:'short', year:'numeric' })
+  const fmtShort = (d: string) => new Date(d).toLocaleDateString('ro-RO', { day:'2-digit', month:'short' })
   const pendingRecords = records.filter(r => !r.trimis)
   const sentRecords    = records.filter(r => r.trimis)
 
@@ -465,7 +481,9 @@ export default function MailTLPPage() {
 
             {/* New record form */}
             {canManage && (
-              <div className={`${mobileTab === 'lista' ? 'hidden md:block' : ''} flex-shrink-0 p-5 border-b border-[#f0e9e5]`}>
+              <div ref={formRef}
+                style={{ height: isDesktop && formHeight !== null ? formHeight : undefined }}
+                className={`${mobileTab === 'lista' ? 'hidden md:block' : ''} flex-shrink-0 p-5 md:overflow-y-auto`}>
                 <p className="text-[11px] font-semibold text-[#888] uppercase tracking-wide mb-3">Înregistrare nouă</p>
                 <div className="bg-white border border-[#e8e2de] rounded-2xl p-4 flex flex-col gap-3">
                   <select value={traducator} onChange={e => setTraducator(e.target.value)}
@@ -492,6 +510,13 @@ export default function MailTLPPage() {
                     {saving ? 'Se salvează...' : 'Adaugă înregistrare'}
                   </button>
                 </div>
+              </div>
+            )}
+
+            {/* VERTICAL DIVIDER formular / listă — desktop only */}
+            {canManage && (
+              <div className="hidden md:block">
+                <VerticalDivider onResize={handleResizeForm} />
               </div>
             )}
 
@@ -532,7 +557,7 @@ export default function MailTLPPage() {
           </div>
 
           {/* RIGHT — Reference panels */}
-          <div className={`${mobileTab !== 'referinta' ? 'hidden' : ''} md:flex flex-1 min-w-0 flex-col overflow-x-hidden`}>
+          <div ref={rightPanelRef} className={`${mobileTab !== 'referinta' ? 'hidden' : ''} md:flex flex-1 min-w-0 flex-col overflow-x-hidden`}>
 
             {/* TOP — Citate incomplete */}
             <div style={{ height: `${rightTopHeight}%` }} className="flex flex-col overflow-x-hidden">
@@ -560,7 +585,14 @@ export default function MailTLPPage() {
                       </button>
                       <div className="flex-1 min-w-0">
                         <p className="text-[12px] text-[#555] truncate font-light">{c.citat_ro || '—'}</p>
-                        <p className="text-[10px] text-[#aaa] mt-0.5">— {c.autor_original}</p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <p className="text-[10px] text-[#aaa]">— {c.autor_original}</p>
+                          {c.data_asignarii && (
+                            <span className="text-[10px] text-[#888] bg-[#f9f7f5] px-1.5 rounded" title="Data asignării">
+                              {fmtShort(c.data_asignarii)}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                     {/* Missing langs + translators */}
@@ -608,6 +640,11 @@ export default function MailTLPPage() {
                         <p className="text-[12px] text-[#555] truncate font-light">{c.text_original}</p>
                         <div className="flex items-center gap-2 mt-0.5">
                           <p className="text-[10px] text-[#aaa]">— {c.autor_original}</p>
+                          {c.data_asignarii && (
+                            <span className="text-[10px] text-[#888] bg-[#f9f7f5] px-1.5 rounded" title="Data asignării">
+                              {fmtShort(c.data_asignarii)}
+                            </span>
+                          )}
                           {(c as any).traducator_ro_user?.full_name && (
                             <span className="text-[10px] text-[#888] bg-[#f9f7f5] px-1.5 rounded">
                               {(c as any).traducator_ro_user.full_name.split(' ')[0]}
