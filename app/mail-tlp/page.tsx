@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import Sidebar from '@/components/Sidebar'
 import AccessDenied from '@/components/AccessDenied'
 import { useUser } from '@/context/UserContext'
@@ -9,6 +10,8 @@ import EmailSentAlert from '@/components/EmailSentAlert'
 import {
   PlusIcon, XMarkIcon, PaperAirplaneIcon, TrashIcon,
   MagnifyingGlassIcon, CheckCircleIcon, ExclamationTriangleIcon,
+  ArrowTopRightOnSquareIcon, ArrowsPointingInIcon, ChevronLeftIcon, ChevronDownIcon,
+  Squares2X2Icon, QueueListIcon, TableCellsIcon,
 } from '@heroicons/react/24/outline'
 import { CheckCircleIcon as CheckSolid } from '@heroicons/react/24/solid'
 
@@ -39,6 +42,10 @@ const LANG_FIELDS: Record<string, string> = {
 const TRANSLATOR_FIELDS: Record<string, string> = {
   ES:'traductor_es', EN:'traductor_en', DE:'traductor_de', PT:'traductor_pt', FR:'traductor_fr', IT:'traductor_it'
 }
+// Columnas de la vista tabla: Traducător | Limbă | Perioadă | ID-uri | Acțiuni
+const TABLE_COLS = 'minmax(150px,1.3fr) 52px 130px minmax(160px,2fr) 128px'
+type ViewMode = 'card' | 'compact' | 'tabel'
+
 const GIF = 'https://res.cloudinary.com/dlgqpbpwu/image/upload/v1780257817/Gif_TPT_2026_1_wl9try.gif'
 
 function generateEmailHtml(toName: string, dinZiua: string, panaZiua: string, citateLipsesc: string, fromName: string, fromEmail: string, language: string, fromRole: string) {
@@ -156,36 +163,33 @@ function DeleteModal({ item, onClose, onDeleted }: { item: MailRecord|null; onCl
 }
 
 // ── Resizable divider ─────────────────────────────────────────────
-function ResizableDivider({ onResize }: { onResize: (dx: number) => void }) {
-  const dragging = useRef(false)
-  const lastX = useRef(0)
-
-  const onMouseDown = (e: React.MouseEvent) => {
-    dragging.current = true
-    lastX.current = e.clientX
-    document.body.style.cursor = 'col-resize'
-    document.body.style.userSelect = 'none'
+// Los listeners se ponen en la ventana donde se arrastra (funciona también en la ventana emergente)
+function startDrag(e: React.MouseEvent, axis: 'x' | 'y', onResize: (d: number) => void) {
+  e.preventDefault()
+  const win = (e.view as unknown as Window) || window
+  const doc = win.document
+  let last = axis === 'x' ? e.clientX : e.clientY
+  doc.body.style.cursor = axis === 'x' ? 'col-resize' : 'row-resize'
+  doc.body.style.userSelect = 'none'
+  const onMove = (ev: MouseEvent) => {
+    const cur = axis === 'x' ? ev.clientX : ev.clientY
+    onResize(cur - last)
+    last = cur
   }
+  const onUp = () => {
+    doc.body.style.cursor = ''
+    doc.body.style.userSelect = ''
+    win.removeEventListener('mousemove', onMove)
+    win.removeEventListener('mouseup', onUp)
+  }
+  win.addEventListener('mousemove', onMove)
+  win.addEventListener('mouseup', onUp)
+}
 
-  useEffect(() => {
-    const onMouseMove = (e: MouseEvent) => {
-      if (!dragging.current) return
-      onResize(e.clientX - lastX.current)
-      lastX.current = e.clientX
-    }
-    const onMouseUp = () => {
-      dragging.current = false
-      document.body.style.cursor = ''
-      document.body.style.userSelect = ''
-    }
-    window.addEventListener('mousemove', onMouseMove)
-    window.addEventListener('mouseup', onMouseUp)
-    return () => { window.removeEventListener('mousemove', onMouseMove); window.removeEventListener('mouseup', onMouseUp) }
-  }, [onResize])
-
+function ResizableDivider({ onResize }: { onResize: (dx: number) => void }) {
   return (
-    <div onMouseDown={onMouseDown}
-      className="w-[8px] flex-shrink-0 cursor-col-resize flex items-center justify-center group relative"
+    <div onMouseDown={e => startDrag(e, 'x', onResize)}
+      className="w-[8px] h-full flex-shrink-0 cursor-col-resize flex items-center justify-center group relative"
       style={{ background: 'transparent' }}>
       <div className="absolute inset-y-0 left-[3px] w-[1px] bg-[#e8e2de] group-hover:bg-[#ce0100] transition-colors" />
       <div className="opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1 z-10">
@@ -197,34 +201,8 @@ function ResizableDivider({ onResize }: { onResize: (dx: number) => void }) {
 
 // ── Vertical resizable divider ────────────────────────────────────
 function VerticalDivider({ onResize }: { onResize: (dy: number) => void }) {
-  const dragging = useRef(false)
-  const lastY = useRef(0)
-
-  const onMouseDown = (e: React.MouseEvent) => {
-    dragging.current = true
-    lastY.current = e.clientY
-    document.body.style.cursor = 'row-resize'
-    document.body.style.userSelect = 'none'
-  }
-
-  useEffect(() => {
-    const onMouseMove = (e: MouseEvent) => {
-      if (!dragging.current) return
-      onResize(e.clientY - lastY.current)
-      lastY.current = e.clientY
-    }
-    const onMouseUp = () => {
-      dragging.current = false
-      document.body.style.cursor = ''
-      document.body.style.userSelect = ''
-    }
-    window.addEventListener('mousemove', onMouseMove)
-    window.addEventListener('mouseup', onMouseUp)
-    return () => { window.removeEventListener('mousemove', onMouseMove); window.removeEventListener('mouseup', onMouseUp) }
-  }, [onResize])
-
   return (
-    <div onMouseDown={onMouseDown}
+    <div onMouseDown={e => startDrag(e, 'y', onResize)}
       className="h-[8px] flex-shrink-0 cursor-row-resize flex items-center justify-center group relative"
       style={{ background: 'transparent' }}>
       <div className="absolute inset-x-0 top-[3px] h-[1px] bg-[#e8e2de] group-hover:bg-[#ce0100] transition-colors" />
@@ -360,9 +338,12 @@ export default function MailTLPPage() {
     setSaving(false); fetchData()
   }
 
+  const [lastAdded, setLastAdded] = useState<string | null>(null)
   const addId = (id: string) => {
     const ids = citateLipsesc.split(',').map(s => s.trim()).filter(Boolean)
     if (!ids.includes(id)) setCitateLipsesc([...ids, id].join(', '))
+    setLastAdded(id)
+    setTimeout(() => setLastAdded(cur => (cur === id ? null : cur)), 1500)
   }
 
   const sendEmail = async (record: MailRecord) => {
@@ -414,151 +395,149 @@ export default function MailTLPPage() {
   const pendingRecords = records.filter(r => !r.trimis)
   const sentRecords    = records.filter(r => r.trimis)
 
+  // ── Panou referință: anclado / cerrado / ventana emergente ──
+  const [refMode, setRefMode] = useState<'docked' | 'hidden' | 'popup'>('docked')
+  const [popupContainer, setPopupContainer] = useState<HTMLElement | null>(null)
+  const popupWinRef = useRef<Window | null>(null)
+
+  const openPopup = () => {
+    const w = window.open('', 'tp-referinta', 'width=560,height=860')
+    if (!w) return
+    const doc = w.document
+    doc.title = 'Referință · Mail TLP'
+    doc.head.innerHTML = ''
+    // copiamos los estilos (Tailwind + fuentes) a la ventana nueva
+    document.querySelectorAll('link[rel="stylesheet"], style').forEach(node => {
+      const clone = node.cloneNode(true) as HTMLElement
+      if (node instanceof HTMLLinkElement) (clone as HTMLLinkElement).href = node.href
+      doc.head.appendChild(clone)
+    })
+    doc.body.className = document.body.className
+    doc.body.style.margin = '0'
+    doc.body.innerHTML = ''
+    const container = doc.createElement('div')
+    container.style.height = '100vh'
+    doc.body.appendChild(container)
+    // si el usuario cierra la ventana, el panel vuelve a la página
+    w.addEventListener('pagehide', () => {
+      popupWinRef.current = null
+      setPopupContainer(null)
+      setRefMode('docked')
+    })
+    popupWinRef.current = w
+    setPopupContainer(container)
+    setRefMode('popup')
+  }
+
+  const dockPanel = () => {
+    popupWinRef.current?.close()
+    popupWinRef.current = null
+    setPopupContainer(null)
+    setRefMode('docked')
+  }
+
+  useEffect(() => {
+    const closePopup = () => popupWinRef.current?.close()
+    window.addEventListener('beforeunload', closePopup)
+    return () => { window.removeEventListener('beforeunload', closePopup); closePopup() }
+  }, [])
+
+  // ── Lista de registros: vista, búsqueda, filtro, secciones plegables ──
+  const [viewMode, setViewMode] = useState<ViewMode>('card')
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem('mailtlp_view')
+      if (v === 'card' || v === 'compact' || v === 'tabel') setViewMode(v)
+    } catch {}
+  }, [])
+  const changeView = (v: ViewMode) => {
+    setViewMode(v)
+    try { localStorage.setItem('mailtlp_view', v) } catch {}
+  }
+  const [searchRec, setSearchRec] = useState('')
+  const [langFilter, setLangFilter] = useState('')
+  const [collapsed, setCollapsed] = useState<{ pending: boolean; sent: boolean }>({ pending: false, sent: false })
+
+  const matchRec = (r: MailRecord) => {
+    if (langFilter && r.traducator_user?.language !== langFilter) return false
+    if (!searchRec) return true
+    const q = searchRec.toLowerCase()
+    return (r.traducator_user?.full_name ?? '').toLowerCase().includes(q)
+      || (r.traducator_user?.email ?? '').toLowerCase().includes(q)
+      || (r.citate_lipsesc ?? '').toLowerCase().includes(q)
+  }
+  const shownPending = pendingRecords.filter(matchRec)
+  const shownSent    = sentRecords.filter(matchRec)
+
+  const renderSection = (key: 'pending' | 'sent', title: string, list: MailRecord[], color: string) => {
+    if (list.length === 0) return null
+    const isCollapsed = collapsed[key]
+    const rows = list.map(record => (
+      <RecordCard key={record.id} record={record} canManage={canManage} variant={viewMode}
+        isSending={key === 'pending' && sendingId === record.id}
+        isSent={key === 'pending' && sentIds.includes(record.id)}
+        onSend={key === 'pending' ? () => sendEmail(record) : () => {}}
+        onDelete={() => setDeleteItem(record)} fmt={fmt} asignariMap={asignariMap} />
+    ))
+    return (
+      <div>
+        <button onClick={() => setCollapsed(c => ({ ...c, [key]: !c[key] }))}
+          className="flex items-center gap-1.5 text-[10px] font-semibold text-[#888] uppercase tracking-wide mb-2 hover:text-[#111] transition-colors">
+          <ChevronDownIcon className={`w-3 h-3 transition-transform ${isCollapsed ? '-rotate-90' : ''}`} />
+          <span className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />
+          {title} · {list.length}
+        </button>
+        {!isCollapsed && (
+          viewMode === 'tabel' ? (
+            <div className="bg-white border border-[#e8e2de] rounded-xl overflow-x-auto">
+              <div className="min-w-[620px]">
+                <div className="grid gap-3 px-3 h-8 items-center bg-[#faf7f5] border-b border-[#f0e9e5] text-[10px] font-semibold text-[#9c8e87] uppercase tracking-wide"
+                  style={{ gridTemplateColumns: TABLE_COLS }}>
+                  <span>Traducător</span><span>Limbă</span><span>Perioadă</span><span>ID-uri</span><span className="text-right">Acțiuni</span>
+                </div>
+                {rows}
+              </div>
+            </div>
+          ) : viewMode === 'compact' ? (
+            <div className="bg-white border border-[#e8e2de] rounded-xl overflow-hidden">{rows}</div>
+          ) : rows
+        )}
+      </div>
+    )
+  }
+
   const filteredCitate   = citateIncomp.filter(c => !searchCitate || c.public_id.toLowerCase().includes(searchCitate.toLowerCase()) || c.citat_ro?.toLowerCase().includes(searchCitate.toLowerCase()))
   const filteredCitateRO = citateROIncomp.filter(c => !searchCitateRO || c.public_id.toLowerCase().includes(searchCitateRO.toLowerCase()) || c.text_original?.toLowerCase().includes(searchCitateRO.toLowerCase()))
 
-  return (
-    <main className="flex h-[calc(100dvh-4rem-env(safe-area-inset-top))] md:h-dvh overflow-hidden bg-[#f9f7f5]">
-      <Sidebar />
-      <div className="flex-1 w-0 flex flex-col overflow-x-hidden">
-
-        {/* Header */}
-        <div className="flex-shrink-0 px-4 pt-6 pb-4 md:px-8 md:pt-7 md:pb-5 border-b border-[#f0e9e5] bg-[#f9f7f5]">
-          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-            <div>
-              <p className="text-[11px] font-semibold text-[#9c8e87] uppercase tracking-[0.15em] mb-2">Coordonare traduceri</p>
-              <h1 className="text-[36px] md:text-[44px] leading-none tracking-tight font-light text-[#111] mb-3">Mail TLP / TLG</h1>
-              <div className="w-10 h-[3px] rounded-full bg-[#ce0100] mb-3" />
-              <p className="text-sm font-light text-[#666]">Trimite reminder-uri personalizate traducătorilor cu citatele lipsă.</p>
-            </div>
-            <div className="flex flex-col gap-3 md:items-end md:mt-1">
-              <div className="flex items-center gap-3">
-                <div>
-                  <p className="text-[11px] text-[#aaa] font-light">Înregistrări active</p>
-                  <p className="text-2xl font-light text-[#111] leading-none">{records.length}</p>
-                </div>
-                <div className="w-px h-10 bg-[#f0e9e5]" />
-                <div>
-                  <p className="text-[11px] text-[#aaa] font-light">În așteptare</p>
-                  <p className="text-2xl font-light text-[#c05c00] leading-none">{pendingRecords.length}</p>
-                </div>
-                <div className="w-px h-10 bg-[#f0e9e5]" />
-                <div>
-                  <p className="text-[11px] text-[#aaa] font-light">Trimise</p>
-                  <p className="text-2xl font-light text-[#166534] leading-none">{records.filter(r => r.trimis).length}</p>
-                </div>
-              </div>
-              {canManage && pendingRecords.length > 0 && (
-                <button onClick={sendAll} disabled={sendingAll}
-                  className="h-10 px-6 rounded-xl bg-[#ce0100] text-white text-sm font-semibold flex items-center justify-center gap-2 shadow-[0_4px_12px_rgba(206,1,0,0.22)] hover:bg-[#a80000] disabled:opacity-60 transition-all w-full md:w-auto">
-                  <PaperAirplaneIcon className="w-4 h-4" />
-                  {'TLG ' + (sendingAll ? 'Se trimite...' : 'Trimite tuturor (' + pendingRecords.length + ')')}
-                </button>
-              )}
-            </div>
-          </div>
+  // ── Contenido del panel de referencia (se usa anclado o en ventana emergente) ──
+  const referencePanel = (
+    <>
+      <div className="flex-shrink-0 h-10 px-3 md:px-4 flex items-center justify-between gap-2 bg-[#f9f7f5] border-b border-[#f0e9e5]">
+        <div className="flex items-center gap-2 min-w-0">
+          <p className="text-[10px] font-semibold text-[#9c8e87] uppercase tracking-[0.12em]">Panou referință</p>
+          {lastAdded && <span className="text-[11px] font-semibold text-[#166534] truncate">✓ {lastAdded} adăugat</span>}
         </div>
-
-        {/* Mobile tabs */}
-        <div className="flex md:hidden items-center gap-1.5 px-4 pt-4 pb-0">
-          {(['lista', 'formular', 'referinta'] as const).map(tab => (
-            <button key={tab} onClick={() => setMobileTab(tab)}
-              className={`h-8 px-4 rounded-xl text-[11px] font-semibold flex-1 transition-all capitalize ${
-                mobileTab === tab ? 'bg-[#ce0100] text-white' : 'bg-white border border-[#e8e2de] text-[#666]'
-              }`}>
-              {tab === 'lista' ? 'Listă' : tab === 'formular' ? 'Formular' : 'Referință'}
+        <div className="flex items-center gap-1">
+          {refMode === 'popup' ? (
+            <button onClick={dockPanel} title="Readu panoul în pagină"
+              className="h-7 px-2.5 rounded-lg border border-[#e8e2de] bg-white text-[11px] font-semibold text-[#555] flex items-center gap-1.5 hover:bg-[#fff4f4] hover:text-[#ce0100] transition-all">
+              <ArrowsPointingInIcon className="w-3.5 h-3.5" /> Readu în pagină
             </button>
-          ))}
+          ) : (
+            <>
+              <button onClick={openPopup} title="Deschide în fereastră separată"
+                className="hidden md:flex h-7 w-7 rounded-lg items-center justify-center text-[#888] hover:bg-white hover:text-[#ce0100] border border-transparent hover:border-[#e8e2de] transition-all">
+                <ArrowTopRightOnSquareIcon className="w-4 h-4" />
+              </button>
+              <button onClick={() => setRefMode('hidden')} title="Închide panoul"
+                className="hidden md:flex h-7 w-7 rounded-lg items-center justify-center text-[#888] hover:bg-white hover:text-[#ce0100] border border-transparent hover:border-[#e8e2de] transition-all">
+                <XMarkIcon className="w-4 h-4" />
+              </button>
+            </>
+          )}
         </div>
-
-        {/* Main split layout — desktop horizontal, mobile tabbed */}
-        <div className="flex-1 flex overflow-hidden">
-
-          {/* LEFT — Records + Form */}
-          <div
-            style={{ width: typeof window !== 'undefined' && window.innerWidth >= 768 ? leftWidth : undefined }}
-            className={`${mobileTab !== 'lista' && mobileTab !== 'formular' ? 'hidden' : ''} md:flex md:flex-col md:flex-shrink-0 overflow-x-hidden bg-[#f9f7f5] w-full md:w-auto`}>
-
-            {/* New record form */}
-            {canManage && (
-              <div ref={formRef}
-                style={{ height: isDesktop && formHeight !== null ? formHeight : undefined }}
-                className={`${mobileTab === 'lista' ? 'hidden md:block' : ''} flex-shrink-0 p-5 md:overflow-y-auto`}>
-                <p className="text-[11px] font-semibold text-[#888] uppercase tracking-wide mb-3">Înregistrare nouă</p>
-                <div className="bg-white border border-[#e8e2de] rounded-2xl p-4 flex flex-col gap-3">
-                  <select value={traducator} onChange={e => setTraducator(e.target.value)}
-                    className={`w-full h-10 rounded-xl border px-3 text-sm text-[#111] outline-none focus:border-[#ce0100] transition-all bg-white ${!traducator ? 'border-[#ffd3d3]' : 'border-[#f0e9e5]'}`}>
-                    <option value="">-- Selecteaza traducatorul --</option>
-                    {availableUsers.map(u => <option key={u.id} value={u.id}>{u.full_name} ({u.language})</option>)}
-                  </select>
-                  <div className="grid grid-cols-2 gap-2">
-                    <input type="date" value={dinZiua} onChange={e => setDinZiua(e.target.value)}
-                      className="w-full h-10 rounded-xl border border-[#f0e9e5] px-3 text-sm text-[#111] outline-none focus:border-[#ce0100] transition-all" />
-                    <input type="date" value={panaZiua} onChange={e => setPanaZiua(e.target.value)}
-                      className="w-full h-10 rounded-xl border border-[#f0e9e5] px-3 text-sm text-[#111] outline-none focus:border-[#ce0100] transition-all" />
-                  </div>
-                  <div>
-                    <textarea value={citateLipsesc} onChange={e => setCitateLipsesc(e.target.value)} rows={2}
-                      placeholder="ID-uri lipsa (CT001, CT002...)"
-                      className="w-full rounded-xl border border-[#f0e9e5] px-3 py-2 text-sm text-[#111] resize-none outline-none focus:border-[#ce0100] transition-all placeholder:text-[#ccc]" />
-                    <p className="text-[10px] text-[#bbb] mt-1">Apasă pe un ID din panoul din dreapta pentru a-l adăuga automat</p>
-                  </div>
-                  {formError && <p className="text-xs text-[#ce0100] font-medium">{formError}</p>}
-                  <button onClick={handleSave} disabled={saving}
-                    className="h-10 rounded-xl bg-[#ce0100] text-white text-sm font-semibold flex items-center justify-center gap-2 shadow-[0_4px_12px_rgba(206,1,0,0.22)] hover:bg-[#a80000] disabled:opacity-50 transition-all">
-                    <PlusIcon className="w-4 h-4" />
-                    {saving ? 'Se salvează...' : 'Adaugă înregistrare'}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* VERTICAL DIVIDER formular / listă — desktop only */}
-            {canManage && (
-              <div className="hidden md:block">
-                <VerticalDivider onResize={handleResizeForm} />
-              </div>
-            )}
-
-            {/* Records list */}
-            <div className={`${mobileTab === 'formular' ? 'hidden md:block' : ''} flex-1 overflow-y-auto p-4 md:p-5 flex flex-col gap-3`}>
-              {pendingRecords.length > 0 && (
-                <div>
-                  <p className="text-[10px] font-semibold text-[#888] uppercase tracking-wide mb-2">În așteptare · {pendingRecords.length}</p>
-                  {pendingRecords.map(record => (
-                    <RecordCard key={record.id} record={record} canManage={canManage}
-                      isSending={sendingId === record.id} isSent={sentIds.includes(record.id)}
-                      onSend={() => sendEmail(record)} onDelete={() => setDeleteItem(record)} fmt={fmt} asignariMap={asignariMap} />
-                  ))}
-                </div>
-              )}
-              {sentRecords.length > 0 && (
-                <div>
-                  <p className="text-[10px] font-semibold text-[#888] uppercase tracking-wide mb-2 mt-2">Trimise · {sentRecords.length}</p>
-                  {sentRecords.map(record => (
-                    <RecordCard key={record.id} record={record} canManage={canManage}
-                      isSending={false} isSent={false}
-                      onSend={() => {}} onDelete={() => setDeleteItem(record)} fmt={fmt} asignariMap={asignariMap} />
-                  ))}
-                </div>
-              )}
-              {!loading && records.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <p className="text-sm font-light text-[#888]">Nicio înregistrare</p>
-                  <p className="text-xs text-[#bbb] mt-1">Adaugă primul reminder folosind formularul de mai sus.</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* HORIZONTAL DIVIDER — desktop only */}
-          <div className="hidden md:block">
-            <ResizableDivider onResize={handleResizeH} />
-          </div>
-
-          {/* RIGHT — Reference panels */}
-          <div ref={rightPanelRef} className={`${mobileTab !== 'referinta' ? 'hidden' : ''} md:flex flex-1 min-w-0 flex-col overflow-x-hidden`}>
-
+      </div>
+      <div ref={rightPanelRef} className="flex-1 min-h-0 flex flex-col overflow-x-hidden">
             {/* TOP — Citate incomplete */}
             <div style={{ height: `${rightTopHeight}%` }} className="flex flex-col overflow-x-hidden">
               <div className="flex-shrink-0 px-4 md:px-5 py-3 border-b border-[#f0e9e5] flex items-center justify-between bg-white gap-2">
@@ -659,9 +638,193 @@ export default function MailTLPPage() {
                 {filteredCitateRO.length === 0 && <p className="text-center py-8 text-xs text-[#bbb]">Nicio cită RO incompletă.</p>}
               </div>
             </div>
+      </div>
+    </>
+  )
+
+  return (
+    <main className="flex h-[calc(100dvh-4rem-env(safe-area-inset-top))] md:h-dvh overflow-hidden bg-[#f9f7f5]">
+      <Sidebar />
+      <div className="flex-1 w-0 flex flex-col overflow-x-hidden">
+
+        {/* Header */}
+        <div className="flex-shrink-0 px-4 pt-6 pb-4 md:px-8 md:pt-7 md:pb-5 border-b border-[#f0e9e5] bg-[#f9f7f5]">
+          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div>
+              <p className="text-[11px] font-semibold text-[#9c8e87] uppercase tracking-[0.15em] mb-2">Coordonare traduceri</p>
+              <h1 className="text-[36px] md:text-[44px] leading-none tracking-tight font-light text-[#111] mb-3">Mail TLP / TLG</h1>
+              <div className="w-10 h-[3px] rounded-full bg-[#ce0100] mb-3" />
+              <p className="text-sm font-light text-[#666]">Trimite reminder-uri personalizate traducătorilor cu citatele lipsă.</p>
+            </div>
+            <div className="flex flex-col gap-3 md:items-end md:mt-1">
+              <div className="flex items-center gap-3">
+                <div>
+                  <p className="text-[11px] text-[#aaa] font-light">Înregistrări active</p>
+                  <p className="text-2xl font-light text-[#111] leading-none">{records.length}</p>
+                </div>
+                <div className="w-px h-10 bg-[#f0e9e5]" />
+                <div>
+                  <p className="text-[11px] text-[#aaa] font-light">În așteptare</p>
+                  <p className="text-2xl font-light text-[#c05c00] leading-none">{pendingRecords.length}</p>
+                </div>
+                <div className="w-px h-10 bg-[#f0e9e5]" />
+                <div>
+                  <p className="text-[11px] text-[#aaa] font-light">Trimise</p>
+                  <p className="text-2xl font-light text-[#166534] leading-none">{records.filter(r => r.trimis).length}</p>
+                </div>
+              </div>
+              {canManage && pendingRecords.length > 0 && (
+                <button onClick={sendAll} disabled={sendingAll}
+                  className="h-10 px-6 rounded-xl bg-[#ce0100] text-white text-sm font-semibold flex items-center justify-center gap-2 shadow-[0_4px_12px_rgba(206,1,0,0.22)] hover:bg-[#a80000] disabled:opacity-60 transition-all w-full md:w-auto">
+                  <PaperAirplaneIcon className="w-4 h-4" />
+                  {'TLG ' + (sendingAll ? 'Se trimite...' : 'Trimite tuturor (' + pendingRecords.length + ')')}
+                </button>
+              )}
+            </div>
           </div>
         </div>
+
+        {/* Mobile tabs */}
+        <div className="flex md:hidden items-center gap-1.5 px-4 pt-4 pb-0">
+          {(['lista', 'formular', 'referinta'] as const).map(tab => (
+            <button key={tab} onClick={() => setMobileTab(tab)}
+              className={`h-8 px-4 rounded-xl text-[11px] font-semibold flex-1 transition-all capitalize ${
+                mobileTab === tab ? 'bg-[#ce0100] text-white' : 'bg-white border border-[#e8e2de] text-[#666]'
+              }`}>
+              {tab === 'lista' ? 'Listă' : tab === 'formular' ? 'Formular' : 'Referință'}
+            </button>
+          ))}
+        </div>
+
+        {/* Main split layout — desktop horizontal, mobile tabbed */}
+        <div className="flex-1 flex overflow-hidden relative">
+
+          {/* LEFT — Records + Form */}
+          <div
+            style={{ width: isDesktop && refMode === 'docked' ? leftWidth : undefined }}
+            className={`${mobileTab !== 'lista' && mobileTab !== 'formular' ? 'hidden' : ''} md:flex md:flex-col ${refMode === 'docked' ? 'md:flex-shrink-0 md:w-auto' : 'md:flex-1'} overflow-x-hidden bg-[#f9f7f5] w-full`}>
+
+            {/* New record form */}
+            {canManage && (
+              <div ref={formRef}
+                style={{ height: isDesktop && formHeight !== null ? formHeight : undefined }}
+                className={`${mobileTab === 'lista' ? 'hidden md:block' : ''} flex-shrink-0 p-5 md:overflow-y-auto`}>
+                <p className="text-[11px] font-semibold text-[#888] uppercase tracking-wide mb-3">Înregistrare nouă</p>
+                <div className="bg-white border border-[#e8e2de] rounded-2xl p-4 flex flex-col gap-3">
+                  <select value={traducator} onChange={e => setTraducator(e.target.value)}
+                    className={`w-full h-10 rounded-xl border px-3 text-sm text-[#111] outline-none focus:border-[#ce0100] transition-all bg-white ${!traducator ? 'border-[#ffd3d3]' : 'border-[#f0e9e5]'}`}>
+                    <option value="">-- Selecteaza traducatorul --</option>
+                    {availableUsers.map(u => <option key={u.id} value={u.id}>{u.full_name} ({u.language})</option>)}
+                  </select>
+                  <div className="grid grid-cols-2 gap-2">
+                    <input type="date" value={dinZiua} onChange={e => setDinZiua(e.target.value)}
+                      className="w-full h-10 rounded-xl border border-[#f0e9e5] px-3 text-sm text-[#111] outline-none focus:border-[#ce0100] transition-all" />
+                    <input type="date" value={panaZiua} onChange={e => setPanaZiua(e.target.value)}
+                      className="w-full h-10 rounded-xl border border-[#f0e9e5] px-3 text-sm text-[#111] outline-none focus:border-[#ce0100] transition-all" />
+                  </div>
+                  <div>
+                    <textarea value={citateLipsesc} onChange={e => setCitateLipsesc(e.target.value)} rows={2}
+                      placeholder="ID-uri lipsa (CT001, CT002...)"
+                      className="w-full rounded-xl border border-[#f0e9e5] px-3 py-2 text-sm text-[#111] resize-none outline-none focus:border-[#ce0100] transition-all placeholder:text-[#ccc]" />
+                    <p className="text-[10px] text-[#bbb] mt-1">Apasă pe un ID din panoul din dreapta pentru a-l adăuga automat</p>
+                  </div>
+                  {formError && <p className="text-xs text-[#ce0100] font-medium">{formError}</p>}
+                  <button onClick={handleSave} disabled={saving}
+                    className="h-10 rounded-xl bg-[#ce0100] text-white text-sm font-semibold flex items-center justify-center gap-2 shadow-[0_4px_12px_rgba(206,1,0,0.22)] hover:bg-[#a80000] disabled:opacity-50 transition-all">
+                    <PlusIcon className="w-4 h-4" />
+                    {saving ? 'Se salvează...' : 'Adaugă înregistrare'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* VERTICAL DIVIDER formular / listă — desktop only */}
+            {canManage && (
+              <div className="hidden md:block">
+                <VerticalDivider onResize={handleResizeForm} />
+              </div>
+            )}
+
+            {/* Records list */}
+            <div className={`${mobileTab === 'formular' ? 'hidden md:flex' : 'flex'} flex-1 min-h-0 flex-col`}>
+              {/* Toolbar: búsqueda, idioma, vista */}
+              <div className="flex-shrink-0 px-4 md:px-5 pt-3 pb-2 flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-2 bg-white border border-[#e8e2de] rounded-lg px-3 h-8 flex-1 min-w-[120px]">
+                  <MagnifyingGlassIcon className="w-3.5 h-3.5 text-[#999] flex-shrink-0" />
+                  <input type="text" placeholder="Caută traducător sau ID..." value={searchRec} onChange={e => setSearchRec(e.target.value)}
+                    className="flex-1 min-w-0 bg-transparent outline-none text-xs placeholder:text-[#ccc]" />
+                  {searchRec && (
+                    <button onClick={() => setSearchRec('')} className="text-[#bbb] hover:text-[#666]"><XMarkIcon className="w-3.5 h-3.5" /></button>
+                  )}
+                </div>
+                <select value={langFilter} onChange={e => setLangFilter(e.target.value)}
+                  className="h-8 rounded-lg border border-[#e8e2de] bg-white px-2 text-xs text-[#555] outline-none focus:border-[#ce0100]">
+                  <option value="">Toate</option>
+                  {LANGS.filter(l => l !== 'RO').map(l => <option key={l} value={l}>{l}</option>)}
+                </select>
+                <div className="flex items-center bg-white border border-[#e8e2de] rounded-lg p-0.5">
+                  {([
+                    { v: 'card', Icon: Squares2X2Icon, t: 'Carduri' },
+                    { v: 'compact', Icon: QueueListIcon, t: 'Compact' },
+                    { v: 'tabel', Icon: TableCellsIcon, t: 'Tabel' },
+                  ] as const).map(({ v, Icon, t }) => (
+                    <button key={v} onClick={() => changeView(v)} title={t}
+                      className={`h-7 w-7 rounded-md flex items-center justify-center transition-all ${viewMode === v ? 'bg-[#ce0100] text-white' : 'text-[#888] hover:bg-[#f9f7f5]'}`}>
+                      <Icon className="w-4 h-4" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto px-4 md:px-5 pb-4 flex flex-col gap-3">
+                {renderSection('pending', 'În așteptare', shownPending, '#c05c00')}
+                {renderSection('sent', 'Trimise', shownSent, '#166534')}
+                {!loading && records.length === 0 && (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <p className="text-sm font-light text-[#888]">Nicio înregistrare</p>
+                    <p className="text-xs text-[#bbb] mt-1">Adaugă primul reminder folosind formularul de mai sus.</p>
+                  </div>
+                )}
+                {!loading && records.length > 0 && shownPending.length === 0 && shownSent.length === 0 && (
+                  <p className="text-center py-8 text-xs text-[#bbb]">Niciun rezultat pentru filtrul actual.</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* HORIZONTAL DIVIDER — desktop only, solo si el panel está anclado */}
+          {refMode === 'docked' && (
+            <div className="hidden md:block">
+              <ResizableDivider onResize={handleResizeH} />
+            </div>
+          )}
+
+          {/* RIGHT — Reference panels (anclado). En modo ventana no se pinta aquí. */}
+          {refMode !== 'popup' && (
+            <div className={`${mobileTab !== 'referinta' ? 'hidden' : 'flex'} ${refMode === 'docked' ? 'md:flex' : 'md:hidden'} flex-1 min-w-0 flex-col overflow-x-hidden`}>
+              {referencePanel}
+            </div>
+          )}
+
+          {/* Pestaña lateral para volver a abrir el panel */}
+          {refMode !== 'docked' && (
+            <button onClick={refMode === 'popup' ? dockPanel : () => setRefMode('docked')}
+              title={refMode === 'popup' ? 'Readu panoul în pagină' : 'Deschide panoul de referință'}
+              className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-20 flex-col items-center gap-2 py-4 px-1.5 rounded-l-xl bg-white border border-r-0 border-[#e8e2de] shadow-[0_4px_16px_rgba(0,0,0,0.08)] text-[#ce0100] hover:bg-[#fff4f4] transition-all">
+              <ChevronLeftIcon className="w-4 h-4" />
+              <span className="text-[11px] font-semibold" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
+                {refMode === 'popup' ? 'Readu panoul' : 'Panou referință'}
+              </span>
+            </button>
+          )}
+        </div>
       </div>
+
+      {/* Panel en ventana emergente */}
+      {popupContainer && createPortal(
+        <div className="h-full flex flex-col bg-white">{referencePanel}</div>,
+        popupContainer
+      )}
 
       <DeleteModal item={deleteItem} onClose={() => setDeleteItem(null)} onDeleted={fetchData} />
 
@@ -678,8 +841,9 @@ export default function MailTLPPage() {
 }
 
 // ── Record Card ───────────────────────────────────────────────────
-function RecordCard({ record, canManage, isSending, isSent, onSend, onDelete, fmt, asignariMap }: {
+function RecordCard({ record, canManage, isSending, isSent, onSend, onDelete, fmt, asignariMap, variant = 'card' }: {
   record: MailRecord; canManage: boolean; isSending: boolean; isSent: boolean
+  variant?: ViewMode
   onSend: ()=>void; onDelete: ()=>void; fmt: (d:string)=>string
   asignariMap: Record<string, string>
 }) {
@@ -720,66 +884,119 @@ function RecordCard({ record, canManage, isSending, isSent, onSend, onDelete, fm
   const dateRange = `${fmt(record.din_ziua)} — ${fmt(record.pana_ziua)}`
   const idList = ids.join(', ')
 
+  const shortDate = (d: string) => new Date(d).toLocaleDateString('ro-RO', { day: '2-digit', month: 'short' })
+
+  const actions = (small: boolean) => (
+    <div className="flex items-center gap-1.5 justify-end flex-shrink-0">
+      {!record.trimis && canManage && (
+        <button onClick={onSend} disabled={isSending || !record.citate_lipsesc} title="Trimite TLP"
+          className={`${small ? 'h-7 px-2' : 'h-8 px-3'} rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition-all ${
+            isSent ? 'bg-[#edfaf3] text-[#166534]' : 'bg-[#ce0100] text-white shadow-[0_3px_8px_rgba(206,1,0,0.2)] hover:bg-[#a80000] disabled:opacity-50'
+          }`}>
+          {isSent ? <><CheckSolid className="w-3 h-3"/>{!small && 'Trimis!'}</> : isSending ? '...' : <><PaperAirplaneIcon className="w-3 h-3"/>TLP</>}
+        </button>
+      )}
+      {canManage && ids.length > 0 && (
+        <button onClick={() => setShowModal(true)} title="Șablon email"
+          className={`${small ? 'h-7 px-2' : 'h-8 px-3'} rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition-all border bg-white text-[#555] border-[#e8e2de] hover:bg-[#f9f7f5]`}>
+          ⎘{!small && ' Șablon'}
+        </button>
+      )}
+      {canManage && (
+        <button onClick={onDelete} title="Șterge"
+          className={`${small ? 'h-7 w-7' : 'h-8 w-8'} rounded-lg bg-[#fff1f1] text-[#ce0100] flex items-center justify-center hover:bg-[#ffe0e0] transition-all`}>
+          <TrashIcon className="w-3.5 h-3.5" />
+        </button>
+      )}
+    </div>
+  )
+
+  const idChip = (id: string) => (
+    <span key={id} className="text-[10px] font-bold px-2 h-[20px] inline-flex items-center gap-1 rounded-full bg-[#fff4f4] text-[#ce0100] border border-[#ffd3d3]">
+      {id}
+      {asignariMap[id] && (
+        <span className="font-normal text-[#888]" title="Data asignării">· {shortDate(asignariMap[id])}</span>
+      )}
+    </span>
+  )
+
+  const langChip = (
+    <span className="text-[10px] font-bold px-2 h-[16px] inline-flex items-center rounded-full bg-[#fff4f4] text-[#ce0100] border border-[#ffd3d3] w-fit">
+      {record.traducator_user?.language}
+    </span>
+  )
+  const statusDot = <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${record.trimis ? 'bg-[#166534]' : 'bg-[#c05c00]'}`} />
+
+  let body: React.ReactNode
+
+  if (variant === 'tabel') {
+    body = (
+      <div className={`grid gap-3 px-3 py-2 items-center border-b border-[#f8f3f0] hover:bg-[#faf7f5] transition-colors ${record.trimis ? 'opacity-70' : ''}`}
+        style={{ gridTemplateColumns: TABLE_COLS }}>
+        <div className="min-w-0 flex items-center gap-2">
+          {statusDot}
+          <div className="min-w-0">
+            <p className="text-[12px] font-semibold text-[#111] truncate">{record.traducator_user?.full_name ?? '—'}</p>
+            <p className="text-[10px] text-[#999] truncate">
+              {record.trimis && record.trimis_de_user ? `Trimis de ${record.trimis_de_user.full_name}` : record.traducator_user?.email}
+            </p>
+          </div>
+        </div>
+        {langChip}
+        <span className="text-[11px] text-[#666] whitespace-nowrap">{shortDate(record.din_ziua)} — {shortDate(record.pana_ziua)}</span>
+        <div className="flex flex-wrap gap-1">
+          {ids.length > 0 ? ids.map(idChip) : <span className="text-[11px] text-[#ccc] italic">—</span>}
+        </div>
+        {actions(true)}
+      </div>
+    )
+  } else if (variant === 'compact') {
+    body = (
+      <div className={`flex items-center gap-2 px-3 h-11 border-b border-[#f8f3f0] hover:bg-[#faf7f5] transition-colors ${record.trimis ? 'opacity-70' : ''}`}>
+        {statusDot}
+        <p className="text-[12px] font-semibold text-[#111] truncate min-w-0 flex-1">{record.traducator_user?.full_name ?? '—'}</p>
+        {langChip}
+        <span className="text-[10px] text-[#888] whitespace-nowrap hidden sm:inline">{shortDate(record.din_ziua)}–{shortDate(record.pana_ziua)}</span>
+        <span className="text-[10px] font-bold px-2 h-[18px] inline-flex items-center rounded-full bg-[#fff4f4] text-[#ce0100] border border-[#ffd3d3] whitespace-nowrap cursor-default"
+          title={ids.map(id => asignariMap[id] ? `${id} · ${shortDate(asignariMap[id])}` : id).join('\n')}>
+          {ids.length} ID
+        </span>
+        {actions(true)}
+      </div>
+    )
+  } else {
+    body = (
+      <div className={`bg-white border border-[#e8e2de] rounded-xl mb-2 overflow-x-hidden ${record.trimis ? 'opacity-70' : ''}`}>
+        <div className={`h-1 ${record.trimis ? 'bg-[#166534]' : 'bg-[#c05c00]'}`} />
+        <div className="p-4">
+          <div className="flex items-start justify-between gap-2 mb-3">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-[#111]">{record.traducator_user?.full_name ?? '—'}</p>
+              <p className="text-[11px] text-[#888] truncate">{record.traducator_user?.email}</p>
+              <div className="mt-1">{langChip}</div>
+            </div>
+            {actions(false)}
+          </div>
+          <div className="flex items-center gap-1.5 text-[11px] text-[#666] mb-3 bg-[#faf7f5] rounded-lg px-3 py-1.5">
+            <span>{fmt(record.din_ziua)}</span><span className="text-[#ccc]">—</span><span>{fmt(record.pana_ziua)}</span>
+          </div>
+          {ids.length > 0 ? (
+            <div className="flex flex-wrap gap-1">{ids.map(idChip)}</div>
+          ) : <p className="text-[11px] text-[#ccc] italic">Niciun ID adăugat</p>}
+          {record.trimis && record.trimis_de_user && (
+            <div className="mt-3 pt-2 border-t border-[#f0e9e5] flex items-center gap-1.5">
+              <CheckCircleIcon className="w-3.5 h-3.5 text-[#166534]" />
+              <p className="text-[10px] text-[#166534]">Trimis de <strong>{record.trimis_de_user.full_name}</strong></p>
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <>
-    <div className={`bg-white border border-[#e8e2de] rounded-xl mb-2 overflow-x-hidden ${record.trimis ? 'opacity-70' : ''}`}>
-      <div className={`h-1 ${record.trimis ? 'bg-[#166534]' : 'bg-[#c05c00]'}`} />
-      <div className="p-4">
-        <div className="flex items-start justify-between gap-2 mb-3">
-          <div>
-            <p className="text-sm font-semibold text-[#111]">{record.traducator_user?.full_name ?? '—'}</p>
-            <p className="text-[11px] text-[#888]">{record.traducator_user?.email}</p>
-            <span className="text-[10px] font-bold px-2 h-[16px] inline-flex items-center rounded-full bg-[#fff4f4] text-[#ce0100] border border-[#ffd3d3] mt-1">
-              {record.traducator_user?.language}
-            </span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            {!record.trimis && canManage && (
-              <button onClick={onSend} disabled={isSending || !record.citate_lipsesc}
-                className={`h-8 px-3 rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition-all ${
-                  isSent ? 'bg-[#edfaf3] text-[#166534]' : 'bg-[#ce0100] text-white shadow-[0_3px_8px_rgba(206,1,0,0.2)] hover:bg-[#a80000] disabled:opacity-50'
-                }`}>
-                {isSent ? <><CheckSolid className="w-3 h-3"/>Trimis!</> : isSending ? '...' : <><PaperAirplaneIcon className="w-3 h-3"/>TLP</>}
-              </button>
-            )}
-            {canManage && ids.length > 0 && (
-              <button onClick={() => setShowModal(true)}
-                className="h-8 px-3 rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition-all border bg-white text-[#555] border-[#e8e2de] hover:bg-[#f9f7f5]">
-                ⎘ Șablon
-              </button>
-            )}
-            {canManage && (
-              <button onClick={onDelete} className="h-8 w-8 rounded-lg bg-[#fff1f1] text-[#ce0100] flex items-center justify-center hover:bg-[#ffe0e0] transition-all">
-                <TrashIcon className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-        </div>
-        <div className="flex items-center gap-1.5 text-[11px] text-[#666] mb-3 bg-[#faf7f5] rounded-lg px-3 py-1.5">
-          <span>{fmt(record.din_ziua)}</span><span className="text-[#ccc]">—</span><span>{fmt(record.pana_ziua)}</span>
-        </div>
-
-        {ids.length > 0 ? (
-          <div className="flex flex-wrap gap-1">
-            {ids.map(id => (
-              <span key={id} className="text-[10px] font-bold px-2 h-[20px] inline-flex items-center gap-1 rounded-full bg-[#fff4f4] text-[#ce0100] border border-[#ffd3d3]">
-                {id}
-                {asignariMap[id] && (
-                  <span className="font-normal text-[#888]" title="Data asignării">
-                    · {new Date(asignariMap[id]).toLocaleDateString('ro-RO', { day: '2-digit', month: 'short' })}
-                  </span>
-                )}
-              </span>
-            ))}
-          </div>
-        ) : <p className="text-[11px] text-[#ccc] italic">Niciun ID adăugat</p>}
-        {record.trimis && record.trimis_de_user && (
-          <div className="mt-3 pt-2 border-t border-[#f0e9e5] flex items-center gap-1.5">
-            <CheckCircleIcon className="w-3.5 h-3.5 text-[#166534]" />
-            <p className="text-[10px] text-[#166534]">Trimis de <strong>{record.trimis_de_user.full_name}</strong></p>
-          </div>
-        )}
-      </div>
+      {body}
 
       {/* Hidden div for execCommand copy — renders the full styled email template */}
       <div ref={copyRef} style={{ position: 'absolute', left: '-9999px', top: 0 }}>
@@ -837,7 +1054,6 @@ function RecordCard({ record, canManage, isSending, isSent, onSend, onDelete, fm
           </p>
         </div>
       </div>
-    </div>
 
       {/* Șablon Modal */}
       {showModal && (
