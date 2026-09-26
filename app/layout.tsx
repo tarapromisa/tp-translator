@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { UserProvider } from '@/context/UserContext'
 import PageTransitionWrapper from '@/components/PageTransitionWrapper'
 import { Open_Sans, Montserrat, Playfair_Display } from 'next/font/google'
@@ -13,14 +13,22 @@ export const metadata: Metadata = {
   description: 'Premium translation platform'
 }
 
+// Necesario para que env(safe-area-inset-*) funcione en iPhone
+// y para que el contenido no quede bajo la barra de Safari / home indicator.
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+}
+
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="ro">
-      <body className={`${openSans.variable} ${montserrat.variable} ${playfair.variable} antialiased bg-[#fcfbfa]`}>
+      <body className={`${openSans.variable} ${montserrat.variable} ${playfair.variable} antialiased bg-[#fcfbfa] min-h-dvh`}>
         <UserProvider>
           <PageTransitionWrapper>
-            {/* pt-14 on mobile for the top bar, removed on md+ */}
-            <div className="pt-14 md:pt-0">
+            {/* pt-16 on mobile = altura de la top bar (h-16) + notch, removed on md+ */}
+            <div className="pt-[calc(4rem+env(safe-area-inset-top))] md:pt-0 pb-[env(safe-area-inset-bottom)] md:pb-0">
               {children}
             </div>
           </PageTransitionWrapper>

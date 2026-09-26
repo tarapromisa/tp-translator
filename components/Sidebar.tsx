@@ -181,7 +181,7 @@ export default function Sidebar() {
   return (
     <>
       {/* Mobile top bar */}
-      <div className="md:hidden fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 h-16"
+      <div className="md:hidden fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 h-[calc(4rem+env(safe-area-inset-top))] pt-[env(safe-area-inset-top)]"
         style={{ background: 'rgba(252,251,250,0.95)', backdropFilter: 'blur(20px)', borderBottom: '1px solid #f3ece8' }}>
         <img src="/logo.png" alt="TP Translator" style={{ height: '44px', width: 'auto', objectFit: 'contain' }} />
         <div className="flex items-center gap-2">
@@ -208,7 +208,7 @@ export default function Sidebar() {
       {mobileOpen && (
         <div className="md:hidden fixed inset-0 z-50 flex">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
-          <div className="relative w-[280px] h-full flex flex-col"
+          <div className="relative w-[280px] max-w-[85vw] h-dvh flex flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"
             style={{ background: 'rgba(252,251,250,0.98)', borderRight: '1px solid #f3ece8' }}>
             {sidebarContent}
           </div>
@@ -218,7 +218,7 @@ export default function Sidebar() {
       {/* Desktop sidebar */}
       <aside className="hidden md:flex flex-col flex-shrink-0"
         style={{
-          position: 'sticky', top: 0, height: '100vh', width: '220px',
+          position: 'sticky', top: 0, height: '100dvh', width: '220px',
           background: 'rgba(252,251,250,0.94)', backdropFilter: 'blur(24px)',
           borderRight: '1px solid #f3ece8',
         }}>
