@@ -433,7 +433,7 @@ export default function CitateROPage() {
   )
 
   return (
-    <main className="flex h-screen overflow-hidden bg-[#f9f7f5]">
+    <main className="flex h-[calc(100dvh-4rem-env(safe-area-inset-top))] md:h-dvh overflow-hidden bg-[#f9f7f5]">
       <Sidebar />
 
       {/* Mobile top bar */}

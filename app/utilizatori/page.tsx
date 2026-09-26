@@ -116,7 +116,7 @@ export default function UtilizatoriPage() {
   const profileRole = profile?.role ?? ''
   if (!['Admin', 'Coordonator principal', 'Coordonator'].includes(profileRole) && profileRole !== '') {
     return (
-      <main className="flex h-screen overflow-hidden bg-[#f9f7f5]">
+      <main className="flex h-[calc(100dvh-4rem-env(safe-area-inset-top))] md:h-dvh overflow-hidden bg-[#f9f7f5]">
         <Sidebar />
         <AccessDenied />
       </main>
@@ -233,7 +233,7 @@ export default function UtilizatoriPage() {
   }
 
   return (
-    <main className="flex h-screen overflow-hidden bg-[#f9f7f5] overflow-x-hidden">
+    <main className="flex h-[calc(100dvh-4rem-env(safe-area-inset-top))] md:h-dvh overflow-hidden bg-[#f9f7f5] overflow-x-hidden">
       <Sidebar />
       <div className="flex-1 w-0 px-4 py-6 md:px-10 md:py-8 overflow-y-auto overflow-x-hidden">
 

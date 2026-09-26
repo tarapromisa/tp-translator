@@ -241,7 +241,7 @@ export default function MailTLPPage() {
 
   if (!canAccess && userRole !== '') {
     return (
-      <main className="flex h-screen overflow-hidden bg-[#f9f7f5]">
+      <main className="flex h-[calc(100dvh-4rem-env(safe-area-inset-top))] md:h-dvh overflow-hidden bg-[#f9f7f5]">
         <Sidebar />
         <AccessDenied />
       </main>
@@ -264,6 +264,8 @@ export default function MailTLPPage() {
   const [searchCitate, setSearchCitate] = useState('')
   const [searchCitateRO, setSearchCitateRO] = useState('')
   const [userMap, setUserMap] = useState<Record<string, string>>({})
+  // public_id → data_asignarii (solo para ver en la app, no se envía en el mail)
+  const [asignariMap, setAsignariMap] = useState<Record<string, string>>({})
 
   // New record form
   const [traducator, setTraducator] = useState('')
@@ -292,6 +294,23 @@ export default function MailTLPPage() {
       supabase.from('users').select('id, full_name, email, language, role').eq('active', true),
     ])
     setRecords(r || [])
+
+    // Fechas de asignación de cada cita que aparece en los registros
+    const allIds = Array.from(new Set(
+      (r || []).flatMap((rec: MailRecord) => (rec.citate_lipsesc ?? '').split(',').map(s => s.trim()).filter(Boolean))
+    ))
+    if (allIds.length > 0) {
+      const [{ data: tDates }, { data: roDates }] = await Promise.all([
+        (supabase.from('texts') as any).select('public_id, data_asignarii').in('public_id', allIds),
+        (supabase.from('citate_ro') as any).select('public_id, data_asignarii').in('public_id', allIds),
+      ])
+      const aMap: Record<string, string> = {}
+      ;[...(tDates || []), ...(roDates || [])].forEach((row: any) => {
+        if (row?.public_id && row?.data_asignarii) aMap[row.public_id] = row.data_asignarii
+      })
+      setAsignariMap(aMap)
+    }
+
     setAllUsers((u || []).filter((u: User) => u.role === 'Traducător'))
     const uMap: Record<string,string> = {}
     ;(u||[]).forEach((usr: User) => { uMap[usr.id] = usr.full_name })
@@ -383,7 +402,7 @@ export default function MailTLPPage() {
   const filteredCitateRO = citateROIncomp.filter(c => !searchCitateRO || c.public_id.toLowerCase().includes(searchCitateRO.toLowerCase()) || c.text_original?.toLowerCase().includes(searchCitateRO.toLowerCase()))
 
   return (
-    <main className="flex h-screen overflow-hidden bg-[#f9f7f5]">
+    <main className="flex h-[calc(100dvh-4rem-env(safe-area-inset-top))] md:h-dvh overflow-hidden bg-[#f9f7f5]">
       <Sidebar />
       <div className="flex-1 w-0 flex flex-col overflow-x-hidden">
 
@@ -484,7 +503,7 @@ export default function MailTLPPage() {
                   {pendingRecords.map(record => (
                     <RecordCard key={record.id} record={record} canManage={canManage}
                       isSending={sendingId === record.id} isSent={sentIds.includes(record.id)}
-                      onSend={() => sendEmail(record)} onDelete={() => setDeleteItem(record)} fmt={fmt} />
+                      onSend={() => sendEmail(record)} onDelete={() => setDeleteItem(record)} fmt={fmt} asignariMap={asignariMap} />
                   ))}
                 </div>
               )}
@@ -494,7 +513,7 @@ export default function MailTLPPage() {
                   {sentRecords.map(record => (
                     <RecordCard key={record.id} record={record} canManage={canManage}
                       isSending={false} isSent={false}
-                      onSend={() => {}} onDelete={() => setDeleteItem(record)} fmt={fmt} />
+                      onSend={() => {}} onDelete={() => setDeleteItem(record)} fmt={fmt} asignariMap={asignariMap} />
                   ))}
                 </div>
               )}
@@ -622,9 +641,10 @@ export default function MailTLPPage() {
 }
 
 // ── Record Card ───────────────────────────────────────────────────
-function RecordCard({ record, canManage, isSending, isSent, onSend, onDelete, fmt }: {
+function RecordCard({ record, canManage, isSending, isSent, onSend, onDelete, fmt, asignariMap }: {
   record: MailRecord; canManage: boolean; isSending: boolean; isSent: boolean
   onSend: ()=>void; onDelete: ()=>void; fmt: (d:string)=>string
+  asignariMap: Record<string, string>
 }) {
   const ids = record.citate_lipsesc?.split(',').map(s => s.trim()).filter(Boolean) ?? []
   const [copied, setCopied] = useState(false)
@@ -705,7 +725,14 @@ function RecordCard({ record, canManage, isSending, isSent, onSend, onDelete, fm
         {ids.length > 0 ? (
           <div className="flex flex-wrap gap-1">
             {ids.map(id => (
-              <span key={id} className="text-[10px] font-bold px-2 h-[20px] inline-flex items-center rounded-full bg-[#fff4f4] text-[#ce0100] border border-[#ffd3d3]">{id}</span>
+              <span key={id} className="text-[10px] font-bold px-2 h-[20px] inline-flex items-center gap-1 rounded-full bg-[#fff4f4] text-[#ce0100] border border-[#ffd3d3]">
+                {id}
+                {asignariMap[id] && (
+                  <span className="font-normal text-[#888]" title="Data asignării">
+                    · {new Date(asignariMap[id]).toLocaleDateString('ro-RO', { day: '2-digit', month: 'short' })}
+                  </span>
+                )}
+              </span>
             ))}
           </div>
         ) : <p className="text-[11px] text-[#ccc] italic">Niciun ID adăugat</p>}
@@ -779,7 +806,7 @@ function RecordCard({ record, canManage, isSending, isSent, onSend, onDelete, fm
       {showModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowModal(false)} />
-          <div className="relative w-full max-w-[580px] bg-white rounded-2xl shadow-[0_30px_80px_rgba(0,0,0,0.15)] overflow-hidden max-h-[90vh] flex flex-col">
+          <div className="relative w-full max-w-[580px] bg-white rounded-2xl shadow-[0_30px_80px_rgba(0,0,0,0.15)] overflow-hidden max-h-[90dvh] flex flex-col">
             <div className="h-1 bg-[#ce0100]" />
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-[#f0e8e4] flex-shrink-0">

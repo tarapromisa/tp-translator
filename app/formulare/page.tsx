@@ -111,7 +111,7 @@ export default function FormularePage() {
   // Translator view — pending forms
   if (isTranslator) {
     return (
-      <main className="flex h-screen overflow-hidden bg-[#f9f7f5]">
+      <main className="flex h-[calc(100dvh-4rem-env(safe-area-inset-top))] md:h-dvh overflow-hidden bg-[#f9f7f5]">
         <Sidebar />
         <div className="flex-1 min-w-0 px-4 py-6 md:px-10 md:py-8 overflow-y-auto">
           <h1 className="text-[40px] md:text-[52px] leading-none tracking-tight font-light text-[#111] mb-3">Formulare</h1>
@@ -174,7 +174,7 @@ export default function FormularePage() {
   }
 
   return (
-    <main className="flex h-screen overflow-hidden bg-[#f9f7f5]">
+    <main className="flex h-[calc(100dvh-4rem-env(safe-area-inset-top))] md:h-dvh overflow-hidden bg-[#f9f7f5]">
       <Sidebar />
       <div className="flex-1 min-w-0 px-4 py-6 md:px-10 md:py-8 overflow-y-auto">
         <div className="flex items-start justify-between mb-8">
@@ -415,7 +415,7 @@ function FormBuilder({ form, onSaved, onCancel }: {
   }
 
   return (
-    <main className="flex h-screen overflow-hidden bg-[#f9f7f5]">
+    <main className="flex h-[calc(100dvh-4rem-env(safe-area-inset-top))] md:h-dvh overflow-hidden bg-[#f9f7f5]">
       <Sidebar />
       <div className="flex-1 min-w-0 overflow-y-auto">
         {/* Header */}
@@ -693,14 +693,14 @@ function ResponsesView({ formId, onBack }: { formId: string; onBack: () => void 
   }
 
   if (loading) return (
-    <main className="flex h-screen overflow-hidden bg-[#f9f7f5]">
+    <main className="flex h-[calc(100dvh-4rem-env(safe-area-inset-top))] md:h-dvh overflow-hidden bg-[#f9f7f5]">
       <Sidebar />
       <div className="flex-1 flex items-center justify-center"><p className="text-[#888]">Se încarcă...</p></div>
     </main>
   )
 
   return (
-    <main className="flex h-screen overflow-hidden bg-[#f9f7f5]">
+    <main className="flex h-[calc(100dvh-4rem-env(safe-area-inset-top))] md:h-dvh overflow-hidden bg-[#f9f7f5]">
       <Sidebar />
       <div className="flex-1 min-w-0 overflow-y-auto">
         <div className="sticky top-0 z-20 bg-white/90 backdrop-blur-md border-b border-[#f0e8e4] px-6 py-4 flex items-center justify-between">

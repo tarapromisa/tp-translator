@@ -80,7 +80,7 @@ export default function FormularInternPage() {
   }
 
   if (loading) return (
-    <main className="flex h-screen overflow-hidden bg-[#f9f7f5]">
+    <main className="flex h-[calc(100dvh-4rem-env(safe-area-inset-top))] md:h-dvh overflow-hidden bg-[#f9f7f5]">
       <Sidebar />
       <div className="flex-1 flex items-center justify-center">
         <p className="text-[#888]">Se încarcă...</p>
@@ -89,7 +89,7 @@ export default function FormularInternPage() {
   )
 
   if (submitted) return (
-    <main className="flex h-screen overflow-hidden bg-[#f9f7f5]">
+    <main className="flex h-[calc(100dvh-4rem-env(safe-area-inset-top))] md:h-dvh overflow-hidden bg-[#f9f7f5]">
       <Sidebar />
       <div className="flex-1 flex items-center justify-center">
         <div className="text-center max-w-md">
@@ -108,7 +108,7 @@ export default function FormularInternPage() {
   )
 
   return (
-    <main className="flex h-screen overflow-hidden bg-[#f9f7f5]">
+    <main className="flex h-[calc(100dvh-4rem-env(safe-area-inset-top))] md:h-dvh overflow-hidden bg-[#f9f7f5]">
       <Sidebar />
       <div className="flex-1 min-w-0 overflow-y-auto px-4 py-8">
         <div className="max-w-xl mx-auto">

@@ -363,7 +363,7 @@ export default function CalendarPage() {
 
   if (!canSeeCalendar && !isTraducatorRO) {
     return (
-      <main className="flex h-screen overflow-hidden bg-[#f9f7f5]">
+      <main className="flex h-[calc(100dvh-4rem-env(safe-area-inset-top))] md:h-dvh overflow-hidden bg-[#f9f7f5]">
         <Sidebar />
         <div className="flex-1 flex items-center justify-center">
           <p className="text-base text-[#888]">Nu ai acces la această pagină.</p>
@@ -373,7 +373,7 @@ export default function CalendarPage() {
   }
 
   return (
-    <main className="flex h-screen overflow-hidden bg-[#f9f7f5]">
+    <main className="flex h-[calc(100dvh-4rem-env(safe-area-inset-top))] md:h-dvh overflow-hidden bg-[#f9f7f5]">
       <Sidebar />
       <div className="flex-1 min-w-0 px-4 py-6 md:px-10 md:py-8 overflow-y-auto overflow-x-hidden">
 
