@@ -45,6 +45,45 @@ const TRANSLATOR_FIELDS: Record<string, string> = {
 // Columnas de la vista tabla: Traducător | Limbă | Perioadă | ID-uri | Acțiuni
 const TABLE_COLS = 'minmax(150px,1.3fr) 52px 130px minmax(160px,2fr) 128px'
 type ViewMode = 'card' | 'compact' | 'tabel'
+type SortRef = 'id-asc' | 'id-desc' | 'date-desc' | 'date-asc'
+const SORT_OPTIONS: { v: SortRef; label: string }[] = [
+  { v: 'id-asc',    label: 'ID ↑' },
+  { v: 'id-desc',   label: 'ID ↓' },
+  { v: 'date-desc', label: 'Dată: noi' },
+  { v: 'date-asc',  label: 'Dată: vechi' },
+]
+const idNum = (pid: string) => parseInt((pid ?? '').replace(/\D/g, ''), 10) || 0
+
+// Ordena por número de ID o por data_asignarii (las que no tienen fecha van al final)
+function sortRef<T extends { public_id: string; data_asignarii?: string | null }>(list: T[], mode: SortRef): T[] {
+  return [...list].sort((a, b) => {
+    if (mode === 'id-asc')  return idNum(a.public_id) - idNum(b.public_id)
+    if (mode === 'id-desc') return idNum(b.public_id) - idNum(a.public_id)
+    const da = a.data_asignarii ? new Date(a.data_asignarii).getTime() : null
+    const db = b.data_asignarii ? new Date(b.data_asignarii).getTime() : null
+    if (da === null && db === null) return idNum(a.public_id) - idNum(b.public_id)
+    if (da === null) return 1
+    if (db === null) return -1
+    return mode === 'date-desc' ? db - da : da - db
+  })
+}
+
+// Busca por ID, texto o fecha (sirve "08 sept", "08.09.2026" o "2026-09-08")
+function matchRef(q: string, publicId: string, text: string | null | undefined, date: string | null | undefined) {
+  if (!q) return true
+  const needle = q.toLowerCase().trim()
+  const hay = [publicId, text ?? '']
+  if (date) {
+    const d = new Date(date)
+    hay.push(
+      date.slice(0, 10),
+      d.toLocaleDateString('ro-RO'),
+      d.toLocaleDateString('ro-RO', { day: '2-digit', month: 'short' }),
+      d.toLocaleDateString('ro-RO', { day: '2-digit', month: 'long', year: 'numeric' }),
+    )
+  }
+  return hay.some(h => h.toLowerCase().includes(needle))
+}
 
 const GIF = 'https://res.cloudinary.com/dlgqpbpwu/image/upload/v1780257817/Gif_TPT_2026_1_wl9try.gif'
 
@@ -316,6 +355,8 @@ export default function MailTLPPage() {
   const [citateROIncomp, setCitateROIncomp] = useState<CitatROIncomplete[]>([])
   const [searchCitate, setSearchCitate] = useState('')
   const [searchCitateRO, setSearchCitateRO] = useState('')
+  const [sortCitate, setSortCitate] = useState<SortRef>('id-asc')
+  const [sortCitateRO, setSortCitateRO] = useState<SortRef>('id-asc')
   const [userMap, setUserMap] = useState<Record<string, string>>({})
   // public_id → data_asignarii (solo para ver en la app, no se envía en el mail)
   const [asignariMap, setAsignariMap] = useState<Record<string, string>>({})
@@ -580,8 +621,8 @@ export default function MailTLPPage() {
     )
   }
 
-  const filteredCitate   = citateIncomp.filter(c => !searchCitate || c.public_id.toLowerCase().includes(searchCitate.toLowerCase()) || c.citat_ro?.toLowerCase().includes(searchCitate.toLowerCase()))
-  const filteredCitateRO = citateROIncomp.filter(c => !searchCitateRO || c.public_id.toLowerCase().includes(searchCitateRO.toLowerCase()) || c.text_original?.toLowerCase().includes(searchCitateRO.toLowerCase()))
+  const filteredCitate   = sortRef(citateIncomp.filter(c => matchRef(searchCitate, c.public_id, c.citat_ro, c.data_asignarii)), sortCitate)
+  const filteredCitateRO = sortRef(citateROIncomp.filter(c => matchRef(searchCitateRO, c.public_id, c.text_original, c.data_asignarii)), sortCitateRO)
 
   // ── Contenido de cada sección (se pinta anclado o en ventana flotante) ──
   const formContent = (
@@ -668,8 +709,8 @@ export default function MailTLPPage() {
 
   const citateContent = (
     <>
-              <div className="flex-shrink-0 px-4 md:px-5 py-3 border-b border-[#f0e9e5] flex items-center justify-between bg-white gap-2">
-                <div className="min-w-0">
+              <div className="flex-shrink-0 px-4 md:px-5 py-3 border-b border-[#f0e9e5] flex items-center justify-between flex-wrap bg-white gap-2">
+                <div className="min-w-0 mr-auto">
                   <p className={`text-[10px] font-semibold text-[#9c8e87] uppercase tracking-[0.12em] ${docked('citate') ? '' : 'hidden'}`}>Citate · idiomas lipsă</p>
                   <p className="text-sm font-light text-[#111]">{filteredCitate.length} {lastAdded
                     ? <span className="text-[#166534] font-semibold">· ✓ {lastAdded} adăugat</span>
@@ -677,9 +718,16 @@ export default function MailTLPPage() {
                 </div>
                 <div className="flex items-center gap-2 bg-[#f9f7f5] border border-[#e8e2de] rounded-lg px-3 h-8 w-32 md:w-44 min-w-0">
                   <MagnifyingGlassIcon className="w-3.5 h-3.5 text-[#999] flex-shrink-0" />
-                  <input type="text" placeholder="Caută..." value={searchCitate} onChange={e => setSearchCitate(e.target.value)}
-                    className="flex-1 bg-transparent outline-none text-xs placeholder:text-[#ccc]" />
+                  <input type="text" placeholder="ID, text sau dată..." value={searchCitate} onChange={e => setSearchCitate(e.target.value)}
+                    className="flex-1 min-w-0 bg-transparent outline-none text-xs placeholder:text-[#ccc]" />
+                  {searchCitate && (
+                    <button onClick={() => setSearchCitate('')} className="text-[#bbb] hover:text-[#666]"><XMarkIcon className="w-3.5 h-3.5" /></button>
+                  )}
                 </div>
+                <select value={sortCitate} onChange={e => setSortCitate(e.target.value as SortRef)} title="Ordonează"
+                  className="h-8 rounded-lg border border-[#e8e2de] bg-[#f9f7f5] px-2 text-xs text-[#555] outline-none focus:border-[#ce0100] flex-shrink-0">
+                  {SORT_OPTIONS.map(o => <option key={o.v} value={o.v}>{o.label}</option>)}
+                </select>
                 {controls('citate')}
               </div>
               <div className="flex-1 overflow-y-auto bg-white">
@@ -723,8 +771,8 @@ export default function MailTLPPage() {
 
   const citateROContent = (
     <>
-              <div className="flex-shrink-0 px-4 md:px-5 py-3 border-b border-[#f0e9e5] flex items-center justify-between bg-white gap-2">
-                <div className="min-w-0">
+              <div className="flex-shrink-0 px-4 md:px-5 py-3 border-b border-[#f0e9e5] flex items-center justify-between flex-wrap bg-white gap-2">
+                <div className="min-w-0 mr-auto">
                   <p className={`text-[10px] font-semibold text-[#9c8e87] uppercase tracking-[0.12em] ${docked('citateRO') ? '' : 'hidden'}`}>Citate RO · fără traducere</p>
                   <p className="text-sm font-light text-[#111]">{filteredCitateRO.length} {lastAdded
                     ? <span className="text-[#166534] font-semibold">· ✓ {lastAdded} adăugat</span>
@@ -732,9 +780,16 @@ export default function MailTLPPage() {
                 </div>
                 <div className="flex items-center gap-2 bg-[#f9f7f5] border border-[#e8e2de] rounded-lg px-3 h-8 w-32 md:w-44 min-w-0">
                   <MagnifyingGlassIcon className="w-3.5 h-3.5 text-[#999] flex-shrink-0" />
-                  <input type="text" placeholder="Caută..." value={searchCitateRO} onChange={e => setSearchCitateRO(e.target.value)}
-                    className="flex-1 bg-transparent outline-none text-xs placeholder:text-[#ccc]" />
+                  <input type="text" placeholder="ID, text sau dată..." value={searchCitateRO} onChange={e => setSearchCitateRO(e.target.value)}
+                    className="flex-1 min-w-0 bg-transparent outline-none text-xs placeholder:text-[#ccc]" />
+                  {searchCitateRO && (
+                    <button onClick={() => setSearchCitateRO('')} className="text-[#bbb] hover:text-[#666]"><XMarkIcon className="w-3.5 h-3.5" /></button>
+                  )}
                 </div>
+                <select value={sortCitateRO} onChange={e => setSortCitateRO(e.target.value as SortRef)} title="Ordonează"
+                  className="h-8 rounded-lg border border-[#e8e2de] bg-[#f9f7f5] px-2 text-xs text-[#555] outline-none focus:border-[#ce0100] flex-shrink-0">
+                  {SORT_OPTIONS.map(o => <option key={o.v} value={o.v}>{o.label}</option>)}
+                </select>
                 {controls('citateRO')}
               </div>
               <div className="flex-1 overflow-y-auto bg-white">
