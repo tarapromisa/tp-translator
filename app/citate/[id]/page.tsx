@@ -8,6 +8,8 @@ import DeleteModal from '@/components/DeleteModal'
 import EditDrawer from '@/components/EditDrawer'
 import {
   ArrowLeftIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
   PencilSquareIcon,
   TrashIcon,
   EnvelopeIcon,
@@ -147,6 +149,38 @@ export default function CitationDetailPage() {
     fetchCitation()
   }, [params.id])
 
+  // ── Navegación entre citas (anterior / siguiente por número de ID) ──
+  const [allIds, setAllIds] = useState<{ id: string; public_id: string }[]>([])
+
+  useEffect(() => {
+    const fetchIds = async () => {
+      const { data } = await supabase.from('texts').select('id, public_id')
+      const num = (pid: string) => parseInt((pid ?? '').replace(/\D/g, ''), 10) || 0
+      const sorted = ((data as any[]) ?? [])
+        .filter(r => r.public_id)
+        .sort((a, b) => num(a.public_id) - num(b.public_id) || a.public_id.localeCompare(b.public_id))
+      setAllIds(sorted)
+    }
+    fetchIds()
+  }, [])
+
+  const currentIndex = allIds.findIndex(r => r.id === params.id)
+  const prevCitation = currentIndex > 0 ? allIds[currentIndex - 1] : null
+  const nextCitation = currentIndex >= 0 && currentIndex < allIds.length - 1 ? allIds[currentIndex + 1] : null
+
+  // Flechas del teclado ← → (no se activan escribiendo ni con un modal abierto)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (e.target as HTMLElement)?.isContentEditable) return
+      if (showEditDrawer || showDeleteModal || showEmailModal) return
+      if (e.key === 'ArrowLeft' && prevCitation) router.push(`/citate/${prevCitation.id}`)
+      if (e.key === 'ArrowRight' && nextCitation) router.push(`/citate/${nextCitation.id}`)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [prevCitation, nextCitation, showEditDrawer, showDeleteModal, showEmailModal, router])
+
   if (loading) {
     return (
       <main className="flex min-h-screen bg-[#fcfbfa]">
@@ -221,6 +255,33 @@ export default function CitationDetailPage() {
             <ArrowLeftIcon className="w-[18px] h-[18px]" />
             Înapoi la citate
           </button>
+
+          {/* ── Navegación ‹ anterior | siguiente › ── */}
+          <div className="flex items-center gap-[8px]">
+            <button
+              onClick={() => prevCitation && router.push(`/citate/${prevCitation.id}`)}
+              disabled={!prevCitation}
+              title={prevCitation ? `Citatul anterior (${prevCitation.public_id}) · tasta ←` : 'Nu există citat anterior'}
+              className="h-[42px] pl-[10px] pr-[14px] rounded-[12px] border border-[#ece6e2] bg-white flex items-center gap-[6px] text-[13px] font-[600] text-[#555] hover:bg-[#fff4f4] hover:text-[#ce0100] hover:border-[#ffd3d3] disabled:opacity-40 disabled:pointer-events-none transition-all"
+            >
+              <ChevronLeftIcon className="w-[18px] h-[18px]" />
+              {prevCitation?.public_id ?? '—'}
+            </button>
+            {currentIndex >= 0 && (
+              <span className="text-[12px] text-[#b6a49c] tabular-nums px-[4px]">
+                {currentIndex + 1} / {allIds.length}
+              </span>
+            )}
+            <button
+              onClick={() => nextCitation && router.push(`/citate/${nextCitation.id}`)}
+              disabled={!nextCitation}
+              title={nextCitation ? `Citatul următor (${nextCitation.public_id}) · tasta →` : 'Nu există citat următor'}
+              className="h-[42px] pl-[14px] pr-[10px] rounded-[12px] border border-[#ece6e2] bg-white flex items-center gap-[6px] text-[13px] font-[600] text-[#555] hover:bg-[#fff4f4] hover:text-[#ce0100] hover:border-[#ffd3d3] disabled:opacity-40 disabled:pointer-events-none transition-all"
+            >
+              {nextCitation?.public_id ?? '—'}
+              <ChevronRightIcon className="w-[18px] h-[18px]" />
+            </button>
+          </div>
 
           <div className="flex items-center gap-[10px]">
             <a
