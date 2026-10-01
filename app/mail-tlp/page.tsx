@@ -68,10 +68,13 @@ function sortRef<T extends { public_id: string; data_asignarii?: string | null }
   })
 }
 
+// Quita diacríticos y mayúsculas: "Dincă" = "dinca", "Lupăescu" = "lupaescu", "ș" = "s"
+const norm = (t: string) => (t ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
+
 // Busca por ID, texto, traductor o fecha (sirve "08 sept", "08.09.2026" o "2026-09-08")
 function matchRef(q: string, publicId: string, text: string | null | undefined, date: string | null | undefined, translators: string[] = []) {
   if (!q) return true
-  const needle = q.toLowerCase().trim()
+  const needle = norm(q)
   const hay = [publicId, text ?? '', ...translators]
   if (date) {
     const d = new Date(date)
@@ -82,7 +85,7 @@ function matchRef(q: string, publicId: string, text: string | null | undefined, 
       d.toLocaleDateString('ro-RO', { day: '2-digit', month: 'long', year: 'numeric' }),
     )
   }
-  return hay.some(h => h.toLowerCase().includes(needle))
+  return hay.some(h => norm(h).includes(needle))
 }
 
 const GIF = 'https://res.cloudinary.com/dlgqpbpwu/image/upload/v1780257817/Gif_TPT_2026_1_wl9try.gif'
@@ -576,10 +579,10 @@ export default function MailTLPPage() {
   const matchRec = (r: MailRecord) => {
     if (langFilter && r.traducator_user?.language !== langFilter) return false
     if (!searchRec) return true
-    const q = searchRec.toLowerCase()
-    return (r.traducator_user?.full_name ?? '').toLowerCase().includes(q)
-      || (r.traducator_user?.email ?? '').toLowerCase().includes(q)
-      || (r.citate_lipsesc ?? '').toLowerCase().includes(q)
+    const q = norm(searchRec)
+    return norm(r.traducator_user?.full_name ?? '').includes(q)
+      || norm(r.traducator_user?.email ?? '').includes(q)
+      || norm(r.citate_lipsesc ?? '').includes(q)
   }
   const shownPending = pendingRecords.filter(matchRec)
   const shownSent    = sentRecords.filter(matchRec)
