@@ -6,6 +6,7 @@ import Sidebar from '@/components/Sidebar'
 import { supabase } from '@/lib/supabase'
 import DeleteModal from '@/components/DeleteModal'
 import EditDrawer from '@/components/EditDrawer'
+import LoadingScreen from '@/components/LoadingSpinner'
 import {
   ArrowLeftIcon,
   ChevronLeftIcon,
@@ -181,16 +182,7 @@ export default function CitationDetailPage() {
     return () => window.removeEventListener('keydown', onKey)
   }, [prevCitation, nextCitation, showEditDrawer, showDeleteModal, showEmailModal, router])
 
-  if (loading) {
-    return (
-      <main className="flex min-h-screen bg-[#fcfbfa]">
-        <Sidebar />
-        <div className="flex-1 flex items-center justify-center">
-          <p className="text-[#8f8179] text-[18px]">Se încarcă...</p>
-        </div>
-      </main>
-    )
-  }
+  if (loading) return <LoadingScreen />
 
   if (!citation) return null
 
