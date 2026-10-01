@@ -68,11 +68,11 @@ function sortRef<T extends { public_id: string; data_asignarii?: string | null }
   })
 }
 
-// Busca por ID, texto o fecha (sirve "08 sept", "08.09.2026" o "2026-09-08")
-function matchRef(q: string, publicId: string, text: string | null | undefined, date: string | null | undefined) {
+// Busca por ID, texto, traductor o fecha (sirve "08 sept", "08.09.2026" o "2026-09-08")
+function matchRef(q: string, publicId: string, text: string | null | undefined, date: string | null | undefined, translators: string[] = []) {
   if (!q) return true
   const needle = q.toLowerCase().trim()
-  const hay = [publicId, text ?? '']
+  const hay = [publicId, text ?? '', ...translators]
   if (date) {
     const d = new Date(date)
     hay.push(
@@ -621,8 +621,8 @@ export default function MailTLPPage() {
     )
   }
 
-  const filteredCitate   = sortRef(citateIncomp.filter(c => matchRef(searchCitate, c.public_id, c.citat_ro, c.data_asignarii)), sortCitate)
-  const filteredCitateRO = sortRef(citateROIncomp.filter(c => matchRef(searchCitateRO, c.public_id, c.text_original, c.data_asignarii)), sortCitateRO)
+  const filteredCitate   = sortRef(citateIncomp.filter(c => matchRef(searchCitate, c.public_id, c.citat_ro, c.data_asignarii, Object.values(c.translators))), sortCitate)
+  const filteredCitateRO = sortRef(citateROIncomp.filter(c => matchRef(searchCitateRO, c.public_id, c.text_original, c.data_asignarii, c.traducator_ro_user?.full_name ? [c.traducator_ro_user.full_name] : [])), sortCitateRO)
 
   // ── Contenido de cada sección (se pinta anclado o en ventana flotante) ──
   const formContent = (
@@ -718,7 +718,7 @@ export default function MailTLPPage() {
                 </div>
                 <div className="flex items-center gap-2 bg-[#f9f7f5] border border-[#e8e2de] rounded-lg px-3 h-8 w-32 md:w-44 min-w-0">
                   <MagnifyingGlassIcon className="w-3.5 h-3.5 text-[#999] flex-shrink-0" />
-                  <input type="text" placeholder="ID, text sau dată..." value={searchCitate} onChange={e => setSearchCitate(e.target.value)}
+                  <input type="text" placeholder="ID, text, traducător sau dată..." value={searchCitate} onChange={e => setSearchCitate(e.target.value)}
                     className="flex-1 min-w-0 bg-transparent outline-none text-xs placeholder:text-[#ccc]" />
                   {searchCitate && (
                     <button onClick={() => setSearchCitate('')} className="text-[#bbb] hover:text-[#666]"><XMarkIcon className="w-3.5 h-3.5" /></button>
@@ -780,7 +780,7 @@ export default function MailTLPPage() {
                 </div>
                 <div className="flex items-center gap-2 bg-[#f9f7f5] border border-[#e8e2de] rounded-lg px-3 h-8 w-32 md:w-44 min-w-0">
                   <MagnifyingGlassIcon className="w-3.5 h-3.5 text-[#999] flex-shrink-0" />
-                  <input type="text" placeholder="ID, text sau dată..." value={searchCitateRO} onChange={e => setSearchCitateRO(e.target.value)}
+                  <input type="text" placeholder="ID, text, traducător sau dată..." value={searchCitateRO} onChange={e => setSearchCitateRO(e.target.value)}
                     className="flex-1 min-w-0 bg-transparent outline-none text-xs placeholder:text-[#ccc]" />
                   {searchCitateRO && (
                     <button onClick={() => setSearchCitateRO('')} className="text-[#bbb] hover:text-[#666]"><XMarkIcon className="w-3.5 h-3.5" /></button>
