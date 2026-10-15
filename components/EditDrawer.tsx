@@ -4,15 +4,18 @@ import { useEffect, useState } from 'react'
 import { XMarkIcon, CheckIcon } from '@heroicons/react/24/outline'
 import { supabase } from '@/lib/supabase'
 
+// tField = columna con el id del traductor · alias = nombre del objeto unido que usa la página de detalle
 const LANGUAGES = [
-  { code: 'RO', label: 'RO', name: 'Română',    flag: '🇷🇴', field: 'citat_ro', readOnly: true  },
-  { code: 'ES', label: 'ES', name: 'Español',   flag: '🇪🇸', field: 'citat_es', readOnly: false },
-  { code: 'EN', label: 'EN', name: 'English',   flag: '🇬🇧', field: 'citat_en', readOnly: false },
-  { code: 'DE', label: 'DE', name: 'Deutsch',   flag: '🇩🇪', field: 'citat_de', readOnly: false },
-  { code: 'PT', label: 'PT', name: 'Português', flag: '🇵🇹', field: 'citat_pt', readOnly: false },
-  { code: 'FR', label: 'FR', name: 'Français',  flag: '🇫🇷', field: 'citat_fr', readOnly: false },
-  { code: 'IT', label: 'IT', name: 'Italiano',  flag: '🇮🇹', field: 'citat_it', readOnly: false },
+  { code: 'RO', label: 'RO', name: 'Română',    flag: '🇷🇴', field: 'citat_ro', readOnly: true,  tField: 'traducator_ro', alias: 'translator_ro' },
+  { code: 'ES', label: 'ES', name: 'Español',   flag: '🇪🇸', field: 'citat_es', readOnly: false, tField: 'traductor_es',  alias: 'translator_es' },
+  { code: 'EN', label: 'EN', name: 'English',   flag: '🇬🇧', field: 'citat_en', readOnly: false, tField: 'traductor_en',  alias: 'translator_en' },
+  { code: 'DE', label: 'DE', name: 'Deutsch',   flag: '🇩🇪', field: 'citat_de', readOnly: false, tField: 'traductor_de',  alias: 'translator_de' },
+  { code: 'PT', label: 'PT', name: 'Português', flag: '🇵🇹', field: 'citat_pt', readOnly: false, tField: 'traductor_pt',  alias: 'translator_pt' },
+  { code: 'FR', label: 'FR', name: 'Français',  flag: '🇫🇷', field: 'citat_fr', readOnly: false, tField: 'traductor_fr',  alias: 'translator_fr' },
+  { code: 'IT', label: 'IT', name: 'Italiano',  flag: '🇮🇹', field: 'citat_it', readOnly: false, tField: 'traductor_it',  alias: 'translator_it' },
 ]
+
+type UserOpt = { id: string; full_name: string; language: string | null; role: string; active: boolean; email: string | null }
 
 interface EditDrawerProps {
   isOpen: boolean
@@ -27,13 +30,29 @@ export default function EditDrawer({ isOpen, citation, onClose, onSaved }: EditD
   const [fields, setFields] = useState<Record<string, string>>({})
   const [saveState, setSaveState] = useState<SaveState>('idle')
   const [activeTab, setActiveTab] = useState('RO')
+  const [translators, setTranslators] = useState<Record<string, string>>({}) // tField → user id ('' = nealocat)
+  const [users, setUsers] = useState<UserOpt[]>([])
+  const [showAllUsers, setShowAllUsers] = useState(false)
+
+  // Lista de usuarios para los desplegables de traductor
+  useEffect(() => {
+    if (!isOpen || users.length > 0) return
+    supabase.from('users').select('id, full_name, language, role, active, email').order('full_name')
+      .then(({ data }) => setUsers((data as UserOpt[]) ?? []))
+  }, [isOpen, users.length])
 
   // Init fields from citation
   useEffect(() => {
     if (citation) {
       const init: Record<string, string> = {}
-      LANGUAGES.forEach((l) => { init[l.field] = citation[l.field] ?? '' })
+      const initT: Record<string, string> = {}
+      LANGUAGES.forEach((l) => {
+        init[l.field] = citation[l.field] ?? ''
+        initT[l.tField] = citation[l.tField] ?? ''
+      })
       setFields(init)
+      setTranslators(initT)
+      setShowAllUsers(false)
       setSaveState('idle')
       setActiveTab('RO')
     }
@@ -57,9 +76,13 @@ export default function EditDrawer({ isOpen, citation, onClose, onSaved }: EditD
 
   const handleSave = async () => {
     setSaveState('saving')
+    // Traductores: '' → null (nealocat)
+    const tUpdate: Record<string, string | null> = {}
+    LANGUAGES.forEach((l) => { tUpdate[l.tField] = translators[l.tField] || null })
+
     const { data, error } = await supabase
       .from('texts')
-      .update(fields)
+      .update({ ...fields, ...tUpdate })
       .eq('id', citation.id)
       .select()
       .single()
@@ -70,8 +93,15 @@ export default function EditDrawer({ isOpen, citation, onClose, onSaved }: EditD
       return
     }
 
+    // Actualizamos también los objetos unidos (translator_xx) para que la página muestre los nombres nuevos sin recargar
+    const joined: Record<string, any> = {}
+    LANGUAGES.forEach((l) => {
+      const u = users.find((x) => x.id === translators[l.tField])
+      joined[l.alias] = u ? { full_name: u.full_name, role: u.role, active: u.active, email: u.email } : null
+    })
+
     setSaveState('saved')
-    onSaved({ ...citation, ...data })
+    onSaved({ ...citation, ...data, ...joined })
     setTimeout(() => {
       setSaveState('idle')
       onClose()
@@ -80,8 +110,24 @@ export default function EditDrawer({ isOpen, citation, onClose, onSaved }: EditD
 
   const activeLang = LANGUAGES.find((l) => l.code === activeTab) ?? LANGUAGES[0]
   const hasChanges = citation
-    ? LANGUAGES.some((l) => (citation[l.field] ?? '') !== fields[l.field])
+    ? LANGUAGES.some((l) =>
+        (citation[l.field] ?? '') !== fields[l.field] ||
+        (citation[l.tField] ?? '') !== (translators[l.tField] ?? ''))
     : false
+
+  const userName = (id: string | undefined) => users.find((u) => u.id === id)?.full_name ?? ''
+
+  // Opciones del desplegable: traductores activos de ese idioma (o todos si se marca la casilla)
+  const optionsFor = (lang: typeof LANGUAGES[number]) => {
+    const current = translators[lang.tField]
+    let list = users.filter((u) => u.active !== false)
+    if (!showAllUsers) list = list.filter((u) => (u.language ?? '').toUpperCase() === lang.code && u.role?.startsWith('Traduc'))
+    if (current && !list.some((u) => u.id === current)) {
+      const cur = users.find((u) => u.id === current)
+      if (cur) list = [cur, ...list]
+    }
+    return list
+  }
 
   return (
     <>
@@ -190,6 +236,37 @@ export default function EditDrawer({ isOpen, citation, onClose, onSaved }: EditD
             </div>
           </div>
 
+          {/* Traducător asignado a esta lengua */}
+          <div className="mb-[16px] rounded-[16px] border border-[#f0e9e5] bg-[#faf7f5] px-[14px] py-[12px]">
+            <div className="flex items-center justify-between mb-[8px]">
+              <label className="text-[11px] font-[700] uppercase tracking-[0.12em] text-[#9c8e87]">
+                Traducător {activeLang.label}
+              </label>
+              <label className="flex items-center gap-[6px] text-[11px] text-[#8f8179] cursor-pointer select-none">
+                <input type="checkbox" checked={showAllUsers} onChange={(e) => setShowAllUsers(e.target.checked)}
+                  className="accent-[#ce0100]" />
+                Toți utilizatorii
+              </label>
+            </div>
+            <select
+              value={translators[activeLang.tField] ?? ''}
+              onChange={(e) => setTranslators((prev) => ({ ...prev, [activeLang.tField]: e.target.value }))}
+              className="w-full h-[42px] rounded-[12px] border border-[#ece6e2] bg-white px-[12px] text-[14px] text-[#111] outline-none focus:border-[#ce0100] transition-all"
+            >
+              <option value="">— Nealocat —</option>
+              {optionsFor(activeLang).map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.full_name}{showAllUsers && u.language ? ` (${u.language})` : ''}
+                </option>
+              ))}
+            </select>
+            {(citation?.[activeLang.tField] ?? '') !== (translators[activeLang.tField] ?? '') && (
+              <p className="text-[11px] text-[#c05c00] mt-[6px]">
+                Se schimbă: {userName(citation?.[activeLang.tField]) || 'Nealocat'} → <strong>{userName(translators[activeLang.tField]) || 'Nealocat'}</strong>
+              </p>
+            )}
+          </div>
+
           <textarea
             value={fields[activeLang.field] ?? ''}
             onChange={(e) =>
@@ -241,6 +318,9 @@ export default function EditDrawer({ isOpen, citation, onClose, onSaved }: EditD
                           {isDone ? '✓ Completat' : 'În așteptare'}
                         </span>
                       </div>
+                      <p className="text-[11px] text-[#9c8e87] truncate mb-[1px]">
+                        👤 {userName(translators[lang.tField]) || <span className="italic text-[#c0b0aa]">Nealocat</span>}
+                      </p>
                       <p className="text-[12px] text-[#8f8179] truncate">
                         {val ? `"${val}"` : '—'}
                       </p>
