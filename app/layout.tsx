@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { UserProvider } from '@/context/UserContext'
 import PageTransitionWrapper from '@/components/PageTransitionWrapper'
+import OnlineUsers from '@/components/OnlineUsers'
 import { Open_Sans, Montserrat, Playfair_Display } from 'next/font/google'
 import './globals.css'
 
@@ -26,6 +27,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="ro">
       <body className={`${openSans.variable} ${montserrat.variable} ${playfair.variable} antialiased bg-[#fcfbfa] min-h-dvh`}>
         <UserProvider>
+          {/* Avatares de usuarios conectados, arriba a la derecha en todas las páginas */}
+          <OnlineUsers />
           <PageTransitionWrapper>
             {/* pt-16 on mobile = altura de la top bar (h-16) + notch, removed on md+ */}
             <div className="pt-[calc(4rem+env(safe-area-inset-top))] md:pt-0 pb-[env(safe-area-inset-bottom)] md:pb-0">
