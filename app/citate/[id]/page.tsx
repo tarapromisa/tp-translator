@@ -11,6 +11,7 @@ import {
   ArrowLeftIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  LockClosedIcon,
   PencilSquareIcon,
   TrashIcon,
   EnvelopeIcon,
@@ -124,6 +125,7 @@ export default function CitationDetailPage() {
   const [isDeleting, setIsDeleting] = useState(false)
   const [showEditDrawer, setShowEditDrawer] = useState(false)
   const [showEmailModal, setShowEmailModal] = useState(false)
+  const [showLockedModal, setShowLockedModal] = useState(false)
 
   useEffect(() => {
     const fetchCitation = async () => {
@@ -174,13 +176,13 @@ export default function CitationDetailPage() {
     const onKey = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (e.target as HTMLElement)?.isContentEditable) return
-      if (showEditDrawer || showDeleteModal || showEmailModal) return
+      if (showEditDrawer || showDeleteModal || showEmailModal || showLockedModal) return
       if (e.key === 'ArrowLeft' && prevCitation) router.push(`/citate/${prevCitation.id}`)
       if (e.key === 'ArrowRight' && nextCitation) router.push(`/citate/${nextCitation.id}`)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [prevCitation, nextCitation, showEditDrawer, showDeleteModal, showEmailModal, router])
+  }, [prevCitation, nextCitation, showEditDrawer, showDeleteModal, showEmailModal, showLockedModal, router])
 
   if (loading) return <LoadingScreen />
 
@@ -213,7 +215,12 @@ export default function CitationDetailPage() {
   )
   const whatsappUrl = `https://api.whatsapp.com/send?text=${whatsappText}`
 
+  // Citat validat → no se puede editar ni borrar (hay que revertirlo desde Validări)
+  const isLocked = citation.validation === 'Validat'
+  const validatedBy = citation.validated_by_user?.full_name as string | undefined
+
   const handleDeleteConfirm = async () => {
+    if (isLocked) { setShowDeleteModal(false); setShowLockedModal(true); return }
     setIsDeleting(true)
     await supabase.from('texts').delete().eq('id', citation.id)
     setIsDeleting(false)
@@ -293,22 +300,51 @@ export default function CitationDetailPage() {
               Email
             </button>
 
-            <button
-              onClick={() => setShowEditDrawer(true)}
-              className="h-[42px] px-[18px] rounded-[12px] border border-[#ece6e2] bg-white flex items-center gap-[8px] text-[14px] font-[500] hover:bg-[#faf7f5] transition-all"
-            >
-              <PencilSquareIcon className="w-[17px] h-[17px]" />
-              Editează
-            </button>
+            {isLocked ? (
+              <button
+                onClick={() => setShowLockedModal(true)}
+                title="Citatul este validat și nu poate fi modificat"
+                className="h-[42px] px-[18px] rounded-[12px] border border-[#e8e2de] bg-[#f1ece9] text-[#9c8e87] flex items-center gap-[8px] text-[14px] font-[500] cursor-not-allowed"
+              >
+                <LockClosedIcon className="w-[17px] h-[17px]" />
+                Blocat
+              </button>
+            ) : (
+              <>
+                <button
+                  onClick={() => setShowEditDrawer(true)}
+                  className="h-[42px] px-[18px] rounded-[12px] border border-[#ece6e2] bg-white flex items-center gap-[8px] text-[14px] font-[500] hover:bg-[#faf7f5] transition-all"
+                >
+                  <PencilSquareIcon className="w-[17px] h-[17px]" />
+                  Editează
+                </button>
 
-            <button
-              onClick={() => setShowDeleteModal(true)}
-              className="h-[42px] w-[42px] rounded-[12px] bg-[#fff1f1] text-[#ce0100] flex items-center justify-center hover:bg-[#ffe0e0] transition-all"
-            >
-              <TrashIcon className="w-[17px] h-[17px]" />
-            </button>
+                <button
+                  onClick={() => setShowDeleteModal(true)}
+                  className="h-[42px] w-[42px] rounded-[12px] bg-[#fff1f1] text-[#ce0100] flex items-center justify-center hover:bg-[#ffe0e0] transition-all"
+                >
+                  <TrashIcon className="w-[17px] h-[17px]" />
+                </button>
+              </>
+            )}
           </div>
         </div>
+
+        {/* ── AVISO: CITAT VALIDAT ── */}
+        {isLocked && (
+          <div className="mb-[20px] flex items-start gap-[14px] rounded-[20px] border border-[#bfe5cf] bg-[#edfaf3] px-[22px] py-[16px]">
+            <div className="w-[38px] h-[38px] rounded-full bg-white border border-[#bfe5cf] flex items-center justify-center flex-shrink-0">
+              <LockClosedIcon className="w-[18px] h-[18px] text-[#1a8c4e]" />
+            </div>
+            <div>
+              <p className="text-[15px] font-[700] text-[#166534]">Citat validat · modificările sunt blocate</p>
+              <p className="text-[13px] text-[#3f6b52] leading-[20px] mt-[2px]">
+                Acest citat a fost validat{validatedBy ? <> de <strong>{validatedBy}</strong></> : ''} și nu mai poate fi modificat sau șters.
+                Dacă este necesară o modificare, contactează <strong>coordonatorul principal</strong> pentru a readuce citatul din pagina <strong>Validări</strong>.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* ── MAIN GRID ── */}
         <div className="grid grid-cols-[1fr_360px] gap-[20px]">
@@ -555,8 +591,33 @@ export default function CitationDetailPage() {
         isDeleting={isDeleting}
       />
 
+      {/* Modal: intento de editar/borrar un citat validado */}
+      {showLockedModal && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowLockedModal(false)} />
+          <div className="relative w-full max-w-[420px] bg-white rounded-[24px] shadow-[0_30px_80px_rgba(0,0,0,0.18)] overflow-hidden">
+            <div className="h-[4px] bg-[#1a8c4e]" />
+            <div className="px-[28px] pt-[26px] pb-[24px] text-center">
+              <div className="w-[52px] h-[52px] mx-auto mb-[14px] rounded-full bg-[#edfaf3] border-2 border-[#bfe5cf] flex items-center justify-center">
+                <LockClosedIcon className="w-[22px] h-[22px] text-[#1a8c4e]" />
+              </div>
+              <h3 className="text-[18px] font-[700] text-[#111] mb-[8px]">Citatul {citation.public_id} este validat</h3>
+              <p className="text-[13px] text-[#6b5e57] leading-[21px] mb-[20px]">
+                Un citat validat nu mai poate fi modificat sau șters.
+                Pentru orice modificare, contactează <strong className="text-[#111]">coordonatorul principal</strong>,
+                care îl poate readuce din pagina <strong className="text-[#111]">Validări</strong>.
+              </p>
+              <button onClick={() => setShowLockedModal(false)}
+                className="w-full h-[44px] rounded-[14px] bg-[#111] text-white text-[14px] font-[600] hover:bg-[#2a2a2a] transition-all">
+                Am înțeles
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <EditDrawer
-        isOpen={showEditDrawer}
+        isOpen={showEditDrawer && !isLocked}
         citation={citation}
         onClose={() => setShowEditDrawer(false)}
         onSaved={handleEdited}

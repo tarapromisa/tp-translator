@@ -74,7 +74,10 @@ export default function EditDrawer({ isOpen, citation, onClose, onSaved }: EditD
     return () => { document.body.style.overflow = '' }
   }, [isOpen])
 
+  const isLocked = citation?.validation === 'Validat'
+
   const handleSave = async () => {
+    if (isLocked) return
     setSaveState('saving')
     // Traductores: '' → null (nealocat)
     const tUpdate: Record<string, string | null> = {}
@@ -350,6 +353,11 @@ export default function EditDrawer({ isOpen, citation, onClose, onSaved }: EditD
 
         {/* Footer */}
         <div className="px-[28px] py-[20px] border-t border-[#f0e9e5] flex-shrink-0">
+          {isLocked && (
+            <p className="text-[12px] text-[#166534] text-center mb-[12px] font-[500]">
+              Citat validat · nu poate fi modificat. Contactează coordonatorul principal pentru a-l readuce din Validări.
+            </p>
+          )}
           {saveState === 'error' && (
             <p className="text-[12px] text-[#ce0100] text-center mb-[12px] font-[500]">
               A apărut o eroare. Încearcă din nou.
@@ -365,7 +373,7 @@ export default function EditDrawer({ isOpen, citation, onClose, onSaved }: EditD
             </button>
             <button
               onClick={handleSave}
-              disabled={saveState === 'saving' || saveState === 'saved' || !hasChanges}
+              disabled={isLocked || saveState === 'saving' || saveState === 'saved' || !hasChanges}
               className={`
                 flex-1 h-[48px] rounded-[14px] text-[14px] font-[700]
                 flex items-center justify-center gap-[8px]
