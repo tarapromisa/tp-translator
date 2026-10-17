@@ -13,6 +13,9 @@ import {
   BookOpenIcon,
   ShieldCheckIcon,
   ClockIcon,
+  MagnifyingGlassIcon,
+  XMarkIcon,
+  LockClosedIcon,
 } from '@heroicons/react/24/outline'
 import { CheckCircleIcon as CheckSolid, XCircleIcon as XSolid } from '@heroicons/react/24/solid'
 
@@ -35,6 +38,20 @@ type StatusTab  = 'asteptare' | 'validat' | 'refuzat'
 const LANG_FIELDS_C = ['citat_ro','citat_es','citat_en','citat_de','citat_pt','citat_fr','citat_it']
 const LANG_FIELDS_V = ['verset_ro','verset_es','verset_en','verset_de','verset_pt','verset_fr','verset_it']
 const LANG_CODES = ['RO','ES','EN','DE','PT','FR','IT']
+
+// ── Buscador / filtros / orden ────────────────────────────────────
+type SortMode = 'date-desc' | 'date-asc' | 'id-asc' | 'id-desc'
+const SORT_OPTIONS: { v: SortMode; label: string }[] = [
+  { v: 'date-desc', label: 'Dată: cele mai noi' },
+  { v: 'date-asc',  label: 'Dată: cele mai vechi' },
+  { v: 'id-asc',    label: 'ID crescător' },
+  { v: 'id-desc',   label: 'ID descrescător' },
+]
+const CITAT_TYPES = ['CT', 'SP', 'TXT', 'RE']
+const typeOf = (pid: string) => CITAT_TYPES.find(t => pid?.startsWith(t)) ?? (pid ?? '').replace(/[0-9]/g, '')
+const idNum  = (pid: string) => parseInt((pid ?? '').replace(/\D/g, ''), 10) || 0
+// Sin diacríticos ni mayúsculas: "dinca" encuentra "Dincă"
+const norm = (t: string) => (t ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
 
 // ── Validate Modal ────────────────────────────────────────────────
 function ValidateModal({ item, type, onClose, onDone }: {
@@ -350,6 +367,11 @@ export default function ValidariPage() {
   const [loading, setLoading]       = useState(true)
   const [selected, setSelected]     = useState<CitatRow | VersetRow | null>(null)
   const [userRole, setUserRole]     = useState<string | null>(null)
+  const [search, setSearch]         = useState('')
+  const [sortMode, setSortMode]     = useState<SortMode>('date-desc')
+  const [typeFilter, setTypeFilter] = useState<string[]>([])
+  const [onlyLocked, setOnlyLocked] = useState(false)
+  const [validatorFilter, setValidatorFilter] = useState('')
 
   const profileRole = profile?.role ?? ''
   if (!['Admin', 'Coordonator principal', 'Coordonator'].includes(profileRole) && profileRole !== '') {
@@ -365,12 +387,12 @@ export default function ValidariPage() {
     setLoading(true)
     // Fetch separately to avoid enum issues with .in()
     const [c1, c2, c3, v1, v2, v3] = await Promise.all([
-      supabase.from('texts').select('*, locked_by_ilustrator').eq('validation', 'În așteptare').order('created_at', { ascending: false }),
-      supabase.from('texts').select('*, locked_by_ilustrator').eq('validation', 'Validat').order('created_at', { ascending: false }),
-      supabase.from('texts').select('*, locked_by_ilustrator').eq('validation', 'Refuzat').order('created_at', { ascending: false }),
-      supabase.from('versete').select('*, locked_by_ilustrator').eq('validation', 'În așteptare').order('created_at', { ascending: false }),
-      supabase.from('versete').select('*, locked_by_ilustrator').eq('validation', 'Validat').order('created_at', { ascending: false }),
-      supabase.from('versete').select('*, locked_by_ilustrator').eq('validation', 'Refuzat').order('created_at', { ascending: false }),
+      supabase.from('texts').select('*, locked_by_ilustrator, validated_by_user:validated_by(full_name)').eq('validation', 'În așteptare').order('created_at', { ascending: false }),
+      supabase.from('texts').select('*, locked_by_ilustrator, validated_by_user:validated_by(full_name)').eq('validation', 'Validat').order('created_at', { ascending: false }),
+      supabase.from('texts').select('*, locked_by_ilustrator, validated_by_user:validated_by(full_name)').eq('validation', 'Refuzat').order('created_at', { ascending: false }),
+      supabase.from('versete').select('*, locked_by_ilustrator, validated_by_user:validated_by(full_name)').eq('validation', 'În așteptare').order('created_at', { ascending: false }),
+      supabase.from('versete').select('*, locked_by_ilustrator, validated_by_user:validated_by(full_name)').eq('validation', 'Validat').order('created_at', { ascending: false }),
+      supabase.from('versete').select('*, locked_by_ilustrator, validated_by_user:validated_by(full_name)').eq('validation', 'Refuzat').order('created_at', { ascending: false }),
     ])
     setAllCitate([...(c1.data||[]), ...(c2.data||[]), ...(c3.data||[])])
     setAllVersete([...(v1.data||[]), ...(v2.data||[]), ...(v3.data||[])])
@@ -398,7 +420,42 @@ export default function ValidariPage() {
   }
 
   const baseItems  = contentTab === 'citate' ? allCitate : allVersete
-  const items      = filterByStatus(baseItems, statusTab)
+  const statusItems = filterByStatus(baseItems, statusTab)
+
+  // Validadores disponibles (para el filtro "Validat de")
+  const validators = Array.from(new Set(
+    statusItems.map(i => (i as any).validated_by_user?.full_name).filter(Boolean) as string[]
+  )).sort()
+
+  const q = norm(search)
+  const items = statusItems
+    .filter(i => {
+      if (q) {
+        const hay = contentTab === 'citate'
+          ? [i.public_id, (i as CitatRow).citat_ro, (i as CitatRow).autor_original]
+          : [i.public_id, (i as VersetRow).verset_ro, (i as VersetRow).referinta_ro]
+        hay.push((i as any).validation_comment ?? '', (i as any).validated_by_user?.full_name ?? '')
+        if (i.created_at) {
+          const d = new Date(i.created_at)
+          hay.push(i.created_at.slice(0, 10), d.toLocaleDateString('ro-RO'), d.toLocaleDateString('ro-RO', { day: '2-digit', month: 'short' }))
+        }
+        if (!hay.some(h => norm(h ?? '').includes(q))) return false
+      }
+      if (contentTab === 'citate' && typeFilter.length > 0 && !typeFilter.includes(typeOf(i.public_id))) return false
+      if (onlyLocked && !(i as any).locked_by_ilustrator) return false
+      if (validatorFilter && (i as any).validated_by_user?.full_name !== validatorFilter) return false
+      return true
+    })
+    .sort((a, b) => {
+      if (sortMode === 'date-desc') return (b.created_at ?? '').localeCompare(a.created_at ?? '')
+      if (sortMode === 'date-asc')  return (a.created_at ?? '').localeCompare(b.created_at ?? '')
+      const byType = typeOf(a.public_id).localeCompare(typeOf(b.public_id))
+      if (byType !== 0) return sortMode === 'id-asc' ? byType : -byType
+      return sortMode === 'id-asc' ? idNum(a.public_id) - idNum(b.public_id) : idNum(b.public_id) - idNum(a.public_id)
+    })
+
+  const hasFilters = !!search || typeFilter.length > 0 || onlyLocked || !!validatorFilter
+  const clearFilters = () => { setSearch(''); setTypeFilter([]); setOnlyLocked(false); setValidatorFilter(''); setPage(1) }
   const totalPages = Math.ceil(items.length / PER_PAGE)
   const paginated  = items.slice((page - 1) * PER_PAGE, page * PER_PAGE)
 
@@ -453,7 +510,7 @@ export default function ValidariPage() {
         {/* Content tabs */}
         <div className="flex items-center gap-2 mb-4">
           {(['citate','versete'] as ContentTab[]).map(t => (
-            <button key={t} onClick={() => { setContentTab(t); setPage(1) }}
+            <button key={t} onClick={() => { setContentTab(t); setPage(1); setTypeFilter([]); setValidatorFilter('') }}
               className={`h-9 px-5 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all capitalize ${
                 contentTab === t ? 'bg-[#ce0100] text-white shadow-[0_4px_12px_rgba(206,1,0,0.22)]' : 'bg-white border border-[#e8e2de] text-[#444] hover:bg-[#faf7f5]'
               }`}>
@@ -470,7 +527,7 @@ export default function ValidariPage() {
           {STATUS_TABS.map(({ key, label, color }) => {
             const count = counts[contentTab][key]
             return (
-              <button key={key} onClick={() => { setStatusTab(key); setPage(1) }}
+              <button key={key} onClick={() => { setStatusTab(key); setPage(1); setValidatorFilter('') }}
                 className={`h-8 px-4 rounded-lg text-[12px] font-semibold flex items-center gap-1.5 transition-all ${
                   statusTab === key ? 'bg-white shadow-sm text-[#111]' : 'text-[#888] hover:text-[#444]'
                 }`}>
@@ -484,6 +541,62 @@ export default function ValidariPage() {
               </button>
             )
           })}
+        </div>
+
+        {/* ── Buscador, filtros y orden ── */}
+        <div className="bg-white border border-[#e8e2de] rounded-2xl px-4 py-3 mb-4 shadow-sm flex flex-col gap-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex-1 min-w-[200px] flex items-center gap-2 bg-[#f9f7f5] border border-[#e8e2de] rounded-xl px-3 h-10">
+              <MagnifyingGlassIcon className="w-4 h-4 text-[#999] flex-shrink-0" />
+              <input type="text" value={search} onChange={e => { setSearch(e.target.value); setPage(1) }}
+                placeholder={contentTab === 'citate' ? 'Caută după ID, text, autor, comentariu sau dată...' : 'Caută după ID, text, referință, comentariu sau dată...'}
+                className="flex-1 min-w-0 bg-transparent outline-none text-sm text-[#111] placeholder:text-[#bbb]" />
+              {search && (
+                <button onClick={() => setSearch('')} className="text-[#bbb] hover:text-[#ce0100]"><XMarkIcon className="w-4 h-4" /></button>
+              )}
+            </div>
+            <select value={sortMode} onChange={e => { setSortMode(e.target.value as SortMode); setPage(1) }} title="Ordonează"
+              className="h-10 rounded-xl border border-[#e8e2de] bg-white px-3 text-sm text-[#444] outline-none focus:border-[#ce0100]">
+              {SORT_OPTIONS.map(o => <option key={o.v} value={o.v}>{o.label}</option>)}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            {contentTab === 'citate' && (
+              <>
+                <span className="text-[12px] text-[#888] mr-0.5">Tip:</span>
+                {CITAT_TYPES.map(t => (
+                  <button key={t} onClick={() => { setTypeFilter(p => p.includes(t) ? p.filter(x => x !== t) : [...p, t]); setPage(1) }}
+                    className={`h-7 px-3 rounded-full text-[12px] font-semibold border transition-all ${
+                      typeFilter.includes(t) ? 'bg-[#ce0100] text-white border-[#ce0100]' : 'bg-white text-[#444] border-[#e8e2de] hover:border-[#ffd3d3]'
+                    }`}>{t}</button>
+                ))}
+                <span className="w-px h-4 bg-[#e8e2de] mx-1" />
+              </>
+            )}
+            <button onClick={() => { setOnlyLocked(v => !v); setPage(1) }}
+              className={`h-7 px-3 rounded-full text-[12px] font-semibold border flex items-center gap-1.5 transition-all ${
+                onlyLocked ? 'bg-[#fff5eb] text-[#c05c00] border-[#ffd9a8]' : 'bg-white text-[#444] border-[#e8e2de] hover:border-[#ffd9a8]'
+              }`}>
+              <LockClosedIcon className="w-3.5 h-3.5" /> Folosite în TP Ilustrator
+            </button>
+            {statusTab !== 'asteptare' && validators.length > 0 && (
+              <select value={validatorFilter} onChange={e => { setValidatorFilter(e.target.value); setPage(1) }}
+                className="h-7 rounded-full border border-[#e8e2de] bg-white px-2.5 text-[12px] text-[#444] outline-none focus:border-[#ce0100]">
+                <option value="">{statusTab === 'validat' ? 'Validat de: toți' : 'Decis de: toți'}</option>
+                {validators.map(v => <option key={v} value={v}>{v}</option>)}
+              </select>
+            )}
+            {hasFilters && (
+              <button onClick={clearFilters}
+                className="h-7 px-3 rounded-full text-[12px] text-[#ce0100] border border-[#ffd3d3] bg-[#fff7f7] hover:bg-[#ffe8e8] transition-all">
+                Șterge filtrele
+              </button>
+            )}
+            <span className="ml-auto text-[12px] text-[#888]">
+              {items.length} {items.length === 1 ? 'rezultat' : 'rezultate'}{hasFilters ? ` din ${statusItems.length}` : ''}
+            </span>
+          </div>
         </div>
 
         {/* List */}
@@ -503,7 +616,8 @@ export default function ValidariPage() {
               }
             </div>
             <p className="text-base font-light text-[#111] mb-1">
-              {statusTab === 'asteptare' ? 'Nicio traducere în așteptare' :
+              {hasFilters ? 'Niciun rezultat pentru căutarea / filtrele actuale' :
+               statusTab === 'asteptare' ? 'Nicio traducere în așteptare' :
                statusTab === 'validat'   ? 'Nicio traducere validată' :
                                            'Nicio traducere refuzată'}
             </p>

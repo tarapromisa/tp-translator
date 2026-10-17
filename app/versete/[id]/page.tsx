@@ -7,11 +7,12 @@ import { supabase } from '@/lib/supabase'
 import {
   ArrowLeftIcon, PencilSquareIcon, TrashIcon,
   CalendarIcon, ClockIcon, UserIcon, ShieldCheckIcon, CheckCircleIcon,
-  HashtagIcon,
+  HashtagIcon, LockClosedIcon,
 } from '@heroicons/react/24/outline'
 import { CheckCircleIcon as CheckCircleSolid } from '@heroicons/react/24/solid'
 import { XMarkIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline'
 import EditVersetDrawer from '@/components/EditVersetDrawer'
+import LoadingScreen from '@/components/LoadingSpinner'
 
 // ── Language config ───────────────────────────────────────────────
 const LANGUAGES = [
@@ -131,6 +132,7 @@ export default function VersetDetailPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [showEditDrawer, setShowEditDrawer] = useState(false)
+  const [showLockedModal, setShowLockedModal] = useState(false)
 
   useEffect(() => {
     const fetch = async () => {
@@ -144,14 +146,7 @@ export default function VersetDetailPage() {
     fetch()
   }, [params.id])
 
-  if (loading) return (
-    <main className="flex min-h-screen bg-[#f9f7f5]">
-      <Sidebar />
-      <div className="flex-1 flex items-center justify-center">
-        <p className="text-base text-[#888]">Se încarcă...</p>
-      </div>
-    </main>
-  )
+  if (loading) return <LoadingScreen />
 
   if (!verset) return null
 
@@ -171,7 +166,12 @@ export default function VersetDetailPage() {
 
   const handleEdited = (updated: any) => { setVerset(updated) }
 
+  // Verset validat → no se puede editar ni borrar (hay que revertirlo desde Validări)
+  const isLocked = verset.validation === 'Validat'
+  const validatedBy = verset.validated_by_user?.full_name as string | undefined
+
   const handleDeleteConfirm = async () => {
+    if (isLocked) { setShowDeleteModal(false); setShowLockedModal(true); return }
     setIsDeleting(true)
     await supabase.from('versete').delete().eq('id', verset.id)
     setIsDeleting(false); setShowDeleteModal(false)
@@ -191,16 +191,41 @@ export default function VersetDetailPage() {
             <ArrowLeftIcon className="w-4 h-4" /> Înapoi la versete
           </button>
           <div className="flex items-center gap-2">
-            <button onClick={() => setShowEditDrawer(true)}
-              className="h-10 px-4 rounded-xl border border-[#e8e2de] bg-white flex items-center gap-2 text-sm text-[#444] hover:bg-[#faf7f5] transition-all">
-              <PencilSquareIcon className="w-4 h-4" /> Editează
-            </button>
-            <button onClick={() => setShowDeleteModal(true)}
-              className="h-10 w-10 rounded-xl bg-[#fff1f1] text-[#ce0100] flex items-center justify-center hover:bg-[#ffe0e0] transition-all">
-              <TrashIcon className="w-4 h-4" />
-            </button>
+            {isLocked ? (
+              <button onClick={() => setShowLockedModal(true)} title="Versetul este validat și nu poate fi modificat"
+                className="h-10 px-4 rounded-xl border border-[#e8e2de] bg-[#f1ece9] text-[#9c8e87] flex items-center gap-2 text-sm cursor-not-allowed">
+                <LockClosedIcon className="w-4 h-4" /> Blocat
+              </button>
+            ) : (
+              <>
+                <button onClick={() => setShowEditDrawer(true)}
+                  className="h-10 px-4 rounded-xl border border-[#e8e2de] bg-white flex items-center gap-2 text-sm text-[#444] hover:bg-[#faf7f5] transition-all">
+                  <PencilSquareIcon className="w-4 h-4" /> Editează
+                </button>
+                <button onClick={() => setShowDeleteModal(true)}
+                  className="h-10 w-10 rounded-xl bg-[#fff1f1] text-[#ce0100] flex items-center justify-center hover:bg-[#ffe0e0] transition-all">
+                  <TrashIcon className="w-4 h-4" />
+                </button>
+              </>
+            )}
           </div>
         </div>
+
+        {/* ── AVISO: VERSET VALIDAT ── */}
+        {isLocked && (
+          <div className="mb-5 flex items-start gap-[14px] rounded-[20px] border border-[#bfe5cf] bg-[#edfaf3] px-[22px] py-[16px]">
+            <div className="w-[38px] h-[38px] rounded-full bg-white border border-[#bfe5cf] flex items-center justify-center flex-shrink-0">
+              <LockClosedIcon className="w-[18px] h-[18px] text-[#1a8c4e]" />
+            </div>
+            <div>
+              <p className="text-[15px] font-[700] text-[#166534]">Verset validat · modificările sunt blocate</p>
+              <p className="text-[13px] text-[#3f6b52] leading-[20px] mt-[2px]">
+                Acest verset a fost validat{validatedBy ? <> de <strong>{validatedBy}</strong></> : ''} și nu mai poate fi modificat sau șters.
+                Dacă este necesară o modificare, contactează <strong>coordonatorul principal</strong> pentru a readuce versetul din pagina <strong>Validări</strong>.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* ── MAIN GRID ── */}
         <div className="grid grid-cols-[1fr_360px] gap-5">
@@ -367,8 +392,33 @@ export default function VersetDetailPage() {
         onCancel={() => setShowDeleteModal(false)}
         isDeleting={isDeleting}
       />
+      {/* Modal: intento de editar/borrar un verset validado */}
+      {showLockedModal && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowLockedModal(false)} />
+          <div className="relative w-full max-w-[420px] bg-white rounded-[24px] shadow-[0_30px_80px_rgba(0,0,0,0.18)] overflow-hidden">
+            <div className="h-[4px] bg-[#1a8c4e]" />
+            <div className="px-[28px] pt-[26px] pb-[24px] text-center">
+              <div className="w-[52px] h-[52px] mx-auto mb-[14px] rounded-full bg-[#edfaf3] border-2 border-[#bfe5cf] flex items-center justify-center">
+                <LockClosedIcon className="w-[22px] h-[22px] text-[#1a8c4e]" />
+              </div>
+              <h3 className="text-[18px] font-[700] text-[#111] mb-[8px]">Versetul {verset.public_id} este validat</h3>
+              <p className="text-[13px] text-[#6b5e57] leading-[21px] mb-[20px]">
+                Un verset validat nu mai poate fi modificat sau șters.
+                Pentru orice modificare, contactează <strong className="text-[#111]">coordonatorul principal</strong>,
+                care îl poate readuce din pagina <strong className="text-[#111]">Validări</strong>.
+              </p>
+              <button onClick={() => setShowLockedModal(false)}
+                className="w-full h-[44px] rounded-[14px] bg-[#111] text-white text-[14px] font-[600] hover:bg-[#2a2a2a] transition-all">
+                Am înțeles
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <EditVersetDrawer
-        isOpen={showEditDrawer}
+        isOpen={showEditDrawer && !isLocked}
         verset={verset}
         onClose={() => setShowEditDrawer(false)}
         onSaved={handleEdited}
