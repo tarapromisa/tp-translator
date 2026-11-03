@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
+import { useRouter } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import AccessDenied from '@/components/AccessDenied'
 import { useUser } from '@/context/UserContext'
@@ -43,7 +44,7 @@ const TRANSLATOR_FIELDS: Record<string, string> = {
   ES:'traductor_es', EN:'traductor_en', DE:'traductor_de', PT:'traductor_pt', FR:'traductor_fr', IT:'traductor_it'
 }
 // Columnas de la vista tabla: Traducător | Limbă | Perioadă | ID-uri | Acțiuni
-const TABLE_COLS = 'minmax(150px,1.3fr) 52px 130px minmax(160px,2fr) 128px'
+const TABLE_COLS = '20px minmax(150px,1.3fr) 52px 130px minmax(160px,2fr) 128px'
 type ViewMode = 'card' | 'compact' | 'tabel'
 type SortRef = 'id-asc' | 'id-desc' | 'date-desc' | 'date-asc'
 const SORT_OPTIONS: { v: SortRef; label: string }[] = [
@@ -263,10 +264,11 @@ const SECTION_TITLES: Record<SectionId, string> = {
 }
 const TITLEBAR_H = 36
 
-function FloatingWindow({ title, geo, z, onFocus, onChange, onDock, onClose, children }: {
+function FloatingWindow({ title, geo, z, onFocus, onChange, onDock, onClose, children, dockLabel = 'Readu în pagină', dockIcon, hideDock }: {
   title: string; geo: Geo; z: number
   onFocus: () => void; onChange: (g: Geo) => void; onDock: () => void; onClose: () => void
   children: React.ReactNode
+  dockLabel?: string; dockIcon?: React.ReactNode; hideDock?: boolean
 }) {
   const drag = (e: React.PointerEvent, kind: 'move' | 'resize') => {
     if (kind === 'move' && (e.target as HTMLElement).closest('button')) return
@@ -305,10 +307,12 @@ function FloatingWindow({ title, geo, z, onFocus, onChange, onDock, onClose, chi
           <p className="text-[10px] font-semibold text-[#9c8e87] uppercase tracking-[0.12em] truncate">{title}</p>
         </div>
         <div className="flex items-center gap-0.5 flex-shrink-0">
-          <button onClick={onDock} title="Readu în pagină"
-            className="h-7 w-7 rounded-lg flex items-center justify-center text-[#888] hover:bg-white hover:text-[#ce0100] transition-all">
-            <ArrowsPointingInIcon className="w-4 h-4" />
-          </button>
+          {!hideDock && (
+            <button onClick={onDock} title={dockLabel}
+              className="h-7 w-7 rounded-lg flex items-center justify-center text-[#888] hover:bg-white hover:text-[#ce0100] transition-all">
+              {dockIcon ?? <ArrowsPointingInIcon className="w-4 h-4" />}
+            </button>
+          )}
           <button onClick={onClose} title="Închide"
             className="h-7 w-7 rounded-lg flex items-center justify-center text-[#888] hover:bg-white hover:text-[#ce0100] transition-all">
             <XMarkIcon className="w-4 h-4" />
@@ -325,6 +329,156 @@ function FloatingWindow({ title, geo, z, onFocus, onChange, onDock, onClose, chi
       </div>
     </div>,
     document.body
+  )
+}
+
+// ── Vista rápida de una cita (ventana flotante) ───────────────────
+const PREVIEW_LANGS = [
+  { code: 'RO', text: 'citat_ro', tr: 'translator_ro', date: 'data_trad_ro' },
+  { code: 'ES', text: 'citat_es', tr: 'translator_es', date: 'data_trad_es' },
+  { code: 'EN', text: 'citat_en', tr: 'translator_en', date: 'data_trad_en' },
+  { code: 'DE', text: 'citat_de', tr: 'translator_de', date: 'data_trad_de' },
+  { code: 'PT', text: 'citat_pt', tr: 'translator_pt', date: 'data_trad_pt' },
+  { code: 'FR', text: 'citat_fr', tr: 'translator_fr', date: 'data_trad_fr' },
+  { code: 'IT', text: 'citat_it', tr: 'translator_it', date: 'data_trad_it' },
+]
+const isROId = (pid: string) => /^RO\d/i.test(pid)
+const dShort = (d?: string | null) => d ? new Date(d.length === 10 ? d + 'T00:00:00' : d).toLocaleDateString('ro-RO', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'
+
+function CitatPreview({ publicId, onOpenPage }: { publicId: string; onOpenPage: (href: string) => void }) {
+  const [data, setData] = useState<any>(null)
+  const [state, setState] = useState<'loading' | 'ok' | 'missing'>('loading')
+  const ro = isROId(publicId)
+
+  useEffect(() => {
+    let alive = true
+    const load = async () => {
+      const res = ro
+        ? await (supabase.from('citate_ro') as any)
+            .select('*, traducator_ro_user:traducator_ro(full_name)').eq('public_id', publicId).maybeSingle()
+        : await (supabase.from('texts') as any)
+            .select(`*,
+              translator_ro:traducator_ro(full_name), translator_es:traductor_es(full_name),
+              translator_en:traductor_en(full_name), translator_de:traductor_de(full_name),
+              translator_pt:traductor_pt(full_name), translator_fr:traductor_fr(full_name),
+              translator_it:traductor_it(full_name)`).eq('public_id', publicId).maybeSingle()
+      if (!alive) return
+      setData(res.data); setState(res.data ? 'ok' : 'missing')
+    }
+    load()
+    return () => { alive = false }
+  }, [publicId, ro])
+
+  if (state === 'loading') return (
+    <div className="flex-1 flex items-center justify-center py-10">
+      <div className="w-9 h-9 rounded-full border-[3px] border-[#f4dede] border-t-[#ce0100] animate-spin" />
+    </div>
+  )
+  if (state === 'missing') return (
+    <p className="p-6 text-center text-sm text-[#888]">Nu am găsit citatul <strong className="text-[#ce0100]">{publicId}</strong>.</p>
+  )
+
+  const href = ro ? '/citate-ro' : `/citate/${data.id}`
+  const done = PREVIEW_LANGS.filter(l => data[l.text]?.trim()).length
+
+  return (
+    <div className="p-5 flex flex-col gap-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className={`text-[24px] font-light leading-none ${ro ? 'text-[#ec4899]' : 'text-[#ce0100]'}`}>{data.public_id}</p>
+          <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+            <span className={`text-[10px] font-semibold px-2 h-[20px] inline-flex items-center rounded-full ${data.status === 'Completat' ? 'bg-[#edfaf3] text-[#166534]' : 'bg-[#fff5eb] text-[#c05c00]'}`}>{data.status ?? 'Incomplet'}</span>
+            {!ro && data.validation && <span className="text-[10px] font-semibold px-2 h-[20px] inline-flex items-center rounded-full bg-[#eef3ff] text-[#1e40af]">{data.validation}</span>}
+            {!ro && <span className="text-[10px] text-[#888]">{done}/7 limbi</span>}
+            {!ro && data.public_ro_id && <span className="text-[10px] text-[#888]">· Text RO {data.public_ro_id}</span>}
+          </div>
+        </div>
+        <div className="flex flex-col gap-1.5 flex-shrink-0">
+          <button onClick={() => onOpenPage(href)}
+            className="h-8 px-3 rounded-lg bg-[#ce0100] text-white text-[11px] font-semibold flex items-center justify-center gap-1.5 hover:bg-[#a80000] transition-all">
+            Deschide pagina
+          </button>
+          <button onClick={() => window.open(href, '_blank')}
+            className="h-7 px-3 rounded-lg border border-[#e8e2de] bg-white text-[11px] font-semibold text-[#555] flex items-center justify-center gap-1.5 hover:bg-[#faf7f5] transition-all">
+            <ArrowTopRightOnSquareIcon className="w-3.5 h-3.5" /> Tab nou
+          </button>
+        </div>
+      </div>
+
+      {ro ? (
+        <>
+          <div className="rounded-xl bg-[#faf7f5] border border-[#f0e9e5] p-3">
+            <p className="text-[10px] font-semibold text-[#9c8e87] uppercase tracking-wide mb-1">Text original</p>
+            <p className="text-[13px] text-[#222] italic leading-relaxed">"{data.text_original}"</p>
+            <p className="text-[11px] text-[#888] mt-1">— {data.autor_original || 'Anonim'}</p>
+          </div>
+          <div className="rounded-xl border border-[#f0e9e5] p-3">
+            <p className="text-[10px] font-semibold text-[#9c8e87] uppercase tracking-wide mb-1">Traducere în română</p>
+            {data.citat_ro
+              ? <p className="text-[13px] text-[#222] leading-relaxed">"{data.citat_ro}"</p>
+              : <p className="text-[12px] text-[#bbb] italic">Încă netradus.</p>}
+          </div>
+          <div className="grid grid-cols-3 gap-2 text-[11px]">
+            <div><p className="text-[#9c8e87]">Traducător RO</p><p className="font-semibold text-[#111]">{data.traducator_ro_user?.full_name ?? '—'}</p></div>
+            <div><p className="text-[#9c8e87]">Asignat</p><p className="font-semibold text-[#111]">{dShort(data.data_asignarii)}</p></div>
+            <div><p className="text-[#9c8e87]">Limită</p><p className="font-semibold text-[#111]">{dShort(data.data_limita)}</p></div>
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="rounded-xl bg-[#faf7f5] border border-[#f0e9e5] p-3">
+            <p className="text-[14px] text-[#111] leading-relaxed">"{data.citat_ro}"</p>
+            <p className="text-[11px] text-[#888] mt-1">— {data.autor_original || 'Anonim'} · asignat {dShort(data.data_asignarii)}</p>
+          </div>
+          <div className="flex flex-col divide-y divide-[#f8f3f0] rounded-xl border border-[#f0e9e5] overflow-hidden">
+            {PREVIEW_LANGS.map(l => {
+              const txt = data[l.text]?.trim()
+              return (
+                <div key={l.code} className={`px-3 py-2 ${txt ? '' : 'bg-[#fffafa]'}`}>
+                  <div className="flex items-center gap-2">
+                    <span className="w-7 h-6 rounded-md bg-[#fff4f4] border border-[#ffd3d3] text-[10px] font-bold text-[#ce0100] flex items-center justify-center flex-shrink-0">{l.code}</span>
+                    <span className="text-[11px] text-[#555] truncate flex-1">{data[l.tr]?.full_name ?? <span className="italic text-[#c0b0aa]">Nealocat</span>}</span>
+                    {txt
+                      ? <span className="text-[10px] font-semibold text-[#166534] whitespace-nowrap">✓ {data[l.date] ? dShort(data[l.date]) : 'Completat'}</span>
+                      : <span className="text-[10px] font-semibold text-[#c05c00] whitespace-nowrap">În așteptare</span>}
+                  </div>
+                  {txt && l.code !== 'RO' && <p className="text-[12px] text-[#444] mt-1 ml-9 leading-snug">{txt}</p>}
+                </div>
+              )
+            })}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+// ── Borrado múltiple ──────────────────────────────────────────────
+function BulkDeleteModal({ count, onCancel, onConfirm }: { count: number; onCancel: () => void; onConfirm: () => Promise<void> }) {
+  const [loading, setLoading] = useState(false)
+  return (
+    <div className="fixed inset-0 z-[999] flex items-center justify-center p-4"
+      style={{ background: 'rgba(10,6,4,0.65)', backdropFilter: 'blur(10px)' }}
+      onClick={e => { if (e.target === e.currentTarget && !loading) onCancel() }}>
+      <div className="bg-white rounded-[24px] w-full max-w-[400px] overflow-hidden shadow-[0_32px_80px_rgba(0,0,0,0.2)]">
+        <div className="h-[4px] bg-[#ce0100]" />
+        <div className="px-8 pt-7 pb-6 text-center">
+          <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-[#fff1f1] border-2 border-[#f4d4d4] flex items-center justify-center">
+            <ExclamationTriangleIcon className="w-5 h-5 text-[#ce0100]" />
+          </div>
+          <h3 className="text-[17px] font-semibold text-[#111] mb-2">Ștergi {count} {count === 1 ? 'înregistrare' : 'înregistrări'}?</h3>
+          <p className="text-[13px] text-[#888] mb-6">Acțiunea nu poate fi anulată.</p>
+          <div className="flex gap-3">
+            <button onClick={onCancel} disabled={loading}
+              className="flex-1 h-10 rounded-[12px] border border-[#e8e2de] bg-white text-[13px] font-semibold text-[#666] hover:bg-[#faf7f5] transition-all">Anulează</button>
+            <button onClick={async () => { setLoading(true); await onConfirm(); setLoading(false) }} disabled={loading}
+              className="flex-1 h-10 rounded-[12px] bg-[#ce0100] text-white text-[13px] font-bold shadow-[0_4px_12px_rgba(206,1,0,0.3)] hover:bg-[#a80000] disabled:opacity-70 transition-all">
+              {loading ? 'Se șterge...' : 'Da, șterge'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -576,6 +730,40 @@ export default function MailTLPPage() {
   const [langFilter, setLangFilter] = useState('')
   const [collapsed, setCollapsed] = useState<{ pending: boolean; sent: boolean }>({ pending: false, sent: false })
 
+  // ── Vista rápida de citas (ventanas flotantes) ──
+  const router = useRouter()
+  const [previews, setPreviews] = useState<{ id: string; geo: Geo }[]>([])
+  // Se abre en el lado contrario al clic, para no tapar la lista desde la que se eligió
+  const openPreview = (publicId: string, clickX?: number) => {
+    setPreviews(prev => {
+      const others = prev.filter(p => p.id !== publicId)
+      const existing = prev.find(p => p.id === publicId)
+      if (existing) return [...others, existing]  // ya abierta → al frente
+      const vw = window.innerWidth, vh = window.innerHeight
+      const w = Math.min(460, vw - 20), h = Math.min(560, vh - 40)
+      const n = prev.length
+      const fromRight = (clickX ?? vw) > vw / 2
+      const baseX = fromRight ? Math.max(10, vw / 2 - w - 20) : Math.min(vw - w - 10, vw / 2 + 20)
+      return [...prev, { id: publicId, geo: { x: Math.round(baseX + (fromRight ? -1 : 1) * n * 28), y: Math.min(80 + n * 28, vh - h - 10), w, h } }]
+    })
+  }
+  const closePreview = (publicId: string) => setPreviews(prev => prev.filter(p => p.id !== publicId))
+
+  // ── Selección múltiple y borrado ──
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [showBulkDelete, setShowBulkDelete] = useState(false)
+  const toggleSelect = (id: string) => setSelectedIds(prev => {
+    const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n
+  })
+  const setMany = (ids: string[], on: boolean) => setSelectedIds(prev => {
+    const n = new Set(prev); ids.forEach(id => on ? n.add(id) : n.delete(id)); return n
+  })
+  const bulkDelete = async () => {
+    const ids = Array.from(selectedIds)
+    if (ids.length > 0) await supabase.from('mail_tlp').delete().in('id', ids)
+    setSelectedIds(new Set()); setShowBulkDelete(false); fetchData()
+  }
+
   const matchRec = (r: MailRecord) => {
     if (langFilter && r.traducator_user?.language !== langFilter) return false
     if (!searchRec) return true
@@ -586,6 +774,16 @@ export default function MailTLPPage() {
   }
   const shownPending = pendingRecords.filter(matchRec)
   const shownSent    = sentRecords.filter(matchRec)
+  const shownAllIds  = [...shownPending, ...shownSent].map(r => r.id)
+  const allShownSelected = shownAllIds.length > 0 && shownAllIds.every(id => selectedIds.has(id))
+  // Si un registro desaparece (borrado / filtrado por otro usuario), lo quitamos de la selección
+  useEffect(() => {
+    setSelectedIds(prev => {
+      const valid = new Set(records.map(r => r.id))
+      const n = new Set(Array.from(prev).filter(id => valid.has(id)))
+      return n.size === prev.size ? prev : n
+    })
+  }, [records])
 
   const renderSection = (key: 'pending' | 'sent', title: string, list: MailRecord[], color: string) => {
     if (list.length === 0) return null
@@ -595,22 +793,36 @@ export default function MailTLPPage() {
         isSending={key === 'pending' && sendingId === record.id}
         isSent={key === 'pending' && sentIds.includes(record.id)}
         onSend={key === 'pending' ? () => sendEmail(record) : () => {}}
-        onDelete={() => setDeleteItem(record)} fmt={fmt} asignariMap={asignariMap} />
+        onDelete={() => setDeleteItem(record)} fmt={fmt} asignariMap={asignariMap}
+        selected={selectedIds.has(record.id)} onToggleSelect={() => toggleSelect(record.id)}
+        onOpenCitat={openPreview} />
     ))
+    const sectionIds = list.map(r => r.id)
+    const sectionAll = sectionIds.every(id => selectedIds.has(id))
+    const sectionSome = !sectionAll && sectionIds.some(id => selectedIds.has(id))
     return (
       <div>
-        <button onClick={() => setCollapsed(c => ({ ...c, [key]: !c[key] }))}
-          className="flex items-center gap-1.5 text-[10px] font-semibold text-[#888] uppercase tracking-wide mb-2 hover:text-[#111] transition-colors">
-          <ChevronDownIcon className={`w-3 h-3 transition-transform ${isCollapsed ? '-rotate-90' : ''}`} />
-          <span className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />
-          {title} · {list.length}
-        </button>
+        <div className="flex items-center gap-2 mb-2">
+          {canManage && (
+            <input type="checkbox" checked={sectionAll} title={sectionAll ? 'Deselectează secțiunea' : 'Selectează toată secțiunea'}
+              ref={el => { if (el) el.indeterminate = sectionSome }}
+              onChange={() => setMany(sectionIds, !sectionAll)}
+              className="w-3.5 h-3.5 accent-[#ce0100] cursor-pointer" />
+          )}
+          <button onClick={() => setCollapsed(c => ({ ...c, [key]: !c[key] }))}
+            className="flex items-center gap-1.5 text-[10px] font-semibold text-[#888] uppercase tracking-wide hover:text-[#111] transition-colors">
+            <ChevronDownIcon className={`w-3 h-3 transition-transform ${isCollapsed ? '-rotate-90' : ''}`} />
+            <span className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />
+            {title} · {list.length}
+          </button>
+        </div>
         {!isCollapsed && (
           viewMode === 'tabel' ? (
             <div className="bg-white border border-[#e8e2de] rounded-xl overflow-x-auto">
               <div className="min-w-[620px]">
                 <div className="grid gap-3 px-3 h-8 items-center bg-[#faf7f5] border-b border-[#f0e9e5] text-[10px] font-semibold text-[#9c8e87] uppercase tracking-wide"
                   style={{ gridTemplateColumns: TABLE_COLS }}>
+                  <span />
                   <span>Traducător</span><span>Limbă</span><span>Perioadă</span><span>ID-uri</span><span className="text-right">Acțiuni</span>
                 </div>
                 {rows}
@@ -695,6 +907,28 @@ export default function MailTLPPage() {
               </div>
 
               <div className="flex-1 overflow-y-auto px-4 md:px-5 pb-4 flex flex-col gap-3">
+                {canManage && shownAllIds.length > 0 && (
+                  <div className={`sticky top-0 z-10 flex items-center gap-2 flex-wrap rounded-xl px-3 py-2 border transition-all ${
+                    selectedIds.size > 0 ? 'bg-[#fff7f7] border-[#ffd3d3]' : 'bg-[#f9f7f5] border-[#f0e9e5]'}`}>
+                    <label className="flex items-center gap-2 text-[11px] font-semibold text-[#555] cursor-pointer select-none">
+                      <input type="checkbox" checked={allShownSelected}
+                        ref={el => { if (el) el.indeterminate = !allShownSelected && selectedIds.size > 0 }}
+                        onChange={() => allShownSelected ? setSelectedIds(new Set()) : setMany(shownAllIds, true)}
+                        className="w-3.5 h-3.5 accent-[#ce0100]" />
+                      Selectează tot ({shownAllIds.length})
+                    </label>
+                    {selectedIds.size > 0 && (
+                      <>
+                        <span className="text-[11px] text-[#ce0100] font-semibold">· {selectedIds.size} {selectedIds.size === 1 ? 'selectată' : 'selectate'}</span>
+                        <button onClick={() => setSelectedIds(new Set())} className="text-[11px] text-[#888] hover:text-[#111] underline-offset-2 hover:underline">Deselectează</button>
+                        <button onClick={() => setShowBulkDelete(true)}
+                          className="ml-auto h-7 px-3 rounded-lg bg-[#ce0100] text-white text-[11px] font-bold flex items-center gap-1.5 shadow-[0_3px_8px_rgba(206,1,0,0.2)] hover:bg-[#a80000] transition-all">
+                          <TrashIcon className="w-3.5 h-3.5" /> Șterge selectate ({selectedIds.size})
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
                 {renderSection('pending', 'În așteptare', shownPending, '#c05c00')}
                 {renderSection('sent', 'Trimise', shownSent, '#166534')}
                 {!loading && records.length === 0 && (
@@ -744,8 +978,8 @@ export default function MailTLPPage() {
                         title="Click pentru a adăuga în câmpul de ID-uri">
                         {c.public_id}
                       </button>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[12px] text-[#555] truncate font-light">{c.citat_ro || '—'}</p>
+                      <div className="flex-1 min-w-0 cursor-pointer group/prev" onClick={e => openPreview(c.public_id, e.clientX)} title="Vezi citatul">
+                        <p className="text-[12px] text-[#555] truncate font-light group-hover/prev:text-[#111] group-hover/prev:underline decoration-[#ffd3d3] underline-offset-2">{c.citat_ro || '—'}</p>
                         <div className="flex items-center gap-2 mt-0.5">
                           <p className="text-[10px] text-[#aaa]">— {c.autor_original}</p>
                           {c.data_asignarii && (
@@ -805,8 +1039,8 @@ export default function MailTLPPage() {
                         title="Click para añadir al campo de IDs">
                         {c.public_id}
                       </button>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[12px] text-[#555] truncate font-light">{c.text_original}</p>
+                      <div className="flex-1 min-w-0 cursor-pointer group/prev" onClick={e => openPreview(c.public_id, e.clientX)} title="Vezi citatul">
+                        <p className="text-[12px] text-[#555] truncate font-light group-hover/prev:text-[#111] group-hover/prev:underline decoration-[#fbcfe8] underline-offset-2">{c.text_original}</p>
                         <div className="flex items-center gap-2 mt-0.5">
                           <p className="text-[10px] text-[#aaa]">— {c.autor_original}</p>
                           {c.data_asignarii && (
@@ -982,6 +1216,21 @@ export default function MailTLPPage() {
         </FloatingWindow>
       ))}
 
+      {/* Vista rápida de citas */}
+      {previews.map((p, i) => (
+        <FloatingWindow key={p.id} title={`Citat ${p.id}`} geo={p.geo} z={20 + i}
+          onFocus={() => { if (previews[previews.length - 1]?.id !== p.id) openPreview(p.id) }}
+          onChange={g => setPreviews(prev => prev.map(x => x.id === p.id ? { ...x, geo: g } : x))}
+          hideDock onDock={() => {}}
+          onClose={() => closePreview(p.id)}>
+          <CitatPreview publicId={p.id} onOpenPage={href => router.push(href)} />
+        </FloatingWindow>
+      ))}
+
+      {showBulkDelete && (
+        <BulkDeleteModal count={selectedIds.size} onCancel={() => setShowBulkDelete(false)} onConfirm={bulkDelete} />
+      )}
+
       <DeleteModal item={deleteItem} onClose={() => setDeleteItem(null)} onDeleted={fetchData} />
 
       {emailAlert && (
@@ -997,9 +1246,10 @@ export default function MailTLPPage() {
 }
 
 // ── Record Card ───────────────────────────────────────────────────
-function RecordCard({ record, canManage, isSending, isSent, onSend, onDelete, fmt, asignariMap, variant = 'card' }: {
+function RecordCard({ record, canManage, isSending, isSent, onSend, onDelete, fmt, asignariMap, variant = 'card', selected = false, onToggleSelect, onOpenCitat }: {
   record: MailRecord; canManage: boolean; isSending: boolean; isSent: boolean
   variant?: ViewMode
+  selected?: boolean; onToggleSelect?: () => void; onOpenCitat?: (publicId: string, clickX?: number) => void
   onSend: ()=>void; onDelete: ()=>void; fmt: (d:string)=>string
   asignariMap: Record<string, string>
 }) {
@@ -1068,13 +1318,20 @@ function RecordCard({ record, canManage, isSending, isSent, onSend, onDelete, fm
   )
 
   const idChip = (id: string) => (
-    <span key={id} className="text-[10px] font-bold px-2 h-[20px] inline-flex items-center gap-1 rounded-full bg-[#fff4f4] text-[#ce0100] border border-[#ffd3d3]">
+    <button key={id} type="button" onClick={e => onOpenCitat?.(id, e.clientX)} title={`Vezi citatul ${id}`}
+      className="text-[10px] font-bold px-2 h-[20px] inline-flex items-center gap-1 rounded-full bg-[#fff4f4] text-[#ce0100] border border-[#ffd3d3] hover:bg-[#ce0100] hover:text-white hover:border-[#ce0100] transition-all group/chip">
       {id}
       {asignariMap[id] && (
-        <span className="font-normal text-[#888]" title="Data asignării">· {shortDate(asignariMap[id])}</span>
+        <span className="font-normal text-[#888] group-hover/chip:text-white/80" title="Data asignării">· {shortDate(asignariMap[id])}</span>
       )}
-    </span>
+    </button>
   )
+
+  const checkbox = canManage && onToggleSelect ? (
+    <input type="checkbox" checked={selected} onChange={onToggleSelect} onClick={e => e.stopPropagation()}
+      title="Selectează" className="w-3.5 h-3.5 accent-[#ce0100] cursor-pointer flex-shrink-0" />
+  ) : null
+  const selBg = selected ? 'bg-[#fff7f7]' : ''
 
   const langChip = (
     <span className="text-[10px] font-bold px-2 h-[16px] inline-flex items-center rounded-full bg-[#fff4f4] text-[#ce0100] border border-[#ffd3d3] w-fit">
@@ -1087,8 +1344,9 @@ function RecordCard({ record, canManage, isSending, isSent, onSend, onDelete, fm
 
   if (variant === 'tabel') {
     body = (
-      <div className={`grid gap-3 px-3 py-2 items-center border-b border-[#f8f3f0] hover:bg-[#faf7f5] transition-colors ${record.trimis ? 'opacity-70' : ''}`}
+      <div className={`grid gap-3 px-3 py-2 items-center border-b border-[#f8f3f0] hover:bg-[#faf7f5] transition-colors ${selBg} ${record.trimis ? 'opacity-70' : ''}`}
         style={{ gridTemplateColumns: TABLE_COLS }}>
+        <span className="flex items-center">{checkbox}</span>
         <div className="min-w-0 flex items-center gap-2">
           {statusDot}
           <div className="min-w-0">
@@ -1108,25 +1366,36 @@ function RecordCard({ record, canManage, isSending, isSent, onSend, onDelete, fm
     )
   } else if (variant === 'compact') {
     body = (
-      <div className={`flex items-center gap-2 px-3 h-11 border-b border-[#f8f3f0] hover:bg-[#faf7f5] transition-colors ${record.trimis ? 'opacity-70' : ''}`}>
+      <div className={`flex items-center gap-2 px-3 h-11 border-b border-[#f8f3f0] hover:bg-[#faf7f5] transition-colors ${selBg} ${record.trimis ? 'opacity-70' : ''}`}>
+        {checkbox}
         {statusDot}
         <p className="text-[12px] font-semibold text-[#111] truncate min-w-0 flex-1">{record.traducator_user?.full_name ?? '—'}</p>
         {langChip}
         <span className="text-[10px] text-[#888] whitespace-nowrap hidden sm:inline">{shortDate(record.din_ziua)}–{shortDate(record.pana_ziua)}</span>
-        <span className="text-[10px] font-bold px-2 h-[18px] inline-flex items-center rounded-full bg-[#fff4f4] text-[#ce0100] border border-[#ffd3d3] whitespace-nowrap cursor-default"
-          title={ids.map(id => asignariMap[id] ? `${id} · ${shortDate(asignariMap[id])}` : id).join('\n')}>
-          {ids.length} ID
+        <span className="relative group/ids">
+          <span className="text-[10px] font-bold px-2 h-[18px] inline-flex items-center rounded-full bg-[#fff4f4] text-[#ce0100] border border-[#ffd3d3] whitespace-nowrap cursor-pointer">
+            {ids.length} ID
+          </span>
+          {/* Al pasar el ratón: lista de IDs para abrir cada cita */}
+          {ids.length > 0 && (
+            <span className="hidden group-hover/ids:flex absolute right-0 top-full pt-1 z-30">
+              <span className="flex flex-wrap gap-1 w-max max-w-[260px] p-2 rounded-xl bg-white border border-[#e8e2de] shadow-[0_10px_30px_rgba(0,0,0,0.12)]">
+                {ids.map(idChip)}
+              </span>
+            </span>
+          )}
         </span>
         {actions(true)}
       </div>
     )
   } else {
     body = (
-      <div className={`bg-white border border-[#e8e2de] rounded-xl mb-2 overflow-x-hidden ${record.trimis ? 'opacity-70' : ''}`}>
+      <div className={`bg-white border rounded-xl mb-2 overflow-x-hidden ${selected ? 'border-[#ce0100] ring-1 ring-[#ffd3d3]' : 'border-[#e8e2de]'} ${record.trimis ? 'opacity-70' : ''}`}>
         <div className={`h-1 ${record.trimis ? 'bg-[#166534]' : 'bg-[#c05c00]'}`} />
         <div className="p-4">
           <div className="flex items-start justify-between gap-2 mb-3">
-            <div className="min-w-0">
+            {checkbox && <div className="pt-1">{checkbox}</div>}
+            <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold text-[#111]">{record.traducator_user?.full_name ?? '—'}</p>
               <p className="text-[11px] text-[#888] truncate">{record.traducator_user?.email}</p>
               <div className="mt-1">{langChip}</div>
