@@ -500,6 +500,8 @@ export default function MailTLPPage() {
   const [records, setRecords] = useState<MailRecord[]>([])
   const [allUsers, setAllUsers] = useState<User[]>([])
   const [currentUser, setCurrentUser] = useState<User|null>(null)
+  const [toast, setToast] = useState<string | null>(null)
+  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(t => (t === msg ? null : t)), 6000) }
   const [loading, setLoading] = useState(true)
   const [deleteItem, setDeleteItem] = useState<MailRecord|null>(null)
   const [sendingId, setSendingId] = useState<string|null>(null)
@@ -597,16 +599,55 @@ export default function MailTLPPage() {
   const assignedUserIds = records.filter(r => !r.trimis).map(r => r.traducator).filter(Boolean) as string[]
   const availableUsers = allUsers.filter(u => !assignedUserIds.includes(u.id))
 
+  // "Load failed" (Safari/iPhone), "Failed to fetch" (Chrome), "NetworkError" (Firefox):
+  // la petición no llegó a completarse (conexión cortada, pestaña dormida, wifi que cambia...)
+  const isNetworkError = (msg?: string) => !!msg && /load failed|failed to fetch|networkerror|network request failed/i.test(msg)
+  const wait = (ms: number) => new Promise(r => setTimeout(r, ms))
+
   const handleSave = async () => {
     if (!traducator || !dinZiua || !panaZiua) { setFormError('Traducătorul și datele sunt obligatorii.'); return }
     setSaving(true); setFormError(null)
-    const { data: { user } } = await supabase.auth.getUser()
-    let createdBy = null
-    if (user) { const { data: p } = await supabase.from('users').select('id').eq('auth_user_id', user.id).single(); createdBy = p?.id }
-    const { error } = await supabase.from('mail_tlp').insert({ traducator, din_ziua: dinZiua, pana_ziua: panaZiua, citate_lipsesc: citateLipsesc || null, created_by: createdBy })
-    if (error) { setFormError(error.message); setSaving(false); return }
-    setTraducator(''); setDinZiua(''); setPanaZiua(''); setCitateLipsesc('')
-    setSaving(false); fetchData()
+    const payload = { traducator, din_ziua: dinZiua, pana_ziua: panaZiua, citate_lipsesc: citateLipsesc || null }
+
+    try {
+      // Quién lo crea: usamos el perfil ya cargado (una petición menos que pueda fallar)
+      let createdBy: string | null = currentUser?.id ?? null
+      if (!createdBy) {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) { const { data: p } = await supabase.from('users').select('id').eq('auth_user_id', user.id).single(); createdBy = p?.id ?? null }
+      }
+
+      let lastError: string | null = null
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        if (attempt > 1) {
+          await wait(attempt * 800)
+          await supabase.auth.getSession() // reactiva la sesión si el navegador la había dormido
+          // ¿Se guardó en el intento anterior aunque el navegador diera error? → no duplicar
+          const { data: existing } = await supabase.from('mail_tlp').select('id')
+            .eq('traducator', traducator).eq('din_ziua', dinZiua).eq('pana_ziua', panaZiua).eq('trimis', false).limit(1)
+          if (existing && existing.length > 0) { lastError = null; break }
+        }
+        const { error } = await supabase.from('mail_tlp').insert({ ...payload, created_by: createdBy })
+        if (!error) { lastError = null; break }
+        lastError = error.message
+        if (!isNetworkError(error.message)) break // error real (permisos, datos): no reintentar
+      }
+
+      if (lastError) {
+        setFormError(isNetworkError(lastError)
+          ? 'Nu s-a putut salva: conexiunea s-a întrerupt. Datele din formular au rămas — verifică internetul și apasă din nou „Adaugă înregistrare”.'
+          : lastError)
+        return
+      }
+      setTraducator(''); setDinZiua(''); setPanaZiua(''); setCitateLipsesc('')
+      fetchData()
+    } catch (e: any) {
+      setFormError(isNetworkError(e?.message)
+        ? 'Nu s-a putut salva: conexiunea s-a întrerupt. Datele din formular au rămas — încearcă din nou.'
+        : (e?.message ?? 'A apărut o eroare. Încearcă din nou.'))
+    } finally {
+      setSaving(false)
+    }
   }
 
   const [lastAdded, setLastAdded] = useState<string | null>(null)
@@ -624,17 +665,24 @@ export default function MailTLPPage() {
     const fromName  = currentUser?.full_name ?? 'Echipa TP Translator'
     const fromRole = currentUser?.role ?? 'Coordonator'
     const html = generateEmailHtml(record.traducator_user.full_name, record.din_ziua, record.pana_ziua, record.citate_lipsesc, fromName, fromEmail, record.traducator_user.language, fromRole)
-    const res = await fetch('/api/send-email', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ to: record.traducator_user.email, toName: record.traducator_user.full_name, type: 'custom', htmlBody: html, subject: 'Citate nefinalizate - TP Translator', fromEmail, fromName }),
-    })
-    if (res.ok) {
-      await supabase.from('mail_tlp').update({ trimis: true, trimis_at: new Date().toISOString(), trimis_de: currentUser?.id }).eq('id', record.id)
-      setSentIds(p => [...p, record.id])
-      setEmailAlert({ name: record.traducator_user.full_name, email: record.traducator_user.email })
-      setTimeout(() => { setSentIds(p => p.filter(id => id !== record.id)); fetchData() }, 2000)
+    try {
+      const res = await fetch('/api/send-email', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to: record.traducator_user.email, toName: record.traducator_user.full_name, type: 'custom', htmlBody: html, subject: 'Citate nefinalizate - TP Translator', fromEmail, fromName }),
+      })
+      if (res.ok) {
+        await supabase.from('mail_tlp').update({ trimis: true, trimis_at: new Date().toISOString(), trimis_de: currentUser?.id }).eq('id', record.id)
+        setSentIds(p => [...p, record.id])
+        setEmailAlert({ name: record.traducator_user.full_name, email: record.traducator_user.email })
+        setTimeout(() => { setSentIds(p => p.filter(id => id !== record.id)); fetchData() }, 2000)
+      } else {
+        showToast('Emailul nu a putut fi trimis. Încearcă din nou.')
+      }
+    } catch {
+      showToast('Emailul nu a putut fi trimis: conexiunea s-a întrerupt. Încearcă din nou.')
+    } finally {
+      setSendingId(null)
     }
-    setSendingId(null)
   }
 
   const sendAll = async () => {
@@ -1226,6 +1274,15 @@ export default function MailTLPPage() {
           <CitatPreview publicId={p.id} onOpenPage={href => router.push(href)} />
         </FloatingWindow>
       ))}
+
+      {/* Aviso de error (sin ventanas del navegador) */}
+      {toast && (
+        <div className="fixed z-[1000] left-1/2 -translate-x-1/2 bottom-[calc(1.25rem+env(safe-area-inset-bottom))] w-[min(92vw,440px)] flex items-start gap-3 bg-[#111] text-white rounded-2xl px-4 py-3 shadow-[0_16px_40px_rgba(0,0,0,0.25)]">
+          <ExclamationTriangleIcon className="w-5 h-5 text-[#ffb4b4] flex-shrink-0 mt-0.5" />
+          <p className="text-[13px] leading-snug flex-1">{toast}</p>
+          <button onClick={() => setToast(null)} className="text-white/60 hover:text-white"><XMarkIcon className="w-4 h-4" /></button>
+        </div>
+      )}
 
       {showBulkDelete && (
         <BulkDeleteModal count={selectedIds.size} onCancel={() => setShowBulkDelete(false)} onConfirm={bulkDelete} />
