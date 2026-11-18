@@ -40,6 +40,7 @@ const ROLE_STYLE: Record<string, { bg: string; text: string }> = {
   'Coordonator principal':{ bg: 'bg-[#fff5eb]', text: 'text-[#c05c00]' },
   'Coordonator':          { bg: 'bg-[#eef3ff]', text: 'text-[#1e40af]' },
   'Traducător':           { bg: 'bg-[#edfaf3]', text: 'text-[#166534]' },
+  'Operator versete':     { bg: 'bg-[#f3efff]', text: 'text-[#6d28d9]' },
 }
 
 function timeAgo(dateStr: string): string {
@@ -73,6 +74,7 @@ const AVATAR_COLOR: Record<string, string> = {
   'Coordonator principal':'#c05c00',
   'Coordonator':          '#1e40af',
   'Traducător':           '#166534',
+  'Operator versete':     '#6d28d9',
 }
 
 // ── Zepto Mail ────────────────────────────────────────────────────

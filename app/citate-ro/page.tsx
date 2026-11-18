@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Sidebar from '@/components/Sidebar'
+import AccessDenied from '@/components/AccessDenied'
 import Pagination from '@/components/Pagination'
 import { supabase } from '@/lib/supabase'
 import { useUser } from '@/context/UserContext'
@@ -355,6 +356,8 @@ export default function CitateROPage() {
   const role = profile?.role ?? ''
   const isCoordinator = ['Admin', 'Coordonator principal', 'Coordonator'].includes(role)
   const isTraducatorRO = role === 'Traducător' && profile?.language === 'RO'
+  // Solo coordinadores y traductores RO; el resto (p. ej. Operator versete) no entra ni por URL
+  const canAccess = isCoordinator || isTraducatorRO
 
   const [items, setItems] = useState<CitatRO[]>([])
   const [users, setUsers] = useState<{ id: string; full_name: string }[]>([])
@@ -431,6 +434,15 @@ export default function CitateROPage() {
     sortField !== field ? <span className="text-[#ddd]">↕</span> :
     sortDir === 'asc' ? <span className="text-[#ce0100]">↑</span> : <span className="text-[#ce0100]">↓</span>
   )
+
+  if (role !== '' && !canAccess) {
+    return (
+      <main className="flex h-[calc(100dvh-4rem-env(safe-area-inset-top))] md:h-dvh overflow-hidden bg-[#f9f7f5]">
+        <Sidebar />
+        <AccessDenied />
+      </main>
+    )
+  }
 
   return (
     <main className="flex h-[calc(100dvh-4rem-env(safe-area-inset-top))] md:h-dvh overflow-hidden bg-[#f9f7f5]">

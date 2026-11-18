@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import { useUser } from '@/context/UserContext'
 import { supabase } from '@/lib/supabase'
@@ -37,6 +38,16 @@ function todayStr() { return toDateStr(new Date()) }
 
 // ── Detail Modal for Coordonator (read-only) ──────────────
 function TareaDetailModal({ tarea, onClose }: { tarea: TareaCalendarWithStatus; onClose: () => void }) {
+  const router = useRouter()
+  const [opening, setOpening] = useState(false)
+  // Abre el detalle del verset asociado (se busca por su ID público)
+  const openVerset = async () => {
+    if (!tarea.verset_public_id) return
+    setOpening(true)
+    const { data } = await supabase.from('versete').select('id').eq('public_id', tarea.verset_public_id).maybeSingle()
+    setOpening(false)
+    if (data?.id) router.push(`/versete/${data.id}`)
+  }
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
@@ -82,6 +93,12 @@ function TareaDetailModal({ tarea, onClose }: { tarea: TareaCalendarWithStatus; 
                   {tarea.gasit ? `Verset existent (${tarea.verset_public_id ?? ''})` : 'Verset neprogramat'}
                 </p>
               </div>
+            )}
+            {tarea.gasit && tarea.verset_public_id && (
+              <button onClick={openVerset} disabled={opening}
+                className="h-10 rounded-xl bg-[#ce0100] text-white text-sm font-semibold hover:bg-[#a80000] disabled:opacity-60 transition-all">
+                {opening ? 'Se deschide...' : `Deschide versetul ${tarea.verset_public_id}`}
+              </button>
             )}
           </div>
         </div>
@@ -150,9 +167,11 @@ export default function CalendarPage() {
   const isAdmin = role === 'Admin'
   const canManage = isAdmin || role === 'Coordonator principal'
   const isCoordinator = role === 'Coordonator'
-  const canSeeCalendar = ['Admin', 'Coordonator', 'Coordonator principal'].includes(role ?? '')
+  // Operator versete: solo ve las tareas de versículos, sin crear, mover ni editar (canManage = false)
+  const isOperatorVersete = role === 'Operator versete'
+  const canSeeCalendar = ['Admin', 'Coordonator', 'Coordonator principal', 'Operator versete'].includes(role ?? '')
   const isTraducatorRO = role === 'Traducător' && profile?.language === 'RO'
-  const canSeeCitatRO = canSeeCalendar || isTraducatorRO
+  const canSeeCitatRO = (canSeeCalendar && !isOperatorVersete) || isTraducatorRO
 
   const [view, setView] = useState<ViewMode>('month')
   const [currentMonth, setCurrentMonth] = useState(() => {
@@ -293,13 +312,14 @@ export default function CalendarPage() {
   const filteredTareas = useMemo(() => {
     if (filterType === 'citateRO') return []
     return tareas.filter(t => {
+      if (isOperatorVersete && !isValidReference(t.referinta_ro)) return false // solo tareas de versículos
       if (filterCoord !== 'all' && t.coordonator_id !== filterCoord) return false
       if (filterStatus === 'complete' && !t.gasit) return false
       if (filterStatus === 'incomplete' && t.gasit) return false
       if (filterMine && profile?.id && t.coordonator_id !== profile.id) return false
       return true
     })
-  }, [tareas, filterType, filterCoord, filterStatus, filterMine, profile])
+  }, [tareas, filterType, filterCoord, filterStatus, filterMine, profile, isOperatorVersete])
 
   const filteredCitateRO = useMemo(() => {
     if (filterType === 'tareas') return []
@@ -381,7 +401,7 @@ export default function CalendarPage() {
           <div>
             <h1 className="text-[40px] md:text-[52px] leading-none tracking-tight font-light text-[#111] mb-3">Calendar</h1>
             <div className="w-10 h-[3px] rounded-full bg-[#ce0100] mb-4" />
-            <p className="text-base text-[#666]">Sarcini zilnice — referințe biblice și alte activități.</p>
+            <p className="text-base text-[#666]">{isOperatorVersete ? 'Versetele programate — doar vizualizare.' : 'Sarcini zilnice — referințe biblice și alte activități.'}</p>
           </div>
           {canManage && (
             <button onClick={() => openCreateModal()}
@@ -419,9 +439,11 @@ export default function CalendarPage() {
               <span className="flex items-center gap-1.5 text-[11px] text-[#888]">
                 <span className="w-3 h-3 rounded-sm bg-[#edfaf3] border border-[#166534]" /> Sarcină cu verset
               </span>
-              <span className="flex items-center gap-1.5 text-[11px] text-[#888]">
-                <span className="w-3 h-3 rounded-sm bg-[#ede9fe] border border-[#7c3aed]" /> Citat RO
-              </span>
+              {canSeeCitatRO && (
+                <span className="flex items-center gap-1.5 text-[11px] text-[#888]">
+                  <span className="w-3 h-3 rounded-sm bg-[#ede9fe] border border-[#7c3aed]" /> Citat RO
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-1 bg-[#f9f7f5] border border-[#e8e2de] rounded-xl p-1">
               {([['month', CalendarDaysIcon], ['list', ListBulletIcon]] as [ViewMode, any][]).map(([v, Icon]) => (
@@ -442,7 +464,7 @@ export default function CalendarPage() {
 
           {/* Type */}
           <div className="flex items-center gap-1 bg-[#f9f7f5] rounded-xl p-0.5">
-            {[['all','Toate'],['tareas','Sarcini'],['citateRO','Citate RO']].map(([v,l]) => (
+            {(canSeeCitatRO ? [['all','Toate'],['tareas','Sarcini'],['citateRO','Citate RO']] : [['all','Toate']]).map(([v,l]) => (
               <button key={v} onClick={() => setFilterType(v)}
                 className={`h-7 px-3 rounded-lg text-[11px] font-semibold transition-all ${
                   filterType === v ? 'bg-white shadow-sm text-[#ce0100]' : 'text-[#aaa] hover:text-[#555]'
