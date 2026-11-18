@@ -444,6 +444,15 @@ export default function UtilizatoriPage() {
                       className="h-9 w-9 rounded-xl border border-[#e8e2de] bg-white flex items-center justify-center text-[#444] hover:bg-[#faf7f5] transition-all flex-shrink-0" title="Trimite credențiale">
                       <KeyIcon className="w-4 h-4" />
                     </button>
+                    {/* Fișă de acces en cualquier momento (sin contraseña: no se guarda en ningún sitio) */}
+                    <button onClick={() => downloadAccessPdf({
+                        fullName: selected.full_name, email: selected.email, role: selected.role,
+                        language: selected.language || null, password: null,
+                        createdBy: currentUser?.full_name ?? null,
+                      }).catch(e => console.error(e))}
+                      className="h-9 w-9 rounded-xl border border-[#e8e2de] bg-white flex items-center justify-center text-[#444] hover:bg-[#faf7f5] hover:text-[#ce0100] transition-all flex-shrink-0" title="Descarcă fișa de acces (PDF, fără parolă)">
+                      <ArrowDownTrayIcon className="w-4 h-4" />
+                    </button>
                     <button onClick={() => setShowDeleteModal(true)}
                       className="h-9 w-9 rounded-xl bg-[#fff1f1] flex items-center justify-center text-[#ce0100] hover:bg-[#ffe0e0] transition-all flex-shrink-0" title="Șterge utilizator">
                       <TrashIcon className="w-4 h-4" />
