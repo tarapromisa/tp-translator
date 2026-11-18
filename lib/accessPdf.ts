@@ -44,17 +44,22 @@ export async function buildAccessPdf(data: AccessPdfData, load: Loader = fileToB
   const { jsPDF } = await import('jspdf')
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
 
-  // Fuentes con diacríticos rumanos
+  // Fuentes con diacríticos rumanos.
+  // Cada grosor se registra con un NOMBRE PROPIO: si los cuatro se llaman igual,
+  // algunas impresoras y drivers mezclan las fuentes y al imprimir salen caracteres rotos.
   const fonts: [string, string][] = [
-    ['OpenSans-Light.ttf', 'light'], ['OpenSans-Regular.ttf', 'normal'],
-    ['OpenSans-SemiBold.ttf', 'semibold'], ['OpenSans-Bold.ttf', 'bold'],
+    ['OpenSans-Light.ttf', 'OpenSans-Light'], ['OpenSans-Regular.ttf', 'OpenSans-Regular'],
+    ['OpenSans-SemiBold.ttf', 'OpenSans-SemiBold'], ['OpenSans-Bold.ttf', 'OpenSans-Bold'],
   ]
-  for (const [file, style] of fonts) {
+  for (const [file, name] of fonts) {
     doc.addFileToVFS(file, await load(`/fonts/${file}`))
-    doc.addFont(file, 'OpenSans', style)
+    doc.addFont(file, name, 'normal')
+  }
+  const FAMILY: Record<string, string> = {
+    light: 'OpenSans-Light', normal: 'OpenSans-Regular', semibold: 'OpenSans-SemiBold', bold: 'OpenSans-Bold',
   }
   const font = (style: string, size: number, color = INK) => {
-    doc.setFont('OpenSans', style); doc.setFontSize(size); doc.setTextColor(...color)
+    doc.setFont(FAMILY[style] ?? 'OpenSans-Regular', 'normal'); doc.setFontSize(size); doc.setTextColor(...color)
   }
 
   const W = 210, M = 20, CW = W - M * 2
@@ -73,7 +78,7 @@ export async function buildAccessPdf(data: AccessPdfData, load: Loader = fileToB
   doc.text('FIȘĂ DE ACCES · CONFIDENȚIAL', W - M, y + 3, { align: 'right' })
 
   // Título
-  y = 46
+  y = 42
   font('light', 28); doc.text('Bine ai venit,', M, y)
   y += 11
   font('semibold', 20, RED)
@@ -94,7 +99,7 @@ export async function buildAccessPdf(data: AccessPdfData, load: Loader = fileToB
     ['Rol', data.role],
     ...(data.language ? [['Limba de lucru', data.language] as [string, string]] : []),
   ]
-  const rowH = 11
+  const rowH = 10
   const cardH = rows.length * rowH + 6
   doc.setFillColor(...SOFT); doc.setDrawColor(...LINE)
   doc.roundedRect(M, y, CW, cardH, 3, 3, 'FD')
@@ -112,7 +117,7 @@ export async function buildAccessPdf(data: AccessPdfData, load: Loader = fileToB
       doc.setDrawColor(...LINE); doc.line(M + 6, ry + 4, M + CW - 6, ry + 4)
     }
   })
-  y += cardH + 12
+  y += cardH + 10
 
   // Pasos
   font('bold', 13); doc.text('Cum intri în cont', M, y)
@@ -131,23 +136,24 @@ export async function buildAccessPdf(data: AccessPdfData, load: Loader = fileToB
     font('normal', 9.5, [85, 78, 74])
     const lines = doc.splitTextToSize(body, CW - 11)
     doc.text(lines, M + 11, y + 5)
-    y += 5 + lines.length * 4.6 + 5
+    y += 5 + lines.length * 4.6 + 3.5
   })
 
   // Qué puede hacer
-  y += 2
   font('bold', 13); doc.text('Ce poți face în platformă', M, y)
   y += 6
   font('normal', 10, [85, 78, 74])
   const roleLines = doc.splitTextToSize(ROLE_INFO[data.role] ?? 'Accesul tău este stabilit de coordonator.', CW)
   doc.text(roleLines, M, y)
-  y += roleLines.length * 4.8 + 8
+  y += roleLines.length * 4.8 + 6
 
   // Aviso de seguridad
   const note = 'Parola din această fișă este temporară. Schimb-o la prima autentificare și nu trimite această fișă altor persoane. Dacă ai probleme la autentificare, scrie-ne la ' + SUPPORT_EMAIL + '.'
   font('normal', 9, [122, 74, 0])
   const noteLines = doc.splitTextToSize(note, CW - 16)
   const noteH = noteLines.length * 4.4 + 10
+  // Si no cabe antes del pie (nombres o textos largos), el aviso pasa a una segunda página
+  if (y + noteH > 274) { doc.addPage(); doc.setFillColor(...RED); doc.rect(0, 0, 210, 4, 'F'); y = 20 }
   doc.setFillColor(255, 245, 235); doc.setDrawColor(255, 217, 168)
   doc.roundedRect(M, y, CW, noteH, 3, 3, 'FD')
   font('bold', 9, [192, 92, 0]); doc.text('IMPORTANT', M + 8, y + 7)
@@ -155,10 +161,14 @@ export async function buildAccessPdf(data: AccessPdfData, load: Loader = fileToB
 
   // Pie
   const today = new Date().toLocaleDateString('ro-RO', { day: '2-digit', month: 'long', year: 'numeric' })
-  doc.setDrawColor(...LINE); doc.line(M, 280, W - M, 280)
-  font('normal', 8, MUTED)
-  doc.text(`Generat la ${today}${data.createdBy ? ` de ${data.createdBy}` : ''}`, M, 285)
-  doc.text(`TP Translator · ${SUPPORT_EMAIL}`, W - M, 285, { align: 'right' })
+  const pages = doc.getNumberOfPages()
+  for (let pg = 1; pg <= pages; pg++) {
+    doc.setPage(pg)
+    doc.setDrawColor(...LINE); doc.line(M, 280, W - M, 280)
+    font('normal', 8, MUTED)
+    doc.text(`Generat la ${today}${data.createdBy ? ` de ${data.createdBy}` : ''}`, M, 285)
+    doc.text(pages > 1 ? `Pagina ${pg} din ${pages} · ${SUPPORT_EMAIL}` : `TP Translator · ${SUPPORT_EMAIL}`, W - M, 285, { align: 'right' })
+  }
 
   return doc
 }
