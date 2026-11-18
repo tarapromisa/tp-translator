@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase'
 
 type Props = { open: boolean; onClose: () => void; onCreated: () => void }
 
-const ROLES = ['Traducător', 'Coordonator', 'Coordonator principal', 'Admin']
+const ROLES = ['Traducător', 'Operator versete', 'Coordonator', 'Coordonator principal', 'Admin']
 const LANGUAGES = ['RO', 'ES', 'EN', 'DE', 'PT', 'FR', 'IT']
 const STATUSES = [
   { value: true,  label: 'Activ',   color: '#166534', bg: '#edfaf3' },
@@ -45,7 +45,7 @@ export default function CreateUserModal({ open, onClose, onCreated }: Props) {
   const canNext = () => {
     if (step === 1) return fullName.trim().length >= 2
     if (step === 2) return email.includes('@') && email.includes('.')
-    if (step === 3) return role !== '' && language !== ''
+    if (step === 3) return role !== '' && (language !== '' || role === 'Operator versete')
     if (step === 4) return true
     return true
   }
@@ -56,7 +56,7 @@ export default function CreateUserModal({ open, onClose, onCreated }: Props) {
       // 1. Create user in users table
       const { data: newUser, error } = await supabase
         .from('users')
-        .insert({ full_name: fullName, email, role, language, active })
+        .insert({ full_name: fullName, email, role, language: language || null, active })
         .select()
         .single()
 
@@ -206,7 +206,9 @@ export default function CreateUserModal({ open, onClose, onCreated }: Props) {
                       }`}>{r}</button>
                   ))}
                 </div>
-                <p className="text-[12px] font-semibold text-[#666] uppercase tracking-wide mb-[10px]">Limbă</p>
+                <p className="text-[12px] font-semibold text-[#666] uppercase tracking-wide mb-[10px]">
+                  Limbă {role === 'Operator versete' && <span className="normal-case font-normal text-[#aaa]">(opțional)</span>}
+                </p>
                 <div className="flex flex-wrap gap-[8px]">
                   {LANGUAGES.map(l => (
                     <button key={l} onClick={() => setLanguage(l)}
@@ -256,7 +258,7 @@ export default function CreateUserModal({ open, onClose, onCreated }: Props) {
                   </div>
                   <div className="flex flex-wrap gap-[6px]">
                     <span className="text-[11px] font-semibold px-[10px] h-[24px] inline-flex items-center rounded-full bg-[#fff4f4] text-[#ce0100] border border-[#ffd3d3]">{role}</span>
-                    <span className="text-[11px] font-semibold px-[10px] h-[24px] inline-flex items-center rounded-full bg-[#f0e9e5] text-[#555]">{language}</span>
+                    {language && <span className="text-[11px] font-semibold px-[10px] h-[24px] inline-flex items-center rounded-full bg-[#f0e9e5] text-[#555]">{language}</span>}
                     <span className={`text-[11px] font-semibold px-[10px] h-[24px] inline-flex items-center rounded-full ${active ? 'bg-[#edfaf3] text-[#166534]' : 'bg-[#f4f4f4] text-[#888]'}`}>
                       {active ? 'Activ' : 'Inactiv'}
                     </span>

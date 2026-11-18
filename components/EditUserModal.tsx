@@ -17,7 +17,7 @@ type User = {
 
 type Props = { open: boolean; user: User | null; onClose: () => void; onSaved: (updated: User) => void }
 
-const ROLES = ['Traducător', 'Coordonator', 'Coordonator principal', 'Admin']
+const ROLES = ['Traducător', 'Operator versete', 'Coordonator', 'Coordonator principal', 'Admin']
 const LANGUAGES = ['RO', 'ES', 'EN', 'DE', 'PT', 'FR', 'IT']
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error'
