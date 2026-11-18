@@ -9,6 +9,7 @@ import CreateUserModal from '@/components/CreateUserModal'
 import EditUserModal from '@/components/EditUserModal'
 import { useUser } from '@/context/UserContext'
 import { supabase } from '@/lib/supabase'
+import { downloadAccessPdf } from '@/lib/accessPdf'
 import {
   MagnifyingGlassIcon,
   EnvelopeIcon,
@@ -18,6 +19,7 @@ import {
   UserIcon,
   KeyIcon,
   TrashIcon,
+  ArrowDownTrayIcon,
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline'
 import { CheckCircleIcon as CheckSolid } from '@heroicons/react/24/solid'
@@ -177,7 +179,7 @@ export default function UtilizatoriPage() {
     if (res.ok) {
       setCredentialsSent(true)
       setEmailAlert({ name: selected.full_name, email: selected.email })
-      setTimeout(() => { setCredentialsSent(false); setShowCredentialsModal(false); setCredentialsPassword('') }, 2000)
+      // No se cierra solo: así se puede descargar la fișa de acces con la contraseña nueva
     }
     else alert('Eroare la trimiterea emailului.')
   }
@@ -563,7 +565,7 @@ export default function UtilizatoriPage() {
                 className="w-full h-[48px] rounded-[14px] border border-[#f0e9e5] px-[14px] text-[14px] text-[#111] outline-none focus:border-[#ce0100] focus:shadow-[0_0_0_3px_rgba(206,1,0,0.07)] transition-all mb-[20px] placeholder:text-[#ccc]"
               />
               <div className="flex gap-[10px]">
-                <button onClick={() => { setShowCredentialsModal(false); setCredentialsPassword('') }}
+                <button onClick={() => { setShowCredentialsModal(false); setCredentialsPassword(''); setCredentialsSent(false) }}
                   className="flex-1 h-[46px] rounded-[14px] border border-[#e8e2de] bg-white text-[13px] font-semibold text-[#666] hover:bg-[#faf7f5] transition-all">
                   Anulează
                 </button>
@@ -576,6 +578,16 @@ export default function UtilizatoriPage() {
                   {sendingCredentials ? 'Se trimite...' : credentialsSent ? <><CheckCircleIcon className="w-4 h-4" /> Trimis!</> : <><EnvelopeIcon className="w-4 h-4" /> Trimite</>}
                 </button>
               </div>
+              {credentialsSent && (
+                <button onClick={() => downloadAccessPdf({
+                    fullName: selected.full_name, email: selected.email, role: selected.role,
+                    language: selected.language || null, password: credentialsPassword,
+                    createdBy: currentUser?.full_name ?? null,
+                  }).catch(e => console.error(e))}
+                  className="mt-[12px] w-full h-[44px] rounded-[14px] border border-[#ffd3d3] bg-[#fff7f7] text-[13px] font-semibold text-[#ce0100] hover:bg-[#ffecec] transition-all flex items-center justify-center gap-2">
+                  <ArrowDownTrayIcon className="w-4 h-4" /> Descarcă fișa de acces (PDF)
+                </button>
+              )}
             </div>
           </div>
         </div>

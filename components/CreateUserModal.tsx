@@ -2,8 +2,10 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeftIcon, ArrowRightIcon, XMarkIcon, CheckIcon, UserIcon } from '@heroicons/react/24/outline'
+import { ArrowLeftIcon, ArrowRightIcon, XMarkIcon, CheckIcon, UserIcon, ArrowDownTrayIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline'
 import { supabase } from '@/lib/supabase'
+import { useUser } from '@/context/UserContext'
+import { downloadAccessPdf } from '@/lib/accessPdf'
 
 type Props = { open: boolean; onClose: () => void; onCreated: () => void }
 
@@ -34,11 +36,30 @@ export default function CreateUserModal({ open, onClose, onCreated }: Props) {
   const [sendWelcome, setSendWelcome] = useState(true)
   const [createAuth, setCreateAuth] = useState(false)
   const [authPassword, setAuthPassword] = useState('')
+  // Pantalla final: usuario creado → descargar la fișa de acces
+  const [created, setCreated] = useState<null | { password: string | null; authFailed: boolean }>(null)
+  const [pdfState, setPdfState] = useState<'idle' | 'loading' | 'error'>('idle')
+  const { profile } = useUser() as any
 
   const reset = () => {
     setStep(1); setFullName(''); setEmail(''); setRole('')
     setLanguage(''); setActive(true); setSendWelcome(true)
     setCreateAuth(false); setAuthPassword(''); setLoading(false)
+    setCreated(null); setPdfState('idle')
+  }
+
+  const handleDownloadPdf = async () => {
+    setPdfState('loading')
+    try {
+      await downloadAccessPdf({
+        fullName, email, role, language: language || null,
+        password: created?.password ?? null,
+        createdBy: profile?.full_name ?? null,
+      })
+      setPdfState('idle')
+    } catch (e) {
+      console.error(e); setPdfState('error')
+    }
   }
   const handleClose = () => { reset(); onClose() }
 
@@ -63,12 +84,14 @@ export default function CreateUserModal({ open, onClose, onCreated }: Props) {
       if (error) { alert(error.message); setLoading(false); return }
 
       // 2. Create auth user if requested
+      let authOk = false
       if (createAuth && authPassword) {
         const res = await fetch('/api/create-auth-user', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password: authPassword, fullName }),
         })
+        authOk = res.ok
         if (!res.ok) console.error('Auth user creation failed')
       }
 
@@ -81,9 +104,10 @@ export default function CreateUserModal({ open, onClose, onCreated }: Props) {
         })
       }
 
-      reset()
-      onClose()
+      // En vez de cerrar: pantalla de confirmación con la descarga del PDF
       onCreated()
+      setCreated({ password: authOk ? authPassword : null, authFailed: createAuth && !!authPassword && !authOk })
+      setLoading(false)
     } catch (err) {
       console.error(err)
       alert('A apărut o eroare.')
@@ -94,6 +118,46 @@ export default function CreateUserModal({ open, onClose, onCreated }: Props) {
   if (!open) return null
 
   const copy = STEP_COPY[step - 1]
+
+  if (created) {
+    return (
+      <div className="fixed inset-0 z-[999] flex items-center justify-center p-4"
+        style={{ background: 'rgba(10,6,4,0.65)', backdropFilter: 'blur(10px)' }}>
+        <div className="bg-white rounded-[36px] w-full max-w-[480px] overflow-hidden shadow-[0_48px_120px_rgba(0,0,0,0.24)]">
+          <div className="h-[4px] w-full bg-[#1a8c4e]" />
+          <div className="px-[40px] pt-[36px] pb-[28px] text-center">
+            <div className="w-[60px] h-[60px] mx-auto mb-[16px] rounded-full bg-[#edfaf3] border-2 border-[#bfe5cf] flex items-center justify-center">
+              <CheckIcon className="w-[26px] h-[26px] text-[#1a8c4e]" />
+            </div>
+            <h2 className="text-[24px] text-[#111] tracking-[-0.03em] mb-[6px]" style={{ fontWeight: 300 }}>Utilizator creat</h2>
+            <p className="text-[14px] text-[#666] mb-[22px]"><strong className="text-[#111]">{fullName}</strong> · {role}</p>
+
+            {created.authFailed && (
+              <div className="mb-[16px] flex items-start gap-[10px] text-left bg-[#fff5eb] border border-[#ffd9a8] rounded-[14px] p-[12px]">
+                <ExclamationTriangleIcon className="w-[18px] h-[18px] text-[#c05c00] flex-shrink-0" />
+                <p className="text-[12px] text-[#7a4a00]">Contul de autentificare nu a putut fi creat, așa că fișa nu include parola. Poți seta parola din „Trimite credențiale”.</p>
+              </div>
+            )}
+
+            <button onClick={handleDownloadPdf} disabled={pdfState === 'loading'}
+              className="w-full h-[50px] rounded-[16px] bg-[#ce0100] text-white text-[14px] font-bold flex items-center justify-center gap-[8px] shadow-[0_6px_16px_rgba(206,1,0,0.25)] hover:bg-[#a80000] disabled:opacity-60 transition-all">
+              <ArrowDownTrayIcon className="w-[18px] h-[18px]" />
+              {pdfState === 'loading' ? 'Se generează...' : 'Descarcă fișa de acces (PDF)'}
+            </button>
+            <p className="text-[11px] text-[#999] mt-[8px]">
+              {created.password ? 'Include emailul, parola temporară și pașii pentru autentificare.' : 'Include emailul și pașii pentru autentificare (fără parolă).'}
+            </p>
+            {pdfState === 'error' && <p className="text-[12px] text-[#ce0100] mt-[8px]">Nu s-a putut genera PDF-ul. Încearcă din nou.</p>}
+
+            <button onClick={handleClose}
+              className="w-full h-[44px] mt-[16px] rounded-[14px] border border-[#e8e2de] bg-white text-[13px] font-semibold text-[#666] hover:bg-[#faf7f5] transition-all">
+              Închide
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="fixed inset-0 z-[999] flex items-center justify-center p-4"
