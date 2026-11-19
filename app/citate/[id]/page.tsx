@@ -7,6 +7,8 @@ import { supabase } from '@/lib/supabase'
 import DeleteModal from '@/components/DeleteModal'
 import EditDrawer from '@/components/EditDrawer'
 import LoadingScreen from '@/components/LoadingSpinner'
+import AccessDenied from '@/components/AccessDenied'
+import { useUser } from '@/context/UserContext'
 import {
   ArrowLeftIcon,
   ChevronLeftIcon,
@@ -118,6 +120,9 @@ function ValidationBadge({ validation, citationStatus }: { validation: string | 
 export default function CitationDetailPage() {
   const params = useParams()
   const router = useRouter()
+  const { profile } = useUser()
+  const role = profile?.role ?? ''
+  const canAccess = ['Admin', 'Coordonator principal', 'Coordonator'].includes(role)
 
   const [loading, setLoading] = useState(true)
   const [citation, setCitation] = useState<any>(null)
@@ -183,6 +188,15 @@ export default function CitationDetailPage() {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [prevCitation, nextCitation, showEditDrawer, showDeleteModal, showEmailModal, showLockedModal, router])
+
+  if (role !== '' && !canAccess) {
+    return (
+      <main className="flex h-[calc(100dvh-4rem-env(safe-area-inset-top))] md:h-dvh overflow-hidden bg-[#f9f7f5]">
+        <Sidebar />
+        <AccessDenied />
+      </main>
+    )
+  }
 
   if (loading) return <LoadingScreen />
 

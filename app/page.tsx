@@ -201,6 +201,15 @@ export default function DashboardPage() {
   const phrase = PHRASES[phraseIndex]
   const isTranslator = userRole === 'Traducător'
   const isCoordinator = userRole === 'Coordonator' || userRole === 'Coordonator principal' || userRole === 'Admin'
+  const isOperatorVersete = userRole === 'Operator versete'
+  const isTraducatorRO = userRole === 'Traducător' && userLanguage === 'RO'
+  // Solo se puede abrir lo que el rol tiene permitido (si no, la tarjeta se ve pero no se pulsa)
+  const canOpen = (href: string) => {
+    if (isCoordinator) return true
+    if (href.startsWith('/versete')) return isOperatorVersete
+    if (href.startsWith('/citate-ro')) return isTraducatorRO
+    return false
+  }
 
   return (
   <>
@@ -309,13 +318,13 @@ export default function DashboardPage() {
             { label: 'Traducători',sub: 'activi în sistem',                               value: stats?.totalUsers ?? 0,      Icon: UsersIcon,                      href: '/utilizatori'},
             { label: 'Citate RO',  sub: 'texte originale',                                value: stats?.totalCitateRO ?? 0,   Icon: DocumentTextIcon,               href: '/citate-ro'  },
           ].map(({ label, sub, value, Icon, href }) => (
-            <div key={label} onClick={() => router.push(href)}
-              className="group bg-white border border-[#f0e9e5] rounded-[24px] p-4 md:p-6 cursor-pointer hover:border-[#e0d8d2] hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] transition-all duration-300">
+            <div key={label} onClick={() => canOpen(href) && router.push(href)}
+              className={`group bg-white border border-[#f0e9e5] rounded-[24px] p-4 md:p-6 transition-all duration-300 ${canOpen(href) ? 'cursor-pointer hover:border-[#e0d8d2] hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)]' : ''}`}>
               <div className="flex items-start justify-between mb-4 md:mb-5">
                 <div className="w-10 h-10 rounded-[14px] bg-[#fff4f4] flex items-center justify-center">
                   <Icon className="w-5 h-5 text-[#ce0100]" strokeWidth={1.5} />
                 </div>
-                <ArrowUpRightIcon className="w-4 h-4 text-[#ccc] group-hover:text-[#ce0100] transition-colors" />
+                {canOpen(href) && <ArrowUpRightIcon className="w-4 h-4 text-[#ccc] group-hover:text-[#ce0100] transition-colors" />}
               </div>
               <p style={{ fontSize:'28px', fontWeight:300, color:'#111', lineHeight:1, marginBottom:'6px' }} className="md:text-[36px]">
                 <AnimatedCounter value={value} />
@@ -368,9 +377,11 @@ export default function DashboardPage() {
                 <p style={{ fontSize:'11px', fontWeight:400, color:'#9c8e87', letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:'4px' }}>Detaliu</p>
                 <p style={{ fontSize:'22px', fontWeight:300, color:'#111' }}>Versete</p>
               </div>
-              <button onClick={() => router.push('/versete')} style={{ fontSize:'12px', color:'#ce0100', fontWeight:400, background:'none', border:'none', cursor:'pointer', flexShrink:0 }}>
-                Vezi toate →
-              </button>
+              {canOpen('/versete') && (
+                <button onClick={() => router.push('/versete')} style={{ fontSize:'12px', color:'#ce0100', fontWeight:400, background:'none', border:'none', cursor:'pointer', flexShrink:0 }}>
+                  Vezi toate →
+                </button>
+              )}
             </div>
             <div className="flex flex-col gap-4">
               {[
@@ -397,10 +408,10 @@ export default function DashboardPage() {
                   <p style={{ fontSize:'28px', fontWeight:300, color:'#ce0100', lineHeight:1 }}>{(stats?.citateInValidare ?? 0) + (stats?.versetInValidare ?? 0)}</p>
                   <p style={{ fontSize:'12px', fontWeight:300, color:'#9c8e87', marginTop:'3px' }}>de revizuit</p>
                 </div>
-                <button onClick={() => router.push('/validari')}
+                {isCoordinator && <button onClick={() => router.push('/validari')}
                   style={{ marginLeft:'auto', height:'36px', padding:'0 18px', borderRadius:'12px', background:'#ce0100', color:'white', border:'none', fontSize:'13px', fontWeight:500, cursor:'pointer', boxShadow:'0 4px 12px rgba(206,1,0,0.2)' }}>
                   Validează →
-                </button>
+                </button>}
               </div>
             </div>
           </div>
@@ -463,9 +474,11 @@ export default function DashboardPage() {
               ) : recent.map((item, i) => {
                 const ds = getDisplayStatus(item.validation, item.progress)
                 const color = STATUS_COLOR[ds] ?? '#d97706'
+                const href = `/${item.type === 'citat' ? 'citate' : 'versete'}/${item.id}`
+                const clickable = canOpen(href)
                 return (
-                  <div key={item.id} onClick={() => router.push(`/${item.type === 'citat' ? 'citate' : 'versete'}/${item.id}`)}
-                    className="flex items-center gap-4 px-5 md:px-7 py-4 cursor-pointer hover:bg-[#faf7f5] transition-colors min-w-[480px]"
+                  <div key={item.id} onClick={() => clickable && router.push(href)}
+                    className={`flex items-center gap-4 px-5 md:px-7 py-4 transition-colors min-w-[480px] ${clickable ? 'cursor-pointer hover:bg-[#faf7f5]' : ''}`}
                     style={{ borderBottom: i < recent.length-1 ? '1px solid #f8f3f0' : 'none' }}>
                     <div style={{
                       width:'32px', height:'32px', borderRadius:'10px', flexShrink:0,

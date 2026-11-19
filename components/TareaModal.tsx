@@ -10,7 +10,7 @@ import { XMarkIcon, TrashIcon, ExclamationTriangleIcon, CheckCircleIcon } from '
 import { useToast, ToastContainer } from '@/components/Toast'
 import ConfirmDialog from '@/components/ConfirmDialog'
 
-type CoordonatorOption = { id: string; full_name: string }
+type CoordonatorOption = { id: string; full_name: string; role: string }
 
 type RefStatus = 'idle' | 'checking' | 'available' | 'used_versete' | 'used_calendar' | 'invalid'
 
@@ -59,7 +59,8 @@ export default function TareaModal({ open, onClose, onSaved, tarea, defaultDate 
     supabase
       .from('users')
       .select('id, full_name, role')
-      .in('role', ['Admin', 'Coordonator', 'Coordonator principal'])
+      .in('role', ['Admin', 'Coordonator', 'Coordonator principal', 'Operator versete'])
+      .eq('active', true)
       .order('full_name', { ascending: true })
       .then(({ data, error }) => {
         if (!error && data) setCoordonatori(data as CoordonatorOption[])
@@ -222,11 +223,23 @@ export default function TareaModal({ open, onClose, onSaved, tarea, defaultDate 
             <label className="text-sm font-medium text-[#444] block mb-1.5">Asignat lui (opțional)</label>
             <select value={coordonatorId} onChange={e => setCoordonatorId(e.target.value)}
               className="w-full h-11 rounded-xl border border-[#e8e2de] px-3 text-sm text-[#111] outline-none focus:border-[#ce0100] transition-all bg-[#fcfbfa]">
-              <option value="">— Niciun coordonator —</option>
-              {coordonatori.map(c => (
-                <option key={c.id} value={c.id}>{c.full_name}</option>
-              ))}
+              <option value="">— Nimeni —</option>
+              {coordonatori.some(c => c.role === 'Operator versete') && (
+                <optgroup label="Operatori versete">
+                  {coordonatori.filter(c => c.role === 'Operator versete').map(c => (
+                    <option key={c.id} value={c.id}>{c.full_name}</option>
+                  ))}
+                </optgroup>
+              )}
+              <optgroup label="Coordonatori">
+                {coordonatori.filter(c => c.role !== 'Operator versete').map(c => (
+                  <option key={c.id} value={c.id}>{c.full_name}</option>
+                ))}
+              </optgroup>
             </select>
+            {coordonatori.find(c => c.id === coordonatorId)?.role === 'Operator versete' && !isVerset && referintaRo.trim() && (
+              <p className="text-[11px] mt-1.5 text-[#c05c00]">Operatorul de versete vede în calendar doar sarcinile cu referință biblică.</p>
+            )}
           </div>
 
           <div>
