@@ -1,154 +1,157 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
-import { motion } from 'framer-motion'
-import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { useParams, useRouter } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
-import AccessDenied from '@/components/AccessDenied'
-import CreateVersetModal from '@/components/CreateVersetModal'
-import AnimatedCounter from '@/components/AnimatedCounter'
-import ReferinteTab from '@/components/ReferinteTab'
-import Pagination from '@/components/Pagination'
-import { useUser } from '@/context/UserContext'
 import { supabase } from '@/lib/supabase'
 import {
-  BellIcon,
-  MagnifyingGlassIcon,
-  ClockIcon,
-  ShieldCheckIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-  BookOpenIcon,
-  Squares2X2Icon,
-  TableCellsIcon,
-  ListBulletIcon,
-  ChevronUpIcon,
-  ChevronDownIcon,
-  ChevronUpDownIcon,
+  ArrowLeftIcon, PencilSquareIcon, TrashIcon,
+  CalendarIcon, ClockIcon, UserIcon, ShieldCheckIcon, CheckCircleIcon,
+  HashtagIcon, LockClosedIcon,
 } from '@heroicons/react/24/outline'
+import { CheckCircleIcon as CheckCircleSolid } from '@heroicons/react/24/solid'
+import { XMarkIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline'
+import EditVersetDrawer from '@/components/EditVersetDrawer'
+import LoadingScreen from '@/components/LoadingSpinner'
+import AccessDenied from '@/components/AccessDenied'
+import { useUser } from '@/context/UserContext'
 
-// ── Types ────────────────────────────────────────────────────────
-type VersetRow = {
-  id: string
-  public_id: string
-  validation: string | null
-  referinta_ro?: string | null
-  verset_ro?: string | null
-  verset_es?: string | null; verset_en?: string | null; verset_de?: string | null
-  verset_pt?: string | null; verset_fr?: string | null; verset_it?: string | null
-  referinta_es?: string | null; referinta_en?: string | null; referinta_de?: string | null
-  referinta_pt?: string | null; referinta_fr?: string | null; referinta_it?: string | null
-  created_at?: string
-  validated_by_user?: { full_name: string } | null
-}
-type ViewMode = 'cards' | 'table' | 'compact'
-type SortField = 'created_at' | 'public_id' | 'progress'
-type SortDir = 'asc' | 'desc'
-type PageTab = 'versete' | 'referinte'
+// ── Language config ───────────────────────────────────────────────
+const LANGUAGES = [
+  { code: 'RO', label: 'RO', name: 'Română',    versetField: 'verset_ro', refField: 'referinta_ro' },
+  { code: 'ES', label: 'ES', name: 'Español',   versetField: 'verset_es', refField: 'referinta_es' },
+  { code: 'EN', label: 'EN', name: 'English',   versetField: 'verset_en', refField: 'referinta_en' },
+  { code: 'DE', label: 'DE', name: 'Deutsch',   versetField: 'verset_de', refField: 'referinta_de' },
+  { code: 'PT', label: 'PT', name: 'Português', versetField: 'verset_pt', refField: 'referinta_pt' },
+  { code: 'FR', label: 'FR', name: 'Français',  versetField: 'verset_fr', refField: 'referinta_fr' },
+  { code: 'IT', label: 'IT', name: 'Italiano',  versetField: 'verset_it', refField: 'referinta_it' },
+]
 
-const LANG_FIELDS = [
-  { code: 'RO', field: 'verset_ro' }, { code: 'ES', field: 'verset_es' },
-  { code: 'EN', field: 'verset_en' }, { code: 'DE', field: 'verset_de' },
-  { code: 'PT', field: 'verset_pt' }, { code: 'FR', field: 'verset_fr' },
-  { code: 'IT', field: 'verset_it' },
-] as const
-
-const STATUS_FILTERS = ['În traducere', 'În așteptare', 'Validat', 'Refuzat']
-
-function getCompletedCount(v: VersetRow) {
-  return LANG_FIELDS.filter(l => !!(v as any)[l.field]?.trim()).length
-}
-function getDisplayStatus(v: VersetRow) {
-  const count = getCompletedCount(v)
-  if (count < 7) return 'În traducere'
-  return v.validation ?? 'În așteptare'
-}
-
-const STATUS_STYLE: Record<string, { pill: string; dot: string }> = {
-  'În traducere': { pill: 'bg-[#fff5eb] text-[#c05c00]', dot: 'bg-[#c05c00]' },
-  'În așteptare': { pill: 'bg-[#eef3ff] text-[#1e40af]', dot: 'bg-[#1e40af]' },
-  'Validat':      { pill: 'bg-[#edfaf3] text-[#166534]', dot: 'bg-[#166534]' },
-  'Refuzat':      { pill: 'bg-[#fff1f1] text-[#991b1b]', dot: 'bg-[#991b1b]' },
-}
-const STATUS_ACCENT: Record<string, string> = {
-  'În traducere': '#c05c00', 'În așteptare': '#1e40af',
-  'Validat': '#166534', 'Refuzat': '#991b1b',
-}
-
-function StatusPill({ status }: { status: string }) {
-  const s = STATUS_STYLE[status] ?? STATUS_STYLE['În traducere']
+// ── Circular progress ─────────────────────────────────────────────
+function CircularProgress({ percentage }: { percentage: number }) {
+  const r = 52; const circ = 2 * Math.PI * r
+  const dash = (percentage / 100) * circ
   return (
-    <span className={`inline-flex items-center gap-[5px] px-[10px] h-[26px] rounded-full text-[12px] font-semibold whitespace-nowrap ${s.pill}`}>
-      <span className={`w-[5px] h-[5px] rounded-full flex-shrink-0 ${s.dot}`} />
-      {status}
+    <div className="relative w-[136px] h-[136px] flex-shrink-0">
+      <svg className="w-full h-full -rotate-90" viewBox="0 0 136 136">
+        <circle cx="68" cy="68" r={r} fill="none" stroke="#f0e8e4" strokeWidth="12" />
+        <circle cx="68" cy="68" r={r} fill="none" stroke="#ce0100" strokeWidth="12"
+          strokeLinecap="round" strokeDasharray={`${dash} ${circ}`}
+          style={{ transition: 'stroke-dasharray 0.6s ease' }} />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-[30px] font-light text-[#111] leading-none">{percentage}%</span>
+        <span className="text-[13px] text-[#888] mt-[3px]">Completat</span>
+      </div>
+    </div>
+  )
+}
+
+// ── Status badges ─────────────────────────────────────────────────
+function CitationStatusBadge({ status }: { status: string }) {
+  const isComplete = status === 'Completat'
+  return (
+    <span className={`inline-flex items-center gap-[6px] px-[12px] h-[28px] rounded-full text-[12px] font-semibold ${
+      isComplete ? 'bg-[#edfaf3] text-[#166534]' : 'bg-[#fff5eb] text-[#c05c00]'
+    }`}>
+      <ClockIcon className="w-[12px] h-[12px]" />
+      {status ?? 'Incomplet'}
     </span>
   )
 }
 
-// ── Main ─────────────────────────────────────────────────────────
-export default function VersetePage() {
+function ValidationBadge({ validation, status }: { validation: string | null, status: string }) {
+  if (status !== 'Completat' || !validation) return <span className="text-sm text-[#aaa] italic">—</span>
+  const map: Record<string, { bg: string; text: string }> = {
+    'În așteptare': { bg: 'bg-[#eef3ff]', text: 'text-[#1e40af]' },
+    'Validat':      { bg: 'bg-[#edfaf3]', text: 'text-[#166534]' },
+    'Refuzat':      { bg: 'bg-[#fff1f1]', text: 'text-[#991b1b]' },
+  }
+  const s = map[validation] ?? map['În așteptare']
+  return (
+    <span className={`inline-flex items-center gap-[6px] px-[12px] h-[28px] rounded-full text-[12px] font-semibold ${s.bg} ${s.text}`}>
+      <ShieldCheckIcon className="w-[12px] h-[12px]" />
+      {validation}
+    </span>
+  )
+}
+
+// ── Delete Modal ──────────────────────────────────────────────────
+function DeleteModal({ isOpen, versetRef, onConfirm, onCancel, isDeleting }: {
+  isOpen: boolean; versetRef: string; onConfirm: () => void; onCancel: () => void; isDeleting: boolean
+}) {
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => { if (e.key === 'Escape' && !isDeleting) onCancel() }
+    window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h)
+  }, [isOpen, isDeleting])
+  if (!isOpen) return null
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: 'rgba(10,6,4,0.55)', backdropFilter: 'blur(6px)' }}
+      onClick={(e) => { if (e.target === e.currentTarget && !isDeleting) onCancel() }}>
+      <div className="bg-white rounded-[28px] w-full max-w-[420px] overflow-hidden shadow-[0_32px_80px_rgba(0,0,0,0.18)]">
+        <div className="h-[5px] bg-[#ce0100]" />
+        {!isDeleting && (
+          <button onClick={onCancel} className="absolute top-[18px] right-[18px] w-[32px] h-[32px] rounded-full bg-[#f4ece9] flex items-center justify-center hover:bg-[#ffe0e0] transition-all">
+            <XMarkIcon className="w-[16px] h-[16px]" />
+          </button>
+        )}
+        <div className="px-[36px] pt-[36px] pb-[32px]">
+          <div className="flex justify-center mb-[24px]">
+            <div className="w-[72px] h-[72px] rounded-full bg-[#fff1f1] border-[2px] border-[#f4d4d4] flex items-center justify-center">
+              <ExclamationTriangleIcon className="w-[32px] h-[32px] text-[#ce0100]" />
+            </div>
+          </div>
+          <h2 className="text-[22px] font-semibold text-[#111] text-center mb-[8px]">Ștergi versetul?</h2>
+          <p className="text-sm text-[#666] text-center mb-[24px] leading-relaxed">
+            Această acțiune este <strong className="text-[#111]">ireversibilă</strong>. Versetul și toate traducerile vor fi șterse permanent.
+          </p>
+          <div className="bg-[#faf7f5] border border-[#f0e9e5] rounded-[16px] px-[18px] py-[14px] mb-[28px]">
+            <p className="text-sm font-semibold text-[#ce0100] mb-[4px]">{versetRef}</p>
+          </div>
+          <div className="flex gap-[10px]">
+            <button onClick={onCancel} disabled={isDeleting}
+              className="flex-1 h-[48px] rounded-[14px] border border-[#e8e2de] bg-white text-sm font-semibold text-[#666] hover:bg-[#faf7f5] disabled:opacity-40 transition-all">
+              Anulează
+            </button>
+            <button onClick={onConfirm} disabled={isDeleting}
+              className="flex-1 h-[48px] rounded-[14px] bg-[#ce0100] text-white text-sm font-bold flex items-center justify-center gap-2 shadow-[0_8px_20px_rgba(206,1,0,0.3)] hover:bg-[#a80000] disabled:opacity-70 transition-all">
+              {isDeleting ? 'Se șterge...' : 'Da, șterge'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Main page ─────────────────────────────────────────────────────
+export default function VersetDetailPage() {
+  const params = useParams()
   const router = useRouter()
   const { profile } = useUser()
-  const [versets, setVersets] = useState<VersetRow[]>([])
+  const role = profile?.role ?? ''
+  const canAccess = ['Admin', 'Coordonator principal', 'Coordonator', 'Operator versete'].includes(role)
   const [loading, setLoading] = useState(true)
-  const [openCreateModal, setOpenCreateModal] = useState(false)
-  const [view, setView] = useState<ViewMode>('cards')
-  const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState<string[]>([])
-  const [sortField, setSortField] = useState<SortField>('created_at')
-  const [sortDir, setSortDir] = useState<SortDir>('desc')
-  const [activeTab, setActiveTab] = useState<PageTab>('versete')
-  const [page, setPage] = useState(1)
-  const PER_PAGE = 20
-
-  const role = profile?.role
-  const isAdmin = role === 'Admin'
-  const canSeeReferinte = role === 'Admin' || role === 'Coordonator' || role === 'Coordonator principal'
-  const canAccess = canSeeReferinte || role === 'Operator versete'
+  const [verset, setVerset] = useState<any>(null)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [showEditDrawer, setShowEditDrawer] = useState(false)
+  const [showLockedModal, setShowLockedModal] = useState(false)
 
   useEffect(() => {
-    supabase.from('versete').select('*, validated_by_user:validated_by(full_name)').order('created_at', { ascending: false })
-      .then(({ data }) => { setVersets(data || []); setLoading(false) })
-  }, [])
+    const fetch = async () => {
+      const { data } = await supabase
+        .from('versete')
+        .select('*, created_by_user:created_by(full_name, role), validated_by_user:validated_by(full_name)')
+        .eq('id', params.id)
+        .single()
+      setVerset(data); setLoading(false)
+    }
+    fetch()
+  }, [params.id])
 
-  const stats = {
-    total:       versets.length,
-    translating: versets.filter(v => getCompletedCount(v) < 7).length,
-    validating:  versets.filter(v => getCompletedCount(v) === 7 && v.validation === 'În așteptare').length,
-    validated:   versets.filter(v => v.validation === 'Validat').length,
-  }
-
-  const filtered = versets
-    .filter(v => {
-      if (search) {
-        const q = search.toLowerCase()
-        if (!v.referinta_ro?.toLowerCase().includes(q) &&
-            !v.public_id?.toLowerCase().includes(q) &&
-            !v.verset_ro?.toLowerCase().includes(q)) return false
-      }
-      if (statusFilter.length > 0 && !statusFilter.includes(getDisplayStatus(v))) return false
-      return true
-    })
-    .sort((a, b) => {
-      let va: any, vb: any
-      if (sortField === 'created_at') { va = a.created_at ?? ''; vb = b.created_at ?? '' }
-      else if (sortField === 'public_id') { va = a.public_id ?? ''; vb = b.public_id ?? '' }
-      else { va = getCompletedCount(a); vb = getCompletedCount(b) }
-      return sortDir === 'asc' ? (va < vb ? -1 : 1) : (va > vb ? -1 : 1)
-    })
-
-  const toggleStatus = (s: string) => { setStatusFilter(p => p.includes(s) ? p.filter(x => x !== s) : [...p, s]); setPage(1) }
-  const toggleSort = (f: SortField) => { if (sortField === f) setSortDir(d => d === 'asc' ? 'desc' : 'asc'); else { setSortField(f); setSortDir('desc') }; setPage(1) }
-
-  const totalPages = Math.ceil(filtered.length / PER_PAGE)
-  const paginated = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE)
-
-  const SortIcon = ({ field }: { field: SortField }) => {
-    if (sortField !== field) return <ChevronUpDownIcon className="w-3.5 h-3.5 text-[#aaa]" />
-    return sortDir === 'asc' ? <ChevronUpIcon className="w-3.5 h-3.5 text-[#ce0100]" /> : <ChevronDownIcon className="w-3.5 h-3.5 text-[#ce0100]" />
-  }
-
-  if (role && !canAccess) {
+  if (role !== '' && !canAccess) {
     return (
       <main className="flex h-[calc(100dvh-4rem-env(safe-area-inset-top))] md:h-dvh overflow-hidden bg-[#f9f7f5]">
         <Sidebar />
@@ -157,345 +160,283 @@ export default function VersetePage() {
     )
   }
 
-  return (
-    <main className="flex h-[calc(100dvh-4rem-env(safe-area-inset-top))] md:h-dvh overflow-hidden bg-[#f9f7f5] overflow-x-hidden">
-      <Sidebar />
-      <div className="flex-1 w-0 px-4 py-6 md:px-10 md:py-8 overflow-y-auto overflow-x-hidden">
+  if (loading) return <LoadingScreen />
 
-        {/* ── HEADER ── */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-8">
-          <div>
-            <h1 className="text-[40px] md:text-[52px] leading-none tracking-tight font-light text-[#111] mb-3">Versete biblice</h1>
-            <div className="w-10 h-[3px] rounded-full bg-[#ce0100] mb-4" />
-            <p className="text-base text-[#666]">Gestionează traducerile și referințele biblice pentru toate limbile.</p>
-          </div>
-          <div className="flex items-center gap-3 sm:mt-2">
-            <button className="w-11 h-11 rounded-xl bg-white border border-[#e8e2de] flex items-center justify-center hover:bg-[#faf7f5] transition-all flex-shrink-0">
-              <BellIcon className="w-5 h-5 text-[#444]" />
-            </button>
-            <button onClick={() => setOpenCreateModal(true)}
-              className="h-11 px-6 rounded-xl bg-[#ce0100] text-white text-sm font-semibold shadow-[0_6px_16px_rgba(206,1,0,0.22)] hover:bg-[#a80000] transition-all flex-1 sm:flex-none">
-              + Verset nou
-            </button>
+  if (!verset) return null
+
+  // ── Derived ───────────────────────────────────────────────────
+  const langCards = LANGUAGES.map(lang => ({
+    ...lang,
+    text:      verset[lang.versetField] as string | null,
+    reference: verset[lang.refField] as string | null,
+  }))
+
+  const completedCount = langCards.filter(c => c.text && c.text.trim() !== '').length
+  const completionPct  = Math.round((completedCount / 7) * 100)
+
+  const formattedDate = verset.created_at
+    ? new Date(verset.created_at).toLocaleDateString('ro-RO', { day: '2-digit', month: 'short', year: 'numeric' })
+    : '—'
+
+  const handleEdited = (updated: any) => { setVerset(updated) }
+
+  // Verset validat → no se puede editar ni borrar (hay que revertirlo desde Validări)
+  const isLocked = verset.validation === 'Validat'
+  const validatedBy = verset.validated_by_user?.full_name as string | undefined
+
+  const handleDeleteConfirm = async () => {
+    if (isLocked) { setShowDeleteModal(false); setShowLockedModal(true); return }
+    setIsDeleting(true)
+    await supabase.from('versete').delete().eq('id', verset.id)
+    setIsDeleting(false); setShowDeleteModal(false)
+    router.push('/versete')
+  }
+
+  return (
+    <main className="flex min-h-screen bg-[#f9f7f5]">
+      <Sidebar />
+
+      <div className="flex-1 px-10 py-8 overflow-y-auto">
+
+        {/* ── TOP BAR ── */}
+        <div className="flex items-center justify-between mb-7">
+          <button onClick={() => router.push('/versete')}
+            className="flex items-center gap-2 text-sm text-[#666] hover:text-[#111] transition-colors">
+            <ArrowLeftIcon className="w-4 h-4" /> Înapoi la versete
+          </button>
+          <div className="flex items-center gap-2">
+            {isLocked ? (
+              <button onClick={() => setShowLockedModal(true)} title="Versetul este validat și nu poate fi modificat"
+                className="h-10 px-4 rounded-xl border border-[#e8e2de] bg-[#f1ece9] text-[#9c8e87] flex items-center gap-2 text-sm cursor-not-allowed">
+                <LockClosedIcon className="w-4 h-4" /> Blocat
+              </button>
+            ) : (
+              <>
+                <button onClick={() => setShowEditDrawer(true)}
+                  className="h-10 px-4 rounded-xl border border-[#e8e2de] bg-white flex items-center gap-2 text-sm text-[#444] hover:bg-[#faf7f5] transition-all">
+                  <PencilSquareIcon className="w-4 h-4" /> Editează
+                </button>
+                <button onClick={() => setShowDeleteModal(true)}
+                  className="h-10 w-10 rounded-xl bg-[#fff1f1] text-[#ce0100] flex items-center justify-center hover:bg-[#ffe0e0] transition-all">
+                  <TrashIcon className="w-4 h-4" />
+                </button>
+              </>
+            )}
           </div>
         </div>
 
-        {/* ── PAGE TABS ── */}
-        {canSeeReferinte && (
-          <div className="flex items-center gap-1.5 mb-6">
-            {(['versete', 'referinte'] as const).map(tab => (
-              <button key={tab} onClick={() => setActiveTab(tab)}
-                className={`h-9 px-5 rounded-xl text-[13px] font-semibold transition-all ${
-                  activeTab === tab ? 'bg-[#ce0100] text-white' : 'bg-white border border-[#e8e2de] text-[#666] hover:bg-[#faf7f5]'
-                }`}>
-                {tab === 'versete' ? 'Versete' : 'Referințe'}
-              </button>
-            ))}
+        {/* ── AVISO: VERSET VALIDAT ── */}
+        {isLocked && (
+          <div className="mb-5 flex items-start gap-[14px] rounded-[20px] border border-[#bfe5cf] bg-[#edfaf3] px-[22px] py-[16px]">
+            <div className="w-[38px] h-[38px] rounded-full bg-white border border-[#bfe5cf] flex items-center justify-center flex-shrink-0">
+              <LockClosedIcon className="w-[18px] h-[18px] text-[#1a8c4e]" />
+            </div>
+            <div>
+              <p className="text-[15px] font-[700] text-[#166534]">Verset validat · modificările sunt blocate</p>
+              <p className="text-[13px] text-[#3f6b52] leading-[20px] mt-[2px]">
+                Acest verset a fost validat{validatedBy ? <> de <strong>{validatedBy}</strong></> : ''} și nu mai poate fi modificat sau șters.
+                Dacă este necesară o modificare, contactează <strong>coordonatorul principal</strong> pentru a readuce versetul din pagina <strong>Validări</strong>.
+              </p>
+            </div>
           </div>
         )}
 
-        {activeTab === 'referinte' && canSeeReferinte ? (
-          <ReferinteTab isAdmin={isAdmin} />
-        ) : (
-          <>
-            {/* ── STATS ── */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-              {[
-                { title: 'Versete active', value: stats.total,       Icon: BookOpenIcon,    accent: '#ce0100' },
-                { title: 'În traducere',   value: stats.translating,  Icon: ClockIcon,       accent: '#c05c00' },
-                { title: 'În validare',    value: stats.validating,   Icon: ShieldCheckIcon, accent: '#1e40af' },
-                { title: 'Validate',       value: stats.validated,    Icon: CheckCircleIcon, accent: '#166534' },
-              ].map(({ title, value, Icon, accent }) => (
-                <div key={title} className="bg-white border border-[#e8e2de] rounded-2xl px-4 py-3 md:px-5 md:h-24 flex items-center gap-4 shadow-sm">
-                  <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${accent}18` }}>
-                    <Icon className="w-5 h-5" style={{ color: accent }} strokeWidth={1.6} />
-                  </div>
-                  <div>
-                    <p className="text-sm text-[#666] mb-1">{title}</p>
-                    <p className="text-3xl font-light text-[#111] leading-none"><AnimatedCounter value={value} /></p>
-                  </div>
+        {/* ── MAIN GRID ── */}
+        <div className="grid grid-cols-[1fr_360px] gap-5">
+
+          {/* ══ LEFT ══ */}
+          <div className="flex flex-col gap-5">
+
+            {/* Hero card */}
+            <div className="bg-white border border-[#e8e2de] rounded-[28px] px-10 py-9 shadow-sm">
+              <div className="flex items-start justify-between mb-6">
+                <div>
+                  <p className="text-xs font-bold tracking-[0.18em] text-[#ce0100] uppercase mb-2">Verset biblic</p>
+                  <h1 className="text-[44px] leading-none font-light text-[#ce0100] mb-3 tracking-tight">{verset.public_id}</h1>
+                  <h2 className="text-2xl font-semibold text-[#111] mb-1">{verset.referinta_ro}</h2>
                 </div>
-              ))}
+                <CircularProgress percentage={completionPct} />
+              </div>
+
+              {/* Verset text */}
+              <blockquote className="text-xl leading-relaxed font-light text-[#222] mb-4 border-l-[3px] border-[#ce0100] pl-5 italic">
+                {verset.verset_ro || '—'}
+              </blockquote>
+
+              {/* Meta */}
+              <div className="flex items-center gap-2 flex-wrap mb-6">
+                <span className="inline-flex items-center gap-1.5 px-3 h-7 rounded-full border border-[#e8e2de] bg-[#faf7f5] text-xs text-[#555]">
+                  <CalendarIcon className="w-3 h-3" /> {formattedDate}
+                </span>
+                <CitationStatusBadge status={verset.status ?? 'Incomplet'} />
+                <span className="inline-flex items-center gap-1.5 px-3 h-7 rounded-full border border-[#e8e2de] bg-[#faf7f5] text-xs text-[#555]">
+                  <UserIcon className="w-3 h-3" />
+                  Creat de: <strong className="font-semibold text-[#111] ml-1">{verset.created_by_user?.full_name ?? '—'}</strong>
+                </span>
+              </div>
+
+              {/* Progress bar */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-semibold text-[#111]">Progres traduceri</span>
+                  <span className="text-sm text-[#666]">{completedCount} / 7 traduceri complete</span>
+                </div>
+                <div className="h-2 bg-[#f0e8e4] rounded-full overflow-hidden">
+                  <div className="h-full bg-[#ce0100] rounded-full transition-all duration-700" style={{ width: `${completionPct}%` }} />
+                </div>
+              </div>
             </div>
 
-            {/* ── TOOLBAR ── */}
-            <div className="bg-white border border-[#e8e2de] rounded-2xl px-4 md:px-5 py-4 mb-4 shadow-sm">
-              {/* Row 1 — search + view switcher */}
-              <div className="flex items-center gap-2 mb-3">
-                <div className="flex-1 min-w-0 flex items-center gap-3 bg-[#f9f7f5] border border-[#e8e2de] rounded-xl px-4 h-10">
-                  <MagnifyingGlassIcon className="w-4 h-4 text-[#999] flex-shrink-0" />
-                  <input type="text" placeholder="Caută după referință, text sau ID..."
-                    value={search} onChange={e => { setSearch(e.target.value); setPage(1) }}
-                    className="flex-1 min-w-0 bg-transparent outline-none text-sm text-[#111] placeholder:text-[#bbb]" />
-                  {search && <button onClick={() => setSearch('')} className="text-xs text-[#999] hover:text-[#ce0100] flex-shrink-0">✕</button>}
-                </div>
-                {/* View */}
-                <div className="flex items-center gap-1 bg-[#f9f7f5] border border-[#e8e2de] rounded-xl p-1 flex-shrink-0">
-                  {([['cards', Squares2X2Icon],['table', TableCellsIcon],['compact', ListBulletIcon]] as [ViewMode, any][]).map(([v, Icon]) => (
-                    <button key={v} onClick={() => setView(v)}
-                      className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
-                        view === v ? 'bg-white shadow-sm text-[#ce0100]' : 'text-[#aaa] hover:text-[#444]'
-                      }`}>
-                      <Icon className="w-4 h-4" />
-                    </button>
-                  ))}
-                </div>
+            {/* ── TRANSLATIONS unified card ── */}
+            <div className="bg-white border border-[#e8e2de] rounded-[28px] overflow-hidden shadow-sm">
+              <div className="px-8 py-5 border-b border-[#f0e8e4]">
+                <h2 className="text-lg font-semibold text-[#111]">Traduceri pe limbi</h2>
               </div>
-
-              {/* Row 2 — sort */}
-              <div className="flex items-center gap-2 mb-3 overflow-x-auto pb-0.5">
-                {([['created_at','Dată'],['public_id','ID'],['progress','Progres']] as [SortField,string][]).map(([f, label]) => (
-                  <button key={f} onClick={() => toggleSort(f)}
-                    className={`h-8 px-3 rounded-xl border flex items-center gap-1.5 text-sm transition-all flex-shrink-0 ${
-                      sortField === f ? 'border-[#ffd3d3] bg-[#fff7f7] text-[#ce0100] font-semibold' : 'border-[#e8e2de] bg-white text-[#555] hover:bg-[#faf7f5]'
-                    }`}>
-                    {label} <SortIcon field={f} />
-                  </button>
-                ))}
-              </div>
-
-              {/* Row 3 — filters */}
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-sm text-[#666] mr-1">Stare:</span>
-                {STATUS_FILTERS.map(s => {
-                  const st = STATUS_STYLE[s]
+              <div className="divide-y divide-[#f8f3f0]">
+                {langCards.map((item) => {
+                  const isDone = item.text && item.text.trim() !== ''
+                  const isRO   = item.code === 'RO'
                   return (
-                    <button key={s} onClick={() => toggleStatus(s)}
-                      className={`h-7 px-3 rounded-full text-sm font-medium border transition-all ${
-                        statusFilter.includes(s) ? `${st.pill} border-transparent` : 'bg-white text-[#444] border-[#e8e2de] hover:border-[#e0d8d4]'
-                      }`}>{s}</button>
+                    <div key={item.code} className={`px-8 py-5 ${!isDone ? 'bg-[#fffafa]' : ''}`}>
+                      <div className="flex items-center gap-3 mb-3">
+                        {/* Lang badge */}
+                        <div className="w-10 h-10 rounded-[11px] bg-[#fff4f4] border border-[#ffd3d3] flex items-center justify-center text-[11px] font-bold text-[#ce0100] flex-shrink-0">
+                          {item.label}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-semibold text-[#111]">{item.name}</span>
+                            {isRO && <span className="text-[10px] font-semibold px-2 h-[18px] inline-flex items-center rounded-full bg-[#fff4f4] text-[#ce0100] border border-[#f4d4d4]">Original</span>}
+                          </div>
+                        </div>
+                        <div className="flex-shrink-0">
+                          {isDone ? (
+                            <div className="flex items-center gap-1.5">
+                              <CheckCircleSolid className="w-[14px] h-[14px] text-[#166534]" />
+                              <span className="text-xs font-semibold text-[#166534]">Completat</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1.5">
+                              <ClockIcon className="w-[13px] h-[13px] text-[#c05c00]" />
+                              <span className="text-xs font-semibold text-[#c05c00]">În așteptare</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Reference */}
+                      {item.reference && (
+                        <p className="text-xs text-[#ce0100] font-semibold mb-2 ml-[52px]">{item.reference}</p>
+                      )}
+
+                      {/* Text */}
+                      {isDone && (
+                        <p className="text-base leading-relaxed font-light text-[#222] ml-[52px] italic">
+                          "{item.text}"
+                        </p>
+                      )}
+                    </div>
                   )
                 })}
-                {statusFilter.length > 0 && (
-                  <button onClick={() => setStatusFilter([])}
-                    className="h-7 px-3 rounded-full text-sm text-[#ce0100] border border-[#ffd3d3] bg-[#fff7f7] hover:bg-[#ffe8e8] ml-1 transition-all">
-                    Șterge filtrele
-                  </button>
+              </div>
+            </div>
+
+          </div>
+
+          {/* ══ RIGHT ══ */}
+          <div className="flex flex-col gap-4">
+
+            {/* Details */}
+            <div className="bg-white border border-[#e8e2de] rounded-[22px] p-6 shadow-sm">
+              <h3 className="text-base font-semibold text-[#111] mb-4">Detalii verset</h3>
+              <div className="flex flex-col gap-3">
+                {[
+                  { icon: CalendarIcon,    label: 'Data creării',   value: formattedDate,                                          valueClass: 'text-[#111] font-semibold' },
+                  { icon: UserIcon,        label: 'Creat de',       value: verset.created_by_user?.full_name ?? '—',               valueClass: 'text-[#111] font-semibold' },
+                  { icon: HashtagIcon,     label: 'ID verset',      value: verset.public_id,                                       valueClass: 'text-[#ce0100] font-semibold' },
+                ].map(({ icon: Icon, label, value, valueClass }) => (
+                  <div key={label}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-sm text-[#666]">
+                        <Icon className="w-4 h-4" /> {label}
+                      </div>
+                      <span className={`text-sm ${valueClass}`}>{value}</span>
+                    </div>
+                    <div className="h-px bg-[#f4ece9] mt-3" />
+                  </div>
+                ))}
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-sm text-[#666]">
+                    <ClockIcon className="w-4 h-4" /> Stare citat
+                  </div>
+                  <CitationStatusBadge status={verset.status ?? 'Incomplet'} />
+                </div>
+
+                <div className="h-px bg-[#f4ece9]" />
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-sm text-[#666]">
+                    <ShieldCheckIcon className="w-4 h-4" /> Stare validării
+                  </div>
+                  <ValidationBadge validation={verset.validation} status={verset.status ?? 'Incomplet'} />
+                </div>
+
+                {verset.validation === 'Validat' && (verset as any).validated_by_user?.full_name && (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-sm text-[#666]">
+                      <CheckCircleIcon className="w-4 h-4" /> Validat de
+                    </div>
+                    <span className="text-sm font-semibold text-[#166534]">
+                      {(verset as any).validated_by_user.full_name}
+                    </span>
+                  </div>
                 )}
               </div>
             </div>
 
-            {/* Count */}
-            <p className="text-sm text-[#666] mb-4 pl-1">
-              {filtered.length} {filtered.length === 1 ? 'verset' : 'versete'}{statusFilter.length > 0 || search ? ' filtrate' : ' total'}
-            </p>
-
-            {/* ── CONTENT ── */}
-            {loading ? (
-              <div className="flex items-center justify-center py-20">
-                <p className="text-base text-[#888]">Se încarcă...</p>
-              </div>
-            ) : filtered.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 gap-3">
-                <p className="text-3xl">📖</p>
-                <p className="text-base text-[#888]">Niciun verset găsit.</p>
-              </div>
-            ) : (
-              <>
-                {/* ═══ CARDS ═══ */}
-                {view === 'cards' && (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
-                    {paginated.map(v => {
-                      const count = getCompletedCount(v)
-                      const pct = (count / 7) * 100
-                      const ds = getDisplayStatus(v)
-                      const accent = STATUS_ACCENT[ds] ?? '#ce0100'
-                      return (
-                        <div key={v.id} onClick={() => router.push(`/versete/${v.id}`)}
-                          className="group bg-white border border-[#e8e2de] rounded-2xl overflow-x-hidden cursor-pointer hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(0,0,0,0.09)] transition-all duration-300">
-                          <div className="h-[3px]" style={{ background: accent }} />
-                          <div className="p-5">
-                            {/* Header */}
-                            <div className="flex items-start justify-between gap-3 mb-3">
-                              <div>
-                                <span className="text-[13px] font-bold text-[#ce0100]">{v.public_id}</span>
-                                <span className="text-[12px] text-[#aaa] ml-2">
-                                  {v.created_at ? new Date(v.created_at).toLocaleDateString('ro-RO',{day:'2-digit',month:'short'}) : ''}
-                                </span>
-                              </div>
-                              <div className="flex flex-col items-end gap-1">
-                                <span className="text-[10px] text-[#999] uppercase tracking-wide">
-                                  {count === 7 ? 'Starea validării' : 'Starea traducerii'}
-                                </span>
-                                <StatusPill status={ds} />
-                              </div>
-                            </div>
-
-                            {/* Reference */}
-                            <h2 className="text-xl font-semibold text-[#111] mb-2">{v.referinta_ro}</h2>
-
-                            {/* Verset text */}
-                            <p className="text-sm text-[#555] leading-relaxed line-clamp-3 mb-5">{v.verset_ro}</p>
-
-                            {/* Progress */}
-                            <div className="mb-4">
-                              <div className="flex justify-between items-center mb-1.5">
-                                <span className="text-xs font-medium text-[#777] uppercase tracking-wide">Progres</span>
-                                <span className="text-xs font-bold text-[#111]">{count}<span className="text-[#aaa] font-normal">/7</span></span>
-                              </div>
-                              <div className="h-1 bg-[#f0e8e4] rounded-full overflow-x-hidden">
-                                <div className="h-full rounded-full transition-all duration-700"
-                                  style={{ width: `${pct}%`, background: count === 7 ? '#166534' : '#ce0100' }} />
-                              </div>
-                            </div>
-
-                            {/* Lang pills */}
-                            <div className="flex flex-wrap gap-1.5 mb-2">
-                              {LANG_FIELDS.map(lang => {
-                                const done = !!(v as any)[lang.field]?.trim()
-                                return (
-                                  <span key={lang.code}
-                                    className={`inline-flex items-center justify-center h-6 px-2.5 rounded-full text-[11px] font-bold leading-none ${
-                                      done ? 'bg-[#ce0100] text-white' : 'bg-[#f0e8e4] text-[#bbb]'
-                                    }`}>{lang.code}</span>
-                                )
-                              })}
-                            </div>
-                            {v.validation === 'Validat' && (v as any).validated_by_user?.full_name && (
-                              <div className="flex items-center gap-1.5 mt-1">
-                                <CheckCircleIcon className="w-3.5 h-3.5 text-[#166534] flex-shrink-0" />
-                                <span className="text-[11px] font-semibold text-[#166534]">
-                                  Validat de {(v as any).validated_by_user.full_name}
-                                </span>
-                              </div>
-                            )}
-                            {v.validation === 'Refuzat' && (
-                              <div className="flex items-center gap-1.5 mt-1">
-                                <XCircleIcon className="w-3.5 h-3.5 text-[#ce0100] flex-shrink-0" />
-                                <span className="text-[11px] font-semibold text-[#ce0100]">Refuzat</span>
-                              </div>
-                            )}
-                            {(v as any).validation_comment && (
-                              <p className="text-[11px] text-[#888] italic mt-1 line-clamp-1">
-                                "{(v as any).validation_comment}"
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-
-                {/* ═══ TABLE ═══ */}
-                {view === 'table' && (
-                  <div className="w-full overflow-x-auto">
-                    <table className="w-full table-fixed min-w-[700px]">
-                      <colgroup>
-                        <col className="w-[110px]" />
-                        <col className="w-[140px]" />
-                        <col />
-                        <col className="w-[130px]" />
-                        <col className="w-[160px]" />
-                        <col className="w-[140px]" />
-                      </colgroup>
-                      <thead>
-                        <tr className="border-b border-[#f0e8e4]">
-                          {([['ID','public_id'],['Referință',null],['Text RO',null],['Progres','progress'],['Limbi',null],['Stare',null]] as [string, SortField|null][]).map(([label, field]) => (
-                            <th key={label}
-                              onClick={() => field && toggleSort(field)}
-                              className={`px-4 py-3 text-left text-xs font-semibold text-[#666] uppercase tracking-wide ${field ? 'cursor-pointer hover:text-[#ce0100]' : ''}`}>
-                              <div className="flex items-center gap-1">
-                                {label}
-                                {field && <SortIcon field={field} />}
-                              </div>
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {paginated.map((v, i) => {
-                          const count = getCompletedCount(v)
-                          const ds = getDisplayStatus(v)
-                          return (
-                            <tr key={v.id} onClick={() => router.push(`/versete/${v.id}`)}
-                              className={`cursor-pointer hover:bg-[#faf7f5] transition-colors ${i < paginated.length-1 ? 'border-b border-[#f8f3f0]' : ''}`}>
-                              <td className="px-4 py-3"><span className="text-sm font-bold text-[#ce0100]">{v.public_id}</span></td>
-                              <td className="px-4 py-3"><span className="text-sm font-semibold text-[#111] truncate block">{v.referinta_ro}</span></td>
-                              <td className="px-4 py-3"><p className="text-sm text-[#555] truncate">{v.verset_ro}</p></td>
-                              <td className="px-4 py-3">
-                                <div className="flex items-center gap-2">
-                                  <div className="flex-1 h-1 bg-[#f0e8e4] rounded-full overflow-x-hidden">
-                                    <div className="h-full rounded-full" style={{ width: `${(count/7)*100}%`, background: count===7?'#166534':'#ce0100' }} />
-                                  </div>
-                                  <span className="text-xs font-bold text-[#111] flex-shrink-0">{count}/7</span>
-                                </div>
-                              </td>
-                              <td className="px-4 py-3">
-                                <div className="flex flex-wrap gap-1">
-                                  {LANG_FIELDS.map(lang => {
-                                    const done = !!(v as any)[lang.field]?.trim()
-                                    return <span key={lang.code} className={`inline-flex items-center justify-center h-5 px-1.5 rounded-full text-[10px] font-bold ${done?'bg-[#ce0100] text-white':'bg-[#f0e8e4] text-[#bbb]'}`}>{lang.code}</span>
-                                  })}
-                                </div>
-                              </td>
-                              <td className="px-4 py-3"><StatusPill status={ds} /></td>
-                            </tr>
-                          )
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-
-                {/* ═══ COMPACT ═══ */}
-                {view === 'compact' && (
-                  <div className="overflow-x-auto">
-                    {paginated.map((v, i) => {
-                      const count = getCompletedCount(v)
-                      const ds = getDisplayStatus(v)
-                      const accent = STATUS_ACCENT[ds] ?? '#ce0100'
-                      return (
-                        <div key={v.id} onClick={() => router.push(`/versete/${v.id}`)}
-                          className={`flex items-center cursor-pointer hover:bg-[#faf7f5] transition-colors min-w-[600px] ${i < paginated.length - 1 ? 'border-b border-[#f8f3f0]' : ''}`}
-                          style={{ minWidth: 0 }}>
-                          {/* Accent bar */}
-                          <div className="w-1 self-stretch flex-shrink-0" style={{ background: accent }} />
-                          {/* ID */}
-                          <div className="w-[110px] flex-shrink-0 px-4 py-3">
-                            <span className="text-sm font-bold text-[#ce0100]">{v.public_id}</span>
-                          </div>
-                          {/* Referinta */}
-                          <div className="w-[140px] flex-shrink-0 px-2 py-3">
-                            <span className="text-sm font-semibold text-[#111] truncate block">{v.referinta_ro}</span>
-                          </div>
-                          {/* Text */}
-                          <div className="flex-1 min-w-0 px-2 py-3">
-                            <p className="text-sm text-[#555] truncate">{v.verset_ro}</p>
-                          </div>
-                          {/* Lang pills */}
-                          <div className="w-[160px] flex-shrink-0 px-2 py-3 flex gap-0.5 flex-wrap">
-                            {LANG_FIELDS.map(lang => {
-                              const done = !!(v as any)[lang.field]?.trim()
-                              return <span key={lang.code} className={`inline-flex items-center justify-center h-5 px-1.5 rounded-full text-[10px] font-bold ${done?'bg-[#ce0100] text-white':'bg-[#f0e8e4] text-[#bbb]'}`}>{lang.code}</span>
-                            })}
-                          </div>
-                          {/* Status */}
-                          <div className="w-[140px] flex-shrink-0 px-3 py-3">
-                            <StatusPill status={ds} />
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-              </>
-            )}
-
-            {/* Pagination */}
-            <Pagination
-              currentPage={page}
-              totalPages={totalPages}
-              totalItems={filtered.length}
-              itemsPerPage={PER_PAGE}
-              onPageChange={setPage}
-              label="versete"
-            />
-          </>
-        )}
+          </div>
+        </div>
       </div>
 
-      <CreateVersetModal open={openCreateModal} onClose={() => setOpenCreateModal(false)} />
+      <DeleteModal
+        isOpen={showDeleteModal}
+        versetRef={verset.referinta_ro ?? verset.public_id}
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setShowDeleteModal(false)}
+        isDeleting={isDeleting}
+      />
+      {/* Modal: intento de editar/borrar un verset validado */}
+      {showLockedModal && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowLockedModal(false)} />
+          <div className="relative w-full max-w-[420px] bg-white rounded-[24px] shadow-[0_30px_80px_rgba(0,0,0,0.18)] overflow-hidden">
+            <div className="h-[4px] bg-[#1a8c4e]" />
+            <div className="px-[28px] pt-[26px] pb-[24px] text-center">
+              <div className="w-[52px] h-[52px] mx-auto mb-[14px] rounded-full bg-[#edfaf3] border-2 border-[#bfe5cf] flex items-center justify-center">
+                <LockClosedIcon className="w-[22px] h-[22px] text-[#1a8c4e]" />
+              </div>
+              <h3 className="text-[18px] font-[700] text-[#111] mb-[8px]">Versetul {verset.public_id} este validat</h3>
+              <p className="text-[13px] text-[#6b5e57] leading-[21px] mb-[20px]">
+                Un verset validat nu mai poate fi modificat sau șters.
+                Pentru orice modificare, contactează <strong className="text-[#111]">coordonatorul principal</strong>,
+                care îl poate readuce din pagina <strong className="text-[#111]">Validări</strong>.
+              </p>
+              <button onClick={() => setShowLockedModal(false)}
+                className="w-full h-[44px] rounded-[14px] bg-[#111] text-white text-[14px] font-[600] hover:bg-[#2a2a2a] transition-all">
+                Am înțeles
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <EditVersetDrawer
+        isOpen={showEditDrawer && !isLocked}
+        verset={verset}
+        onClose={() => setShowEditDrawer(false)}
+        onSaved={handleEdited}
+      />
     </main>
   )
 }
