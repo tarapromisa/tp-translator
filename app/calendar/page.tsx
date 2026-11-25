@@ -83,14 +83,14 @@ function TareaDetailModal({ tarea, onClose }: { tarea: TareaCalendarWithStatus; 
                 <p className="text-sm text-[#555]">{tarea.nota}</p>
               </div>
             )}
-            {isValidReference(tarea.referinta_ro) && (
+            {(isValidReference(tarea.referinta_ro) || tarea.fortat) && (
               <div className={`flex items-center gap-2 px-3 py-2 rounded-xl ${tarea.gasit ? 'bg-[#edfaf3]' : 'bg-[#fff1f1]'}`}>
                 {tarea.gasit
                   ? <CheckCircleIcon className="w-4 h-4 text-[#166534]" />
                   : <XCircleIcon className="w-4 h-4 text-[#991b1b]" />
                 }
                 <p className={`text-[12px] font-semibold ${tarea.gasit ? 'text-[#166534]' : 'text-[#991b1b]'}`}>
-                  {tarea.gasit ? `Verset existent (${tarea.verset_public_id ?? ''})` : 'Verset neprogramat'}
+                  {tarea.gasit ? `Verset existent (${tarea.verset_public_id ?? ''})${tarea.fortat ? ' · marcat manual' : ''}` : 'Verset neprogramat'}
                 </p>
               </div>
             )}
@@ -312,7 +312,8 @@ export default function CalendarPage() {
   const filteredTareas = useMemo(() => {
     if (filterType === 'citateRO') return []
     return tareas.filter(t => {
-      if (isOperatorVersete && !isValidReference(t.referinta_ro)) return false // solo tareas de versículos
+      if (isOperatorVersete && !isValidReference(t.referinta_ro) && !t.fortat) return false // solo tareas de versículos
+      if (isOperatorVersete && t.coordonator_id !== profile?.id) return false   // y solo las asignadas a él/ella
       if (filterCoord !== 'all' && t.coordonator_id !== filterCoord) return false
       if (filterStatus === 'complete' && !t.gasit) return false
       if (filterStatus === 'incomplete' && t.gasit) return false
@@ -483,7 +484,7 @@ export default function CalendarPage() {
           </div>
 
           {/* Coordinator filter */}
-          {coordinators.length > 0 && filterType !== 'citateRO' && (
+          {!isOperatorVersete && coordinators.length > 0 && filterType !== 'citateRO' && (
             <select value={filterCoord} onChange={e => setFilterCoord(e.target.value)}
               className="h-8 px-3 rounded-xl border border-[#e8e2de] text-[11px] text-[#555] bg-white outline-none cursor-pointer">
               <option value="all">Toți coordonatorii</option>
@@ -494,12 +495,12 @@ export default function CalendarPage() {
           )}
 
           {/* Mine only */}
-          <button onClick={() => setFilterMine(f => !f)}
+          {!isOperatorVersete && <button onClick={() => setFilterMine(f => !f)}
             className={`h-8 px-3 rounded-xl border text-[11px] font-semibold transition-all ${
               filterMine ? 'bg-[#ce0100] text-white border-transparent' : 'border-[#e8e2de] text-[#555] hover:bg-[#f9f7f5]'
             }`}>
             Ale mele
-          </button>
+          </button>}
 
           {/* Reset */}
           {(filterType !== 'all' || filterStatus !== 'all' || filterCoord !== 'all' || filterMine) && (
@@ -571,9 +572,10 @@ export default function CalendarPage() {
 
                       {/* Tareas */}
                       {dayTareas.map(t => {
-                        const isBible = isValidReference(t.referinta_ro)
+                        const isBible = isValidReference(t.referinta_ro) || t.fortat
                         return (
                           <div key={t.id}
+                            title={t.fortat ? `${t.referinta_ro} · ${t.verset_public_id} (marcat manual)` : undefined}
                             draggable={canManage}
                             onDragStart={e => { e.stopPropagation(); handleDragStart(e, t.id, 'tarea') }}
                             onClick={(e) => { e.stopPropagation(); openEditModal(t) }}
@@ -606,7 +608,7 @@ export default function CalendarPage() {
             ) : (
               filteredTareas.map((t, i) => {
                 const d = new Date(t.data + 'T00:00:00')
-                const isBible = isValidReference(t.referinta_ro)
+                const isBible = isValidReference(t.referinta_ro) || t.fortat
                 return (
                   <div key={t.id}
                     className={`flex items-center gap-3 md:gap-4 px-4 md:px-5 py-3 ${i < filteredTareas.length - 1 ? 'border-b border-[#f8f3f0]' : ''}`}>
@@ -630,7 +632,7 @@ export default function CalendarPage() {
                         )}
                         {isBible && t.gasit && t.verset_public_id && (
                           <span className="text-[11px] text-[#166534] bg-[#edfaf3] rounded-full px-2 py-0.5 font-semibold">
-                            {t.verset_public_id}
+                            {t.verset_public_id}{t.fortat ? ' · manual' : ''}
                           </span>
                         )}
                         {t.nota && <span className="text-[11px] text-[#999]">{t.nota}</span>}

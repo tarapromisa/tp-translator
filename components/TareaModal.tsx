@@ -34,6 +34,23 @@ export default function TareaModal({ open, onClose, onSaved, tarea, defaultDate 
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
   const [refStatus, setRefStatus] = useState<RefStatus>('idle')
   const [refMessage, setRefMessage] = useState<string | null>(null)
+
+  // ── Forțare verset (solo Admin) ──
+  const isAdmin = profile?.role === 'Admin'
+  const [forceOn, setForceOn] = useState(false)
+  const [forceId, setForceId] = useState('')
+  const [forceCheck, setForceCheck] = useState<null | { ok: boolean; ref?: string }>(null)
+  const [forceChecking, setForceChecking] = useState(false)
+
+  const verifyForce = useCallback(async (raw: string) => {
+    const id = raw.trim().toUpperCase()
+    if (!id) { setForceCheck(null); return false }
+    setForceChecking(true)
+    const { data } = await supabase.from('versete').select('public_id, referinta_ro').eq('public_id', id).maybeSingle()
+    setForceChecking(false)
+    setForceCheck(data ? { ok: true, ref: data.referinta_ro ?? '' } : { ok: false })
+    return !!data
+  }, [])
   const { toasts, showToast } = useToast()
 
   const isVerset = isValidReference(referintaRo.trim())
@@ -44,11 +61,17 @@ export default function TareaModal({ open, onClose, onSaved, tarea, defaultDate 
       setReferintaRo(tarea.referinta_ro)
       setCoordonatorId(tarea.coordonator_id ?? '')
       setNota(tarea.nota ?? '')
+      setForceOn(!!tarea.verset_fortat)
+      setForceId(tarea.verset_fortat ?? '')
+      setForceCheck(tarea.verset_fortat ? { ok: true } : null)
     } else {
       setData(defaultDate ?? '')
       setReferintaRo('')
       setCoordonatorId('')
       setNota('')
+      setForceOn(false)
+      setForceId('')
+      setForceCheck(null)
     }
     setError(null)
     setRefStatus('idle')
@@ -127,6 +150,19 @@ export default function TareaModal({ open, onClose, onSaved, tarea, defaultDate 
     // Verifică referința înainte de salvare
     if (isVerset) await checkRef(referintaRo)
 
+    // Forțare: solo Admin, y el verset tiene que existir
+    let versetFortat: string | null | undefined = undefined   // undefined = no se toca (no Admin)
+    if (isAdmin) {
+      if (forceOn) {
+        if (!forceId.trim()) { setError('Scrie ID-ul versetului pe care vrei să-l forțezi (ex: V245).'); return }
+        const ok = await verifyForce(forceId)
+        if (!ok) { setError(`Versetul ${forceId.trim().toUpperCase()} nu există.`); return }
+        versetFortat = forceId.trim().toUpperCase()
+      } else {
+        versetFortat = null
+      }
+    }
+
     setSaving(true)
 
     if (tarea) {
@@ -135,6 +171,7 @@ export default function TareaModal({ open, onClose, onSaved, tarea, defaultDate 
         referinta_ro: referintaRo.trim(),
         coordonator_id: coordonatorId || null,
         nota: nota.trim() || null,
+        ...(versetFortat !== undefined ? { verset_fortat: versetFortat } : {}),
       })
       setSaving(false)
       if (!result.success) { showToast(result.error ?? 'Eroare la salvare.', 'error'); return }
@@ -145,6 +182,7 @@ export default function TareaModal({ open, onClose, onSaved, tarea, defaultDate 
         referinta_ro: referintaRo.trim(),
         coordonator_id: coordonatorId || null,
         nota: nota.trim() || null,
+        ...(versetFortat !== undefined ? { verset_fortat: versetFortat } : {}),
         created_by: profile?.id ?? '',
       })
       setSaving(false)
@@ -241,6 +279,45 @@ export default function TareaModal({ open, onClose, onSaved, tarea, defaultDate 
               <p className="text-[11px] mt-1.5 text-[#c05c00]">Operatorul de versete vede în calendar doar sarcinile cu referință biblică.</p>
             )}
           </div>
+
+          {/* Forțare verset — doar Admin */}
+          {isAdmin && (
+            <div className={`rounded-xl border px-3 py-3 ${forceOn ? 'border-[#bfe5cf] bg-[#f3fbf6]' : 'border-[#e8e2de] bg-[#fcfbfa]'}`}>
+              <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                <input type="checkbox" checked={forceOn}
+                  onChange={e => { setForceOn(e.target.checked); if (!e.target.checked) setForceCheck(null) }}
+                  className="mt-0.5 w-4 h-4 accent-[#166534]" />
+                <span>
+                  <span className="block text-sm font-semibold text-[#111]">Forțează versetul ca existent</span>
+                  <span className="block text-[11px] text-[#888]">Doar Admin · pentru când referința nu este recunoscută automat</span>
+                </span>
+              </label>
+              {forceOn && (
+                <div className="mt-3 pl-6">
+                  <input type="text" value={forceId}
+                    onChange={e => { setForceId(e.target.value.toUpperCase()); setForceCheck(null) }}
+                    onBlur={() => verifyForce(forceId)}
+                    placeholder="ID verset, ex: V245"
+                    className="w-full h-10 rounded-xl border border-[#e8e2de] px-3 text-sm font-semibold text-[#111] outline-none focus:border-[#166534] transition-all bg-white placeholder:text-[#bbb] placeholder:font-normal uppercase" />
+                  {forceChecking && <p className="text-[11px] mt-1.5 text-[#999]">Se verifică...</p>}
+                  {!forceChecking && forceCheck?.ok && (
+                    <div className="flex items-center gap-1.5 mt-1.5">
+                      <CheckCircleIcon className="w-3.5 h-3.5 text-[#166534]" />
+                      <p className="text-[11px] text-[#166534] font-medium">
+                        Verset găsit{forceCheck.ref ? `: ${forceCheck.ref}` : ''}
+                      </p>
+                    </div>
+                  )}
+                  {!forceChecking && forceCheck && !forceCheck.ok && (
+                    <div className="flex items-center gap-1.5 mt-1.5">
+                      <ExclamationTriangleIcon className="w-3.5 h-3.5 text-[#991b1b]" />
+                      <p className="text-[11px] text-[#991b1b] font-medium">Nu există niciun verset cu acest ID.</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           <div>
             <label className="text-sm font-medium text-[#444] block mb-1.5">Notă (opțional)</label>

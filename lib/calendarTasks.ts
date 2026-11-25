@@ -21,6 +21,7 @@ export type TareaCalendar = {
   referinta_ro: string
   coordonator_id: string | null
   nota: string | null
+  verset_fortat: string | null   // ID de verset puesto a mano por el Admin (ej. 'V245')
   created_by: string | null
   created_at: string
   updated_at: string
@@ -29,6 +30,7 @@ export type TareaCalendar = {
 export type TareaCalendarWithStatus = TareaCalendar & {
   gasit: boolean                 // true = ✓ (verset existent cu referința corespunzătoare)
   verset_public_id: string | null
+  fortat: boolean                // true = marcado a mano por el Admin (verset_fortat)
   coordonator_nume: string | null
 }
 
@@ -90,6 +92,17 @@ export async function fetchTareasWithStatus(
   }
 
   return tareas.map(t => {
+    // Forțat manual por el Admin: tiene prioridad sobre la detección automática
+    if (t.verset_fortat) {
+      return {
+        ...t,
+        gasit: true,
+        verset_public_id: t.verset_fortat,
+        fortat: true,
+        coordonator_nume: t.coordonator_id ? coordonatorMap.get(t.coordonator_id) ?? null : null,
+      }
+    }
+
     const parsed = parseReference(t.referinta_ro)
     let gasit = false
     let verset_public_id: string | null = null
@@ -106,6 +119,7 @@ export async function fetchTareasWithStatus(
       ...t,
       gasit,
       verset_public_id,
+      fortat: false,
       coordonator_nume: t.coordonator_id ? coordonatorMap.get(t.coordonator_id) ?? null : null,
     }
   })
@@ -116,7 +130,7 @@ export async function fetchTareasWithStatus(
  */
 export async function createTarea(
   supabase: SupabaseClient,
-  input: { data: string; referinta_ro: string; coordonator_id?: string | null; nota?: string | null; created_by: string }
+  input: { data: string; referinta_ro: string; coordonator_id?: string | null; nota?: string | null; verset_fortat?: string | null; created_by: string }
 ): Promise<{ success: boolean; error?: string; id?: string }> {
   const { data, error } = await supabase
     .from('tareas_calendar')
@@ -125,6 +139,7 @@ export async function createTarea(
       referinta_ro: input.referinta_ro,
       coordonator_id: input.coordonator_id ?? null,
       nota: input.nota ?? null,
+      verset_fortat: input.verset_fortat ?? null,
       created_by: input.created_by,
     })
     .select('id')
@@ -150,7 +165,7 @@ export async function createTarea(
 export async function updateTarea(
   supabase: SupabaseClient,
   id: string,
-  updates: Partial<{ data: string; referinta_ro: string; coordonator_id: string | null; nota: string | null }>
+  updates: Partial<{ data: string; referinta_ro: string; coordonator_id: string | null; nota: string | null; verset_fortat: string | null }>
 ): Promise<{ success: boolean; error?: string }> {
   const { error } = await supabase
     .from('tareas_calendar')
